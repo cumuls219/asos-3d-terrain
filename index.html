@@ -1,86 +1,49 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>부산관할 ASOS Active 3D 지형지도</title>
 
-<!--
-  V-World 공식 WebGL 3D API 3.0 호출 형식.
-  HTTPS GitHub Pages이므로 공식 안내에 따라 인증 도메인(host)을 명시합니다.
--->
+<!-- V-World 2026 공식 예제와 동일: domain 파라미터 없음 -->
 <script type="text/javascript"
-src="https://map.vworld.kr/js/webglMapInit.js.do?version=3.0&amp;apiKey=CD9939DD-4087-326C-A1F8-F077628FF9FB&amp;domain=cumuls219.github.io"></script>
+src="https://map.vworld.kr/js/webglMapInit.js.do?version=3.0&apiKey=CD9939DD-4087-326C-A1F8-F077628FF9FB"></script>
 
 <style>
-html,body {
-  margin:0; width:100%; height:100%; overflow:hidden;
-  font-family:"Malgun Gothic","Noto Sans KR",sans-serif; background:#07111f;
-}
-#vmap { width:100%; height:100vh; margin:0; }
-#panel {
-  position:absolute; z-index:1000; top:14px; right:14px; width:310px;
-  padding:14px; border-radius:15px; color:#fff;
-  background:rgba(7,17,31,.78); border:1px solid rgba(255,255,255,.16);
-  backdrop-filter:blur(12px);
-}
-#panel h1 {font-size:16px;margin:0 0 4px}
-#panel .sub {font-size:11px;color:#cbd5e1;margin-bottom:8px}
-select,button {
-  width:100%; min-height:40px; margin-top:7px; border-radius:9px;
-  border:1px solid rgba(255,255,255,.18); color:#fff; background:#0f172a;
-}
-.row {display:grid;grid-template-columns:1fr 1fr;gap:7px}
-#status {
-  position:absolute; z-index:1100; left:12px; bottom:12px;
-  padding:8px 11px; color:white; border-radius:10px;
-  background:rgba(7,17,31,.8); font-size:11px;
-}
-#popup {
-  display:none; position:absolute; z-index:1200; width:330px;
-  padding:12px; border-radius:13px; color:white;
-  background:rgba(7,17,31,.93); border:1px solid rgba(255,255,255,.16);
-}
-#popup table {width:100%;border-collapse:collapse;font-size:11px}
-#popup th,#popup td {padding:6px;border-bottom:1px solid rgba(255,255,255,.08);text-align:left}
-#popup th {width:28%;color:#cbd5e1}
-#popupClose {width:auto;min-height:28px;float:right;padding:3px 8px}
-#errorBox {
-  display:none; position:absolute; z-index:9999; inset:0; padding:20px;
-  align-items:center; justify-content:center; color:#fff;
-  background:rgba(2,6,23,.94);
-}
-#errorCard {
-  width:min(760px,100%); max-height:80vh; overflow:auto; padding:20px;
-  background:#0f172a; border:1px solid rgba(255,255,255,.15); border-radius:16px;
-}
-#errorCard pre {
-  white-space:pre-wrap; word-break:break-word; font-size:11px; line-height:1.5;
-  color:#fca5a5; background:#020617; padding:10px; border-radius:8px;
-}
-@media(max-width:620px) {
-  #panel {left:8px;right:8px;top:8px;width:auto}
-}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#06111f;font-family:"Malgun Gothic",sans-serif}
+#vmap{width:100%;height:100vh}
+#panel{position:absolute;z-index:1000;top:14px;right:14px;width:310px;padding:14px;border-radius:15px;color:white;background:rgba(7,17,31,.78);border:1px solid rgba(255,255,255,.16);backdrop-filter:blur(12px)}
+#panel h1{font-size:16px;margin:0 0 4px}
+#panel .sub{font-size:11px;color:#cbd5e1;margin-bottom:8px}
+select,button{width:100%;min-height:40px;margin-top:7px;border-radius:9px;border:1px solid rgba(255,255,255,.18);color:#fff;background:#0f172a}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+#status{position:absolute;z-index:1100;left:12px;bottom:12px;padding:8px 11px;color:white;border-radius:10px;background:rgba(7,17,31,.8);font-size:11px}
+#popup{display:none;position:absolute;z-index:1200;width:330px;padding:12px;border-radius:13px;color:white;background:rgba(7,17,31,.93);border:1px solid rgba(255,255,255,.16)}
+#popup table{width:100%;border-collapse:collapse;font-size:11px}
+#popup th,#popup td{padding:6px;border-bottom:1px solid rgba(255,255,255,.08);text-align:left}
+#popup th{width:28%;color:#cbd5e1}
+#popupClose{width:auto;min-height:28px;float:right;padding:3px 8px}
+#errorBox{display:none;position:absolute;z-index:9999;inset:0;padding:20px;align-items:center;justify-content:center;color:#fff;background:rgba(2,6,23,.94)}
+#errorCard{width:min(760px,100%);max-height:80vh;overflow:auto;padding:20px;background:#0f172a;border:1px solid rgba(255,255,255,.15);border-radius:16px}
+#errorCard pre{white-space:pre-wrap;word-break:break-word;font-size:11px;line-height:1.5;color:#fca5a5;background:#020617;padding:10px;border-radius:8px}
+@media(max-width:620px){#panel{left:8px;right:8px;top:8px;width:auto}}
 </style>
 </head>
 <body>
 
-<!-- V-World 공식 샘플처럼 지도 컨테이너를 먼저 생성 -->
 <div id="vmap"></div>
 
 <div id="panel">
   <h1>부산관할 ASOS Active 3D 지형지도</h1>
   <div class="sub">V-World WebGL 3D · ASOS 17개 지점</div>
-  <select id="stationSelect">
-    <option value="">관측소를 선택하세요</option>
-  </select>
+  <select id="stationSelect"><option value="">관측소를 선택하세요</option></select>
   <div class="row">
     <button id="homeBtn" type="button">전체 지점</button>
     <button id="terrainBtn" type="button">3D 지형 ON</button>
   </div>
 </div>
 
-<div id="status">V-World 공식 최소 구조로 지도 초기화 중…</div>
+<div id="status">V-World 3D 지형 초기화 중…</div>
 
 <div id="popup">
   <button id="popupClose" type="button">닫기</button>
@@ -95,177 +58,152 @@ select,button {
   </div>
 </div>
 
-<script type="text/javascript">
+<script>
 "use strict";
 
 const WEATHER_STATIONS = [{"지점번호": 152, "지점명": "울산", "주소": "울산광역시 중구 약사동 308", "위도": 35.58237, "경도": 129.33469, "높이": 81.14}, {"지점번호": 155, "지점명": "창원", "주소": "경상남도 창원시 마산합포구 가포동 473-1", "위도": 35.17019, "경도": 128.57282, "높이": 34.97}, {"지점번호": 159, "지점명": "부산", "주소": "부산광역시 중구 대청동1가 9-305", "위도": 35.10468, "경도": 129.03203, "높이": 69.56}, {"지점번호": 162, "지점명": "통영", "주소": "경상남도 통영시 정량동 844", "위도": 34.84541, "경도": 128.43561, "높이": 31.24}, {"지점번호": 192, "지점명": "진주", "주소": "경상남도 진주시 평거동 695-244", "위도": 35.16378, "경도": 128.04004, "높이": 29.35}, {"지점번호": 253, "지점명": "김해시", "주소": "경상남도 김해시 부원동 112-3", "위도": 35.22981, "경도": 128.89075, "높이": 54.59}, {"지점번호": 255, "지점명": "북창원", "주소": "경상남도 창원시 성산구 내동 산27-10", "위도": 35.22655, "경도": 128.6726, "높이": 50.95}, {"지점번호": 257, "지점명": "양산시", "주소": "경상남도 양산시 동면 금산리 1501", "위도": 35.30737, "경도": 129.02009, "높이": 6.29}, {"지점번호": 263, "지점명": "의령군", "주소": "경상남도 의령군 의령읍 무전리 78", "위도": 35.32258, "경도": 128.28812, "높이": 14.1}, {"지점번호": 264, "지점명": "함양군", "주소": "경상남도 함양군 함양읍 용평리 915-63", "위도": 35.51138, "경도": 127.74538, "높이": 152.07}, {"지점번호": 284, "지점명": "거창", "주소": "경상남도 거창군 거창읍 정장리 967-8", "위도": 35.66739, "경도": 127.9099, "높이": 228.45}, {"지점번호": 285, "지점명": "합천", "주소": "경상남도 합천군 합천읍 합천리 129-4", "위도": 35.56505, "경도": 128.16994, "높이": 26.72}, {"지점번호": 288, "지점명": "밀양", "주소": "경상남도 밀양시 내이동 1073-3", "위도": 35.49147, "경도": 128.74412, "높이": 8.31}, {"지점번호": 289, "지점명": "산청", "주소": "경상남도 산청군 산청읍 지리 311-2", "위도": 35.413, "경도": 127.8791, "높이": 138.22}, {"지점번호": 294, "지점명": "거제", "주소": "경상남도 거제시 장평동 770-27", "위도": 34.88818, "경도": 128.60459, "높이": 44.83}, {"지점번호": 295, "지점명": "남해", "주소": "경상남도 남해군 이동면 다정리 797-2", "위도": 34.81662, "경도": 127.92641, "높이": 45.71}, {"지점번호": 296, "지점명": "북부산", "주소": "부산광역시 강서구 대저1동 1246", "위도": 35.217781, "경도": 128.960242, "높이": 3.0}];
 const stations = WEATHER_STATIONS.map((s,i)=>({
-  index:i,
-  id:Number(s["지점번호"]),
-  name:String(s["지점명"]),
-  address:String(s["주소"]),
-  lat:Number(s["위도"]),
-  lon:Number(s["경도"]),
+  index:i,id:Number(s["지점번호"]),name:String(s["지점명"]),
+  address:String(s["주소"]),lat:Number(s["위도"]),lon:Number(s["경도"]),
   height:Number(s["높이"])
 }));
 
-const $ = id => document.getElementById(id);
-function esc(v) {
-  return String(v ?? "")
-   .replace(/&/g,"&amp;").replace(/</g,"&lt;")
-   .replace(/>/g,"&gt;").replace(/"/g,"&quot;");
-}
-function fail(err) {
-  $("errorMessage").innerHTML =
-    "<p><b>"+esc(err && err.message ? err.message : err)+"</b></p>"+
-    "<p>현재 host: <code>"+esc(location.host)+"</code></p>"+
-    "<p>V-World 요청 domain: <code>cumuls219.github.io</code></p>";
-  $("errorStack").textContent = err && err.stack ? err.stack : "stack 정보 없음";
-  $("errorBox").style.display = "flex";
+const $=id=>document.getElementById(id);
+function esc(v){return String(v??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}
+function fail(err,stage){
+  $("errorMessage").innerHTML=
+    "<p><b>단계: "+esc(stage)+"</b></p>"+
+    "<p><b>"+esc(err&&err.message?err.message:err)+"</b></p>"+
+    "<p>현재 URL: <code>"+esc(location.href)+"</code></p>"+
+    "<p>V-World API 호출: <code>version=3.0 + apiKey</code> (domain 파라미터 없음)</p>";
+  $("errorStack").textContent=err&&err.stack?err.stack:"stack 정보 없음";
+  $("errorBox").style.display="flex";
 }
 
-const lats = stations.map(s=>s.lat);
-const lons = stations.map(s=>s.lon);
-const centerLat = (Math.min(...lats)+Math.max(...lats))/2;
-const centerLon = (Math.min(...lons)+Math.max(...lons))/2;
-const HOME_HEIGHT = 300000;
+const lats=stations.map(s=>s.lat), lons=stations.map(s=>s.lon);
+const centerLat=(Math.min(...lats)+Math.max(...lats))/2;
+const centerLon=(Math.min(...lons)+Math.max(...lons))/2;
+const HOME_HEIGHT=300000;
 
-var map;
-var viewer;
-var originalTerrain;
-var terrainOn = true;
+var map, viewer, originalTerrain, terrainOn=true;
 
 try {
-  /*
-    여기부터 map.start()까지는 V-World 공식 최소 예제와 동일한 구조:
-    1) options
-    2) new vw.Map()
-    3) setOption()
-    4) start()
-  */
-  var options = {
-    mapId: "vmap",
-    initPosition: new vw.CameraPosition(
-      new vw.CoordZ(centerLon, centerLat, HOME_HEIGHT),
-      new vw.Direction(0, -90, 0)
+  // API 로더가 정상인지 먼저 명확히 진단
+  if (typeof vw === "undefined") {
+    throw new Error("V-World API 스크립트가 로드되지 않아 vw 객체가 없습니다.");
+  }
+
+  // V-World 2026 공식 최소 지도 생성 구조
+  var options={
+    mapId:"vmap",
+    initPosition:new vw.CameraPosition(
+      new vw.CoordZ(centerLon,centerLat,HOME_HEIGHT),
+      new vw.Direction(0,-90,0)
     ),
-    logo: true,
-    navigation: true
+    logo:true,
+    navigation:true
   };
 
-  map = new vw.Map();
+  map=new vw.Map();
   map.setOption(options);
   map.start();
 
-  // 공식 예제처럼 start() 직후 viewer 획득
-  viewer = ws3d.viewer;
-  originalTerrain = viewer.terrainProvider;
+  // 공식 샘플처럼 start 직후 viewer 사용
+  viewer=ws3d.viewer;
+  originalTerrain=viewer.terrainProvider;
 
-  vw.ws3dInitCallBack = function() {
+  vw.ws3dInitCallBack=function(){
     try {
-      const select = $("stationSelect");
+      const select=$("stationSelect");
 
-      stations.forEach(s => {
-        const option = document.createElement("option");
-        option.value = String(s.index);
-        option.textContent = s.id + " · " + s.name;
+      stations.forEach(s=>{
+        const option=document.createElement("option");
+        option.value=String(s.index);
+        option.textContent=s.id+" · "+s.name;
         select.appendChild(option);
 
-        const entity = viewer.entities.add({
-          id: "asos-" + s.id,
-          name: s.name,
-          position: Cesium.Cartesian3.fromDegrees(s.lon, s.lat, 0),
-          point: {
-            pixelSize: 13,
-            color: Cesium.Color.CYAN,
-            outlineColor: Cesium.Color.WHITE,
-            outlineWidth: 2,
-            heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
-            disableDepthTestDistance: Number.POSITIVE_INFINITY
+        const entity=viewer.entities.add({
+          id:"asos-"+s.id,
+          name:s.name,
+          position:Cesium.Cartesian3.fromDegrees(s.lon,s.lat,0),
+          point:{
+            pixelSize:13,
+            color:Cesium.Color.CYAN,
+            outlineColor:Cesium.Color.WHITE,
+            outlineWidth:2,
+            heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,
+            disableDepthTestDistance:Number.POSITIVE_INFINITY
           },
-          label: {
-            text: s.id + " " + s.name,
-            font: "700 13px Malgun Gothic",
-            fillColor: Cesium.Color.WHITE,
-            outlineColor: Cesium.Color.BLACK,
-            outlineWidth: 3,
-            style: Cesium.LabelStyle.FILL_AND_OUTLINE,
-            pixelOffset: new Cesium.Cartesian2(0,-22),
-            verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
-            heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
-            disableDepthTestDistance: Number.POSITIVE_INFINITY
+          label:{
+            text:s.id+" "+s.name,
+            font:"700 13px Malgun Gothic",
+            fillColor:Cesium.Color.WHITE,
+            outlineColor:Cesium.Color.BLACK,
+            outlineWidth:3,
+            style:Cesium.LabelStyle.FILL_AND_OUTLINE,
+            pixelOffset:new Cesium.Cartesian2(0,-22),
+            verticalOrigin:Cesium.VerticalOrigin.BOTTOM,
+            heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,
+            disableDepthTestDistance:Number.POSITIVE_INFINITY
           }
         });
-        entity.__stationIndex = s.index;
+        entity.__stationIndex=s.index;
       });
 
-      $("homeBtn").addEventListener("click", () => {
+      $("homeBtn").addEventListener("click",()=>{
         viewer.camera.flyTo({
-          destination: Cesium.Cartesian3.fromDegrees(centerLon,centerLat,HOME_HEIGHT),
-          orientation: {
-            heading: 0,
-            pitch: Cesium.Math.toRadians(-50),
-            roll: 0
-          },
-          duration: 1.3
+          destination:Cesium.Cartesian3.fromDegrees(centerLon,centerLat,HOME_HEIGHT),
+          orientation:{heading:0,pitch:Cesium.Math.toRadians(-50),roll:0},
+          duration:1.3
         });
       });
 
-      select.addEventListener("change", e => {
-        const s = stations.find(v=>v.index===Number(e.target.value));
-        if (!s) return;
+      select.addEventListener("change",e=>{
+        const s=stations.find(v=>v.index===Number(e.target.value));
+        if(!s)return;
         viewer.camera.flyTo({
-          destination: Cesium.Cartesian3.fromDegrees(s.lon,s.lat,5000),
-          orientation: {
-            heading:0,
-            pitch:Cesium.Math.toRadians(-42),
-            roll:0
-          },
+          destination:Cesium.Cartesian3.fromDegrees(s.lon,s.lat,5000),
+          orientation:{heading:0,pitch:Cesium.Math.toRadians(-42),roll:0},
           duration:1.4
         });
       });
 
-      $("terrainBtn").addEventListener("click", () => {
-        terrainOn = !terrainOn;
-        viewer.terrainProvider = terrainOn
-          ? originalTerrain
-          : new Cesium.EllipsoidTerrainProvider();
-        $("terrainBtn").textContent = terrainOn ? "3D 지형 ON" : "3D 지형 OFF";
+      $("terrainBtn").addEventListener("click",()=>{
+        terrainOn=!terrainOn;
+        viewer.terrainProvider=terrainOn?originalTerrain:new Cesium.EllipsoidTerrainProvider();
+        $("terrainBtn").textContent=terrainOn?"3D 지형 ON":"3D 지형 OFF";
       });
 
       $("popupClose").addEventListener("click",()=>$("popup").style.display="none");
 
-      const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
-      handler.setInputAction(click => {
-        const picked = viewer.scene.pick(click.position);
-        if (!Cesium.defined(picked) || !picked.id) return;
+      const handler=new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+      handler.setInputAction(click=>{
+        const picked=viewer.scene.pick(click.position);
+        if(!Cesium.defined(picked)||!picked.id)return;
+        const s=stations.find(v=>v.index===Number(picked.id.__stationIndex));
+        if(!s)return;
 
-        const s = stations.find(v=>v.index===Number(picked.id.__stationIndex));
-        if (!s) return;
-
-        $("popupContent").innerHTML =
-          "<b>"+esc(s.id+" · "+s.name)+"</b>"+
-          "<table>"+
+        $("popupContent").innerHTML=
+          "<b>"+esc(s.id+" · "+s.name)+"</b><table>"+
           "<tr><th>주소</th><td>"+esc(s.address)+"</td></tr>"+
           "<tr><th>위도</th><td>"+s.lat.toFixed(6)+"</td></tr>"+
           "<tr><th>경도</th><td>"+s.lon.toFixed(6)+"</td></tr>"+
-          "<tr><th>높이</th><td>"+s.height.toFixed(2)+" m</td></tr>"+
-          "</table>";
+          "<tr><th>높이</th><td>"+s.height.toFixed(2)+" m</td></tr></table>";
 
-        const popup = $("popup");
-        popup.style.display="block";
-        popup.style.left=Math.max(8,Math.min(click.position.x+12,innerWidth-350))+"px";
-        popup.style.top=Math.max(8,Math.min(click.position.y+12,innerHeight-240))+"px";
-      }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+        const p=$("popup");
+        p.style.display="block";
+        p.style.left=Math.max(8,Math.min(click.position.x+12,innerWidth-350))+"px";
+        p.style.top=Math.max(8,Math.min(click.position.y+12,innerHeight-240))+"px";
+      },Cesium.ScreenSpaceEventType.LEFT_CLICK);
 
-      $("status").textContent = "V-World 3D 지형 · ASOS 17개 지점 활성화";
+      $("status").textContent="V-World 3D 지형 · ASOS 17개 지점 활성화";
     } catch(err) {
-      fail(err);
+      fail(err,"ASOS 레이어 초기화");
     }
   };
 
 } catch(err) {
-  fail(err);
+  fail(err,"V-World map.start()");
 }
 </script>
 </body>
