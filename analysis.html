@@ -54,10 +54,12 @@ button,.fileLabel,select{border:1px solid var(--l);border-radius:9px;background:
 </div>
 <div id="tempLegend"><div id="grad"></div><div id="scale"><span id="tmin">-</span><span>IDW p=2</span><span id="tmax">-</span></div></div>
 <div class="slider"><span>기온장 투명도</span><input id="alpha" type="range" min="0.25" max="0.95" step="0.05" value="0.72"><span id="aval" class="sv">72%</span></div>
-<div class="slider"><span>바람 길이</span><input id="wscale" type="range" min="0.5" max="2.0" step="0.1" value="1.0"><span id="wval" class="sv">1.0×</span></div></div>
+<div class="slider"><span>바람장 밀도</span><input id="wdensity" type="range" min="14" max="32" step="1" value="24"><span id="wdensityVal" class="sv">24</span></div>
+<div class="slider"><span>바람 길이</span><input id="wscale" type="range" min="0.5" max="2.0" step="0.1" value="1.0"><span id="wval" class="sv">1.0×</span></div>
+<div class="slider"><span>벡터 두께</span><input id="wthick" type="range" min="1.5" max="8.0" step="0.5" value="4.0"><span id="wthickVal" class="sv">4.0</span></div></div>
 <div class="sec"><div class="ttl">배경 · 관측망</div><div class="g2"><button id="satBtn">위성 OFF</button><button id="bldBtn">3D 건물 OFF</button><button id="asosBtn" class="on asos">ASOS ON</button><button id="awsBtn" class="on aws">AWS ON</button></div></div>
 <div class="sec"><div class="ttl">지점 이동</div><select id="stationSelect"><option value="">관측소를 선택하세요</option></select><button id="homeBtn" style="width:100%;margin-top:7px">전체 77개 지점 보기</button></div>
-<div id="note">기온장: 관측값 IDW(p=2), 유효 관측지점의 볼록껍질 내부만 표출.<br>바람장: 선택한 1분 또는 10분 풍향·풍속 → U/V 변환 → U/V 각각 IDW. 풍향 자체는 보간하지 않음.<br>1분·10분 자료가 함께 있으면 자동 혼합하지 않고 사용자가 선택.</div>
+<div id="note">기온장: 관측값 IDW(p=2), 유효 관측지점의 볼록껍질 내부만 표출. 640px 경계 mask + feathering 적용.<br>바람장: 선택한 1분 또는 10분 풍향·풍속 → U/V 변환 → U/V 각각 IDW. 풍향 자체는 보간하지 않음.<br>1분·10분 자료가 함께 있으면 자동 혼합하지 않고 사용자가 선택.</div>
 </div></div>
 <div id="status">V-World 3D 분석지형 초기화 중…</div>
 <div id="popup"><button id="popupClose">닫기</button><div id="popupContent"></div></div>
@@ -190,9 +192,132 @@ function home(){viewer.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(c
 function hull(P){if(P.length<=2)return P.slice();P=P.slice().sort((a,b)=>a.x===b.x?a.y-b.y:a.x-b.x);function c(o,a,b){return(a.x-o.x)*(b.y-o.y)-(a.y-o.y)*(b.x-o.x)}var l=[],u=[];P.forEach(p=>{while(l.length>=2&&c(l[l.length-2],l[l.length-1],p)<=0)l.pop();l.push(p)});for(var i=P.length-1;i>=0;i--){var p=P[i];while(u.length>=2&&c(u[u.length-2],u[u.length-1],p)<=0)u.pop();u.push(p)}l.pop();u.pop();return l.concat(u)}function inside(x,y,p){var z=false;for(var i=0,j=p.length-1;i<p.length;j=i++){var a=p[i],b=p[j];if(((a.y>y)!=(b.y>y))&&(x<(b.x-a.x)*(y-a.y)/(b.y-a.y+1e-30)+a.x))z=!z}return z}function km(a,b,c,d){var R=6371,r=Math.PI/180,da=(c-a)*r,do1=(d-b)*r,q=Math.sin(da/2)**2+Math.cos(a*r)*Math.cos(c*r)*Math.sin(do1/2)**2;return 2*R*Math.asin(Math.sqrt(q))}function idw(lat,lon,P,k){var sw=0,sv=0;for(var i=0;i<P.length;i++){var d=km(lat,lon,P[i].lat,P[i].lon);if(d<.03)return P[i][k];var w=1/(d*d);sw+=w;sv+=w*P[i][k]}return sw?sv/sw:NaN}
 function ramp(t){t=Math.max(0,Math.min(1,t));var q=[[0,[49,54,149]],[.1,[69,117,180]],[.2,[116,173,209]],[.3,[171,217,233]],[.4,[224,243,248]],[.5,[255,255,191]],[.6,[254,224,144]],[.7,[253,174,97]],[.8,[244,109,67]],[.9,[215,48,39]],[1,[165,0,38]]];for(var i=1;i<q.length;i++)if(t<=q[i][0]){var a=q[i-1],b=q[i],f=(t-a[0])/(b[0]-a[0]);return a[1].map((v,j)=>Math.round(v+f*(b[1][j]-v)))}return q[q.length-1][1]}
 function clearTemp(){if(tempLayer){try{viewer.scene.imageryLayers.remove(tempLayer,true)}catch(x){}tempLayer=null}tempOn=false;e('tempBtn').textContent='기온장 OFF';e('tempBtn').classList.remove('on');e('tempLegend').style.display='none'}
-function buildTemp(){clearTemp();var P=[];wx.forEach(function(w,id){var s=stationById.get(id);if(s&&fin(w.temp))P.push({lat:s.lat,lon:s.lon,temp:w.temp})});if(P.length<3)return false;var H=hull(P.map(p=>({x:p.lon,y:p.lat}))),W=Math.min(...P.map(p=>p.lon)),E=Math.max(...P.map(p=>p.lon)),S0=Math.min(...P.map(p=>p.lat)),N=Math.max(...P.map(p=>p.lat)),mn=Math.min(...P.map(p=>p.temp)),mx=Math.max(...P.map(p=>p.temp)),sp=Math.max(.1,mx-mn),cw=360,ch=360,c=document.createElement('canvas');c.width=cw;c.height=ch;var x=c.getContext('2d'),im=x.createImageData(cw,ch),d=im.data;for(var y=0;y<ch;y++){var lat=N-(N-S0)*y/(ch-1);for(var i=0;i<cw;i++){var lon=W+(E-W)*i/(cw-1),ix=(y*cw+i)*4;if(!inside(lon,lat,H)){d[ix+3]=0;continue}var v=idw(lat,lon,P,'temp'),rgb=ramp((v-mn)/sp);d[ix]=rgb[0];d[ix+1]=rgb[1];d[ix+2]=rgb[2];d[ix+3]=255}}x.putImageData(im,0,0);try{var p=new Cesium.SingleTileImageryProvider({url:c.toDataURL('image/png'),rectangle:Cesium.Rectangle.fromDegrees(W,S0,E,N)});tempLayer=viewer.scene.imageryLayers.addImageryProvider(p);tempLayer.alpha=Number(e('alpha').value);tempOn=true;e('tempBtn').textContent='기온장 ON';e('tempBtn').classList.add('on');e('tempLegend').style.display='block';e('tmin').textContent=mn.toFixed(1)+'℃';e('tmax').textContent=mx.toFixed(1)+'℃';return true}catch(x){err(x,'기온장 Draping');return false}}
-function uv(wd,ws){var r=wd*Math.PI/180;return{u:-ws*Math.sin(r),v:-ws*Math.cos(r)}}function endp(lat,lon,u,v){var m=2300*Number(e('wscale').value),dn=v*m,de=u*m;return{lat:lat+dn/111320,lon:lon+de/(111320*Math.max(.2,Math.cos(lat*Math.PI/180)))}}function clearW(a){while(a.length){try{viewer.entities.remove(a.pop())}catch(x){}}}function arrow(lat,lon,u,v,col,a){if(Math.hypot(u,v)<.05)return;var z=endp(lat,lon,u,v);a.push(viewer.entities.add({polyline:{positions:Cesium.Cartesian3.fromDegreesArray([lon,lat,z.lon,z.lat]),width:4,clampToGround:true,material:new Cesium.PolylineArrowMaterialProperty(col)}}))}
-function obsWind(){clearW(wobs);wx.forEach(function(w,id){var s=stationById.get(id);if(!s||!fin(w.wd)||!fin(w.ws))return;var q=uv(w.wd,w.ws);arrow(s.lat,s.lon,q.u,q.v,Cesium.Color.fromCssColorString('#111827').withAlpha(.94),wobs)})}function gridWind(){clearW(wgrid);var P=[];wx.forEach(function(w,id){var s=stationById.get(id);if(!s||!fin(w.wd)||!fin(w.ws))return;var q=uv(w.wd,w.ws);P.push({lat:s.lat,lon:s.lon,u:q.u,v:q.v})});if(P.length<3)return false;var H=hull(P.map(p=>({x:p.lon,y:p.lat}))),W=Math.min(...P.map(p=>p.lon)),E=Math.max(...P.map(p=>p.lon)),S0=Math.min(...P.map(p=>p.lat)),N=Math.max(...P.map(p=>p.lat));for(var j=0;j<12;j++){var lat=S0+(N-S0)*j/11;for(var i=0;i<14;i++){var lon=W+(E-W)*i/13;if(!inside(lon,lat,H))continue;arrow(lat,lon,idw(lat,lon,P,'u'),idw(lat,lon,P,'v'),Cesium.Color.fromCssColorString('#172554').withAlpha(.92),wgrid)}}return true}
+function buildTemp(){
+  clearTemp();
+  var P=[];
+  wx.forEach(function(w,id){
+    var s=stationById.get(id);
+    if(s&&fin(w.temp))P.push({lat:s.lat,lon:s.lon,temp:w.temp});
+  });
+  if(P.length<3)return false;
+
+  var H=hull(P.map(function(p){return{x:p.lon,y:p.lat}})),
+      W=Math.min.apply(null,P.map(function(p){return p.lon})),
+      E=Math.max.apply(null,P.map(function(p){return p.lon})),
+      S0=Math.min.apply(null,P.map(function(p){return p.lat})),
+      N=Math.max.apply(null,P.map(function(p){return p.lat})),
+      mn=Math.min.apply(null,P.map(function(p){return p.temp})),
+      mx=Math.max.apply(null,P.map(function(p){return p.temp})),
+      sp=Math.max(.1,mx-mn),
+      cw=640,ch=640,
+      c=document.createElement('canvas');
+
+  c.width=cw;c.height=ch;
+  var x=c.getContext('2d'),
+      im=x.createImageData(cw,ch),d=im.data;
+
+  /* IDW 값 계산. 경계 처리는 별도 mask로 분리한다. */
+  for(var y=0;y<ch;y++){
+    var lat=N-(N-S0)*y/(ch-1);
+    for(var i=0;i<cw;i++){
+      var lon=W+(E-W)*i/(cw-1),ix=(y*cw+i)*4;
+      var v=idw(lat,lon,P,'temp'),rgb=ramp((v-mn)/sp);
+      d[ix]=rgb[0];d[ix+1]=rgb[1];d[ix+2]=rgb[2];d[ix+3]=255;
+    }
+  }
+  x.putImageData(im,0,0);
+
+  /* 기존 convex hull 분석영역을 유지하되, 640px mask와 8px feathering으로
+     가장자리만 부드럽게 한다. blurred mask를 다시 hard hull로 clip하여
+     관측영역 바깥쪽으로 분석장이 확장되지 않도록 한다. */
+  var hard=document.createElement('canvas');
+  hard.width=cw;hard.height=ch;
+  var hctx=hard.getContext('2d');
+  hctx.fillStyle='rgba(255,255,255,1)';
+  hctx.beginPath();
+  H.forEach(function(p,k){
+    var px=(p.x-W)/(E-W)*(cw-1),
+        py=(N-p.y)/(N-S0)*(ch-1);
+    if(k===0)hctx.moveTo(px,py);else hctx.lineTo(px,py);
+  });
+  hctx.closePath();
+  hctx.fill();
+
+  var soft=document.createElement('canvas');
+  soft.width=cw;soft.height=ch;
+  var sctx=soft.getContext('2d');
+  sctx.filter='blur(8px)';
+  sctx.drawImage(hard,0,0);
+  sctx.filter='none';
+  sctx.globalCompositeOperation='destination-in';
+  sctx.drawImage(hard,0,0);
+  sctx.globalCompositeOperation='source-over';
+
+  x.globalCompositeOperation='destination-in';
+  x.drawImage(soft,0,0);
+  x.globalCompositeOperation='source-over';
+
+  try{
+    var p=new Cesium.SingleTileImageryProvider({
+      url:c.toDataURL('image/png'),
+      rectangle:Cesium.Rectangle.fromDegrees(W,S0,E,N)
+    });
+    tempLayer=viewer.scene.imageryLayers.addImageryProvider(p);
+    tempLayer.alpha=Number(e('alpha').value);
+    tempOn=true;
+    e('tempBtn').textContent='기온장 ON';
+    e('tempBtn').classList.add('on');
+    e('tempLegend').style.display='block';
+    e('tmin').textContent=mn.toFixed(1)+'℃';
+    e('tmax').textContent=mx.toFixed(1)+'℃';
+    return true;
+  }catch(x){
+    err(x,'기온장 Draping');
+    return false;
+  }
+}
+function uv(wd,ws){var r=wd*Math.PI/180;return{u:-ws*Math.sin(r),v:-ws*Math.cos(r)}}function endp(lat,lon,u,v){var m=2300*Number(e('wscale').value),dn=v*m,de=u*m;return{lat:lat+dn/111320,lon:lon+de/(111320*Math.max(.2,Math.cos(lat*Math.PI/180)))}}function clearW(a){while(a.length){try{viewer.entities.remove(a.pop())}catch(x){}}}function arrow(lat,lon,u,v,col,a){if(Math.hypot(u,v)<.05)return;var z=endp(lat,lon,u,v),th=Number(e('wthick').value);a.push(viewer.entities.add({polyline:{positions:Cesium.Cartesian3.fromDegreesArray([lon,lat,z.lon,z.lat]),width:th,clampToGround:true,material:new Cesium.PolylineArrowMaterialProperty(col)}}))}
+function obsWind(){clearW(wobs);wx.forEach(function(w,id){var s=stationById.get(id);if(!s||!fin(w.wd)||!fin(w.ws))return;var q=uv(w.wd,w.ws);arrow(s.lat,s.lon,q.u,q.v,Cesium.Color.fromCssColorString('#111827').withAlpha(.94),wobs)})}function gridWind(){
+  clearW(wgrid);
+  var P=[];
+  wx.forEach(function(w,id){
+    var s=stationById.get(id);
+    if(!s||!fin(w.wd)||!fin(w.ws))return;
+    var q=uv(w.wd,w.ws);
+    P.push({lat:s.lat,lon:s.lon,u:q.u,v:q.v});
+  });
+  if(P.length<3)return false;
+
+  var H=hull(P.map(function(p){return{x:p.lon,y:p.lat}})),
+      W=Math.min.apply(null,P.map(function(p){return p.lon})),
+      E=Math.max.apply(null,P.map(function(p){return p.lon})),
+      S0=Math.min.apply(null,P.map(function(p){return p.lat})),
+      N=Math.max.apply(null,P.map(function(p){return p.lat}));
+
+  /* 기존 14×12 고정 대신 동서방향 밀도를 14~32로 조절.
+     남북방향은 실제 거리 종횡비에 맞춰 자동 계산한다. */
+  var nx=Math.round(Number(e('wdensity').value)),
+      mid=(S0+N)/2*Math.PI/180,
+      xkm=Math.max(1,(E-W)*111.32*Math.cos(mid)),
+      ykm=Math.max(1,(N-S0)*111.32),
+      ny=Math.max(8,Math.min(30,Math.round((nx-1)*(ykm/xkm))+1));
+
+  for(var j=0;j<ny;j++){
+    var lat=S0+(N-S0)*j/(ny-1);
+    for(var i=0;i<nx;i++){
+      var lon=W+(E-W)*i/(nx-1);
+      if(!inside(lon,lat,H))continue;
+      arrow(
+        lat,lon,
+        idw(lat,lon,P,'u'),
+        idw(lat,lon,P,'v'),
+        Cesium.Color.fromCssColorString('#172554').withAlpha(.92),
+        wgrid
+      );
+    }
+  }
+  return true;
+}
 function csv(t){var R=[],r=[],c='',q=false;for(var i=0;i<t.length;i++){var h=t[i],n=t[i+1];if(h==='"'){if(q&&n==='"'){c+='"';i++}else q=!q}else if((h===','||h==='\t')&&!q){r.push(c);c=''}else if((h==='\n'||h==='\r')&&!q){if(h==='\r'&&n==='\n')i++;r.push(c);c='';if(r.some(v=>String(v).trim()!==''))R.push(r);r=[]}else c+=h}if(c||r.length){r.push(c);R.push(r)}if(!R.length)return[];var H=R[0].map(v=>String(v).trim());return R.slice(1).map(function(a){var o={};H.forEach((h,i)=>o[h]=a[i]===undefined?'':a[i]);return o})}
 function timeText(v){if(typeof XLSX!=='undefined'&&typeof v==='number'&&v>20000&&XLSX.SSF){var d=XLSX.SSF.parse_date_code(v);if(d)return d.y+'-'+String(d.m).padStart(2,'0')+'-'+String(d.d).padStart(2,'0')+' '+String(d.H).padStart(2,'0')+':'+String(d.M).padStart(2,'0')}return String(v==null?'':v)}
 function applyRows(R,name,autoDraw){
@@ -290,6 +415,9 @@ function install(){if(ready)return;ready=true;viewer=ws3d.viewer;terrainMode();r
 e('wind1Btn').onclick=function(){if(windFields.m1)setWindMode('m1',true)};
 e('wind10Btn').onclick=function(){if(windFields.m10)setWindMode('m10',true)};
 e('windUnknownBtn').onclick=function(){if(windFields.generic)setWindMode('generic',true)};
-e('asosBtn').onclick=()=>network('ASOS',!shown.ASOS);e('awsBtn').onclick=()=>network('AWS',!shown.AWS);e('satBtn').onclick=()=>satellite(!sat);e('bldBtn').onclick=()=>buildings(!bldOn);e('homeBtn').onclick=home;e('stationSelect').onchange=function(){var p=this.value.split('-'),s=S.find(x=>x.type===p[0]&&x.id===Number(p[1]));if(s)fly(s)};e('tempBtn').onclick=function(){if(tempOn)clearTemp();else buildTemp()};e('windGridBtn').onclick=function(){wgridOn=!wgridOn;if(wgridOn){if(gridWind()){this.textContent='바람장 ON';this.classList.add('on')}}else{clearW(wgrid);this.textContent='바람장 OFF';this.classList.remove('on')}};e('windObsBtn').onclick=function(){wobsOn=!wobsOn;if(wobsOn){obsWind();this.textContent='관측바람 ON';this.classList.add('on')}else{clearW(wobs);this.textContent='관측바람 OFF';this.classList.remove('on')}};e('alpha').oninput=function(){e('aval').textContent=Math.round(Number(this.value)*100)+'%';if(tempLayer)tempLayer.alpha=Number(this.value)};e('wscale').oninput=function(){e('wval').textContent=Number(this.value).toFixed(1)+'×';if(wgridOn)gridWind();if(wobsOn)obsWind()};e('popupClose').onclick=()=>e('popup').style.display='none';var h=new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);h.setInputAction(function(c){e('popup').style.display='none';var p=viewer.scene.pick(c.position);if(!Cesium.defined(p)||!p.id)return;var i=Number(p.id.__idx);if(Number.isFinite(i)&&S[i])popup(c,S[i])},Cesium.ScreenSpaceEventType.LEFT_CLICK);e('status').textContent='분석모드 · 위성 OFF · 지형 ON · 관측자료를 불러오세요';setTimeout(home,500)}
+e('asosBtn').onclick=()=>network('ASOS',!shown.ASOS);e('awsBtn').onclick=()=>network('AWS',!shown.AWS);e('satBtn').onclick=()=>satellite(!sat);e('bldBtn').onclick=()=>buildings(!bldOn);e('homeBtn').onclick=home;e('stationSelect').onchange=function(){var p=this.value.split('-'),s=S.find(x=>x.type===p[0]&&x.id===Number(p[1]));if(s)fly(s)};e('tempBtn').onclick=function(){if(tempOn)clearTemp();else buildTemp()};e('windGridBtn').onclick=function(){wgridOn=!wgridOn;if(wgridOn){if(gridWind()){this.textContent='바람장 ON';this.classList.add('on')}}else{clearW(wgrid);this.textContent='바람장 OFF';this.classList.remove('on')}};e('windObsBtn').onclick=function(){wobsOn=!wobsOn;if(wobsOn){obsWind();this.textContent='관측바람 ON';this.classList.add('on')}else{clearW(wobs);this.textContent='관측바람 OFF';this.classList.remove('on')}};e('alpha').oninput=function(){e('aval').textContent=Math.round(Number(this.value)*100)+'%';if(tempLayer)tempLayer.alpha=Number(this.value)};
+e('wdensity').oninput=function(){e('wdensityVal').textContent=this.value;if(wgridOn)gridWind()};
+e('wscale').oninput=function(){e('wval').textContent=Number(this.value).toFixed(1)+'×';if(wgridOn)gridWind();if(wobsOn)obsWind()};
+e('wthick').oninput=function(){e('wthickVal').textContent=Number(this.value).toFixed(1);if(wgridOn)gridWind();if(wobsOn)obsWind()};e('popupClose').onclick=()=>e('popup').style.display='none';var h=new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);h.setInputAction(function(c){e('popup').style.display='none';var p=viewer.scene.pick(c.position);if(!Cesium.defined(p)||!p.id)return;var i=Number(p.id.__idx);if(Number.isFinite(i)&&S[i])popup(c,S[i])},Cesium.ScreenSpaceEventType.LEFT_CLICK);e('status').textContent='분석모드 · 위성 OFF · 지형 ON · 관측자료를 불러오세요';setTimeout(home,500)}
 try{if(typeof vw==='undefined')throw new Error('V-World API 스크립트가 로드되지 않았습니다.');vw.ws3dInitCallBack=function(){try{install()}catch(x){err(x,'분석 UI 초기화')}};var o={mapId:'map',initPosition:new vw.CameraPosition(new vw.CoordZ(clon,clat,homeH),new vw.Direction(0,-90,0)),logo:true,navigation:true};map=new vw.Map();map.setOption(o);map.start();setTimeout(function(){try{if(!ready&&typeof ws3d!=='undefined'&&ws3d.viewer)install()}catch(x){err(x,'지연 초기화')}},1500)}catch(x){err(x,'V-World map.start()')}
 })();</script></body></html>
