@@ -80,7 +80,9 @@ var originalTerrain;
 var terrainOn=true;
 
 /* V-World 공식 2026 예제와 같은 순서 */
+var initStage = "초기 진입";
 try {
+  initStage = "옵션 생성";
   var options = {
     mapId : "vmap",
     initPosition : new vw.CameraPosition(
@@ -88,7 +90,7 @@ try {
       new vw.Direction(0, -50, 0)
     ),
     logo : true,
-    navigation : false
+    navigation : true
   };
 
   map = new vw.Map();
@@ -101,9 +103,10 @@ try {
     new vw.Direction(0, -50, 0)
   ));
 
+  initStage = "map.setLogoVisible()";
   map.setLogoVisible(true);
-  map.setNavigationZoomVisible(false);
 
+  initStage = "초기화 콜백 등록";
   vw.ws3dInitCallBack = function() {
     try {
       viewer = ws3d.viewer;
@@ -212,12 +215,13 @@ try {
     }
   };
 
+  initStage = "map.start()";
   map.start();
 
 } catch(err) {
-  console.error(err);
+  console.error("V-World 초기화 실패 단계:", initStage, err);
   showFatal(
-    "<p><b>V-World map.start() 단계 오류</b></p>"+
+    "<p><b>V-World 초기화 실패 단계: "+esc(initStage)+"</b></p>"+
     "<p>"+esc(err.message||err)+"</p>"+
     "<p>V-World 개발키 서비스 URL: <code>https://cumuls219.github.io/asos-3d-terrain/</code></p>"
   );
