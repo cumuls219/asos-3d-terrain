@@ -3,152 +3,525 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>부산관할 ASOS Active 3D 지형지도</title>
-<script type="text/javascript" src="https://map.vworld.kr/js/webglMapInit.js.do?version=3.0&apiKey=CD9939DD-4087-326C-A1F8-F077628FF9FB"></script>
+<title>부산관할 ASOS·AWS Active 3D 지형지도</title>
+
+<!-- V-World WebGL 3D API 3.0 개발키 -->
+<script type="text/javascript"
+src="https://map.vworld.kr/js/webglMapInit.js.do?version=3.0&apiKey=CD9939DD-4087-326C-A1F8-F077628FF9FB"></script>
+
 <style>
-html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#07111f;font-family:"Malgun Gothic","Noto Sans KR",sans-serif}
+html,body{
+  margin:0;width:100%;height:100%;overflow:hidden;background:#07111f;
+  font-family:"Malgun Gothic","Noto Sans KR",Arial,sans-serif
+}
 #map{position:absolute;inset:0;width:100%;height:100%}
-#asosPanel{position:absolute;z-index:1000;top:14px;right:14px;width:min(320px,calc(100% - 28px));box-sizing:border-box;padding:14px;border:1px solid rgba(255,255,255,.18);border-radius:15px;background:rgba(7,17,31,.78);color:#fff;backdrop-filter:blur(12px)}
-#asosPanel h1{margin:0 0 4px;font-size:16px} #asosPanel .sub{font-size:11px;color:#cbd5e1;margin-bottom:8px}
-#asosPanel select,#asosPanel button{box-sizing:border-box;width:100%;min-height:40px;margin-top:7px;border:1px solid rgba(255,255,255,.18);border-radius:9px;background:#0f172a;color:#fff}
-#asosActions{display:grid;grid-template-columns:1fr 1fr;gap:7px}
-#asosStatus{position:absolute;z-index:1100;left:12px;bottom:12px;padding:8px 11px;border-radius:10px;background:rgba(7,17,31,.82);color:#fff;font-size:11px}
-#asosPopup{display:none;position:absolute;z-index:1200;width:330px;max-width:calc(100% - 20px);box-sizing:border-box;padding:12px;border:1px solid rgba(255,255,255,.16);border-radius:13px;background:rgba(7,17,31,.93);color:#fff}
-#asosPopupClose{float:right;width:auto;min-height:28px;padding:3px 8px} #asosPopup table{width:100%;border-collapse:collapse;font-size:11px} #asosPopup th,#asosPopup td{padding:6px;border-bottom:1px solid rgba(255,255,255,.08);text-align:left;vertical-align:top} #asosPopup th{width:28%;color:#cbd5e1}
-#asosError{display:none;position:absolute;z-index:9999;inset:0;align-items:center;justify-content:center;padding:20px;background:rgba(2,6,23,.94);color:#fff} #asosErrorCard{width:min(760px,100%);max-height:80vh;overflow:auto;padding:20px;border-radius:16px;background:#0f172a} #asosErrorStack{white-space:pre-wrap;word-break:break-word;font-size:11px;color:#fca5a5;background:#020617;padding:10px;border-radius:8px}
-@media(max-width:620px){#asosPanel{left:8px;right:8px;top:8px;width:auto}}
+
+#stationPanel{
+  position:absolute;z-index:1000;top:14px;right:14px;
+  width:min(350px,calc(100% - 28px));box-sizing:border-box;
+  padding:15px;border:1px solid rgba(255,255,255,.18);border-radius:16px;
+  background:rgba(7,17,31,.80);color:#fff;backdrop-filter:blur(13px);
+  box-shadow:0 16px 46px rgba(0,0,0,.24)
+}
+#stationPanel h1{margin:0 0 4px;font-size:16px}
+#stationPanel .sub{font-size:11px;color:#cbd5e1;margin-bottom:10px;line-height:1.5}
+
+#stationSelect,#stationPanel button{
+  box-sizing:border-box;width:100%;min-height:40px;
+  border:1px solid rgba(255,255,255,.18);border-radius:9px;
+  background:#0f172a;color:#fff
+}
+#stationSelect{padding:0 10px;margin-bottom:8px}
+#stationPanel button{cursor:pointer;font-weight:700;font-size:12px}
+#stationPanel button:hover{border-color:rgba(255,255,255,.45)}
+
+#legend{
+  display:flex;align-items:center;gap:15px;flex-wrap:wrap;
+  padding:8px 9px;margin-bottom:9px;border-radius:9px;
+  background:rgba(255,255,255,.055);font-size:11px;color:#e2e8f0
+}
+.legendItem{display:flex;align-items:center;gap:6px}
+.asosDot{
+  width:11px;height:11px;border-radius:50%;
+  background:#38bdf8;border:2px solid #fff;box-sizing:border-box
+}
+.awsDiamond{
+  width:10px;height:10px;transform:rotate(45deg);
+  background:#fb923c;border:1.5px solid #fff;box-sizing:border-box
+}
+
+#toggleGrid{
+  display:grid;grid-template-columns:1fr 1fr;gap:7px
+}
+#toggleGrid .wide{grid-column:1 / -1}
+
+.toggleBtn.on.asos{
+  background:rgba(14,165,233,.27);
+  border-color:rgba(56,189,248,.90)
+}
+.toggleBtn.on.aws{
+  background:rgba(234,88,12,.27);
+  border-color:rgba(251,146,60,.90)
+}
+.toggleBtn.on.base{
+  background:rgba(34,197,94,.18);
+  border-color:rgba(74,222,128,.65)
+}
+
+#stationStatus{
+  position:absolute;z-index:1100;left:12px;bottom:12px;
+  padding:8px 11px;border-radius:10px;
+  background:rgba(7,17,31,.84);color:#fff;font-size:11px
+}
+
+#stationPopup{
+  display:none;position:absolute;z-index:1200;width:345px;
+  max-width:calc(100% - 20px);box-sizing:border-box;padding:12px;
+  border:1px solid rgba(255,255,255,.16);border-radius:13px;
+  background:rgba(7,17,31,.94);color:#fff
+}
+#stationPopupClose{
+  float:right;width:auto;min-height:28px;padding:3px 8px;
+  border:1px solid rgba(255,255,255,.2);border-radius:7px;
+  background:#0f172a;color:#fff;cursor:pointer
+}
+#stationPopup table{width:100%;border-collapse:collapse;font-size:11px}
+#stationPopup th,#stationPopup td{
+  padding:6px;border-bottom:1px solid rgba(255,255,255,.08);
+  text-align:left;vertical-align:top
+}
+#stationPopup th{width:28%;color:#cbd5e1}
+
+.typeBadge{
+  display:inline-block;margin-left:6px;padding:2px 6px;border-radius:999px;
+  font-size:10px;font-weight:800;vertical-align:1px
+}
+.typeBadge.asos{background:rgba(14,165,233,.25);color:#bae6fd}
+.typeBadge.aws{background:rgba(234,88,12,.25);color:#fed7aa}
+
+#stationError{
+  display:none;position:absolute;z-index:9999;inset:0;
+  align-items:center;justify-content:center;padding:20px;
+  background:rgba(2,6,23,.94);color:#fff
+}
+#stationErrorCard{
+  width:min(760px,100%);max-height:80vh;overflow:auto;
+  padding:20px;border-radius:16px;background:#0f172a
+}
+#stationErrorStack{
+  white-space:pre-wrap;word-break:break-word;font-size:11px;
+  color:#fca5a5;background:#020617;padding:10px;border-radius:8px
+}
+
+@media(max-width:620px){
+  #stationPanel{left:8px;right:8px;top:8px;width:auto}
+}
 </style>
 </head>
+
 <body>
 <div id="map"></div>
-<div id="asosPanel">
-  <h1>부산관할 ASOS Active 3D 지형지도</h1>
-  <div class="sub">V-World WebGL 3D · ASOS 17개 지점</div>
-  <select id="asosStationSelect"><option value="">관측소를 선택하세요</option></select>
-  <div id="asosActions"><button id="asosHome" type="button">전체 지점</button><button id="asosTerrain" type="button">3D 지형 ON</button></div>
+
+<div id="stationPanel">
+  <h1>부산관할 ASOS·AWS Active 3D 지형지도</h1>
+  <div class="sub">ASOS 17개 · AWS 60개 · 총 77개 지점 · V-World 3D 건물</div>
+
+  <select id="stationSelect">
+    <option value="">관측소를 선택하세요</option>
+  </select>
+
+  <div id="legend">
+    <span class="legendItem"><span class="asosDot"></span>ASOS 17</span>
+    <span class="legendItem"><span class="awsDiamond"></span>AWS 60</span>
+  </div>
+
+  <div id="toggleGrid">
+    <button id="asosToggle" class="toggleBtn on asos" type="button">ASOS ON</button>
+    <button id="awsToggle" class="toggleBtn on aws" type="button">AWS ON</button>
+    <button id="terrainToggle" class="toggleBtn on base" type="button">3D 지형 ON</button>
+    <button id="buildingToggle" class="toggleBtn on base" type="button">3D 건물 ON</button>
+    <button id="homeButton" class="wide" type="button">전체 77개 지점 보기</button>
+  </div>
 </div>
-<div id="asosStatus">V-World 3D 지형 초기화 중…</div>
-<div id="asosPopup"><button id="asosPopupClose" type="button">닫기</button><div id="asosPopupContent"></div></div>
-<div id="asosError"><div id="asosErrorCard"><h2>V-World 3D 지도 초기화 실패</h2><div id="asosErrorMessage"></div><pre id="asosErrorStack"></pre></div></div>
+
+<div id="stationStatus">V-World 3D 지형 초기화 중…</div>
+
+<div id="stationPopup">
+  <button id="stationPopupClose" type="button">닫기</button>
+  <div id="stationPopupContent"></div>
+</div>
+
+<div id="stationError">
+  <div id="stationErrorCard">
+    <h2>V-World 3D 지도 초기화 실패</h2>
+    <div id="stationErrorMessage"></div>
+    <pre id="stationErrorStack"></pre>
+  </div>
+</div>
+
 <script>
-(function () {
+(function(){
 "use strict";
 
 /*
- 중요: 이 파일은 애플리케이션 코드를 함수 스코프 안에 격리합니다.
- V-World 내부와 충돌할 수 있는 전역 '$', 'viewer', 'options' 등을 만들지 않습니다.
+  중요:
+  - 사용자 코드 전체를 함수 스코프에 격리하여 V-World 내부 전역과 충돌하지 않음.
+  - 원자료는 엑셀 시트1(ASOS), 시트2(AWS)의 값을 그대로 사용.
 */
-var stationData = [{"지점번호":152,"지점명":"울산","주소":"울산광역시 중구 약사동 308","위도":35.58237,"경도":129.33469,"높이":81.14},{"지점번호":155,"지점명":"창원","주소":"경상남도 창원시 마산합포구 가포동 473-1","위도":35.17019,"경도":128.57282,"높이":34.97},{"지점번호":159,"지점명":"부산","주소":"부산광역시 중구 대청동1가 9-305","위도":35.10468,"경도":129.03203,"높이":69.56},{"지점번호":162,"지점명":"통영","주소":"경상남도 통영시 정량동 844","위도":34.84541,"경도":128.43561,"높이":31.24},{"지점번호":192,"지점명":"진주","주소":"경상남도 진주시 평거동 695-244","위도":35.16378,"경도":128.04004,"높이":29.35},{"지점번호":253,"지점명":"김해시","주소":"경상남도 김해시 부원동 112-3","위도":35.22981,"경도":128.89075,"높이":54.59},{"지점번호":255,"지점명":"북창원","주소":"경상남도 창원시 성산구 내동 산27-10","위도":35.22655,"경도":128.6726,"높이":50.95},{"지점번호":257,"지점명":"양산시","주소":"경상남도 양산시 동면 금산리 1501","위도":35.30737,"경도":129.02009,"높이":6.29},{"지점번호":263,"지점명":"의령군","주소":"경상남도 의령군 의령읍 무전리 78","위도":35.32258,"경도":128.28812,"높이":14.1},{"지점번호":264,"지점명":"함양군","주소":"경상남도 함양군 함양읍 용평리 915-63","위도":35.51138,"경도":127.74538,"높이":152.07},{"지점번호":284,"지점명":"거창","주소":"경상남도 거창군 거창읍 정장리 967-8","위도":35.66739,"경도":127.9099,"높이":228.45},{"지점번호":285,"지점명":"합천","주소":"경상남도 합천군 합천읍 합천리 129-4","위도":35.56505,"경도":128.16994,"높이":26.72},{"지점번호":288,"지점명":"밀양","주소":"경상남도 밀양시 내이동 1073-3","위도":35.49147,"경도":128.74412,"높이":8.31},{"지점번호":289,"지점명":"산청","주소":"경상남도 산청군 산청읍 지리 311-2","위도":35.413,"경도":127.8791,"높이":138.22},{"지점번호":294,"지점명":"거제","주소":"경상남도 거제시 장평동 770-27","위도":34.88818,"경도":128.60459,"높이":44.83},{"지점번호":295,"지점명":"남해","주소":"경상남도 남해군 이동면 다정리 797-2","위도":34.81662,"경도":127.92641,"높이":45.71},{"지점번호":296,"지점명":"북부산","주소":"부산광역시 강서구 대저1동 1246","위도":35.217781,"경도":128.960242,"높이":3.0}];
+var rawStations = [{"지점번호":152,"지점명":"울산","주소":"울산광역시 중구 약사동 308","위도":35.58237,"경도":129.33469,"높이":81.14,"구분":"ASOS"},{"지점번호":155,"지점명":"창원","주소":"경상남도 창원시 마산합포구 가포동 473-1","위도":35.17019,"경도":128.57282,"높이":34.97,"구분":"ASOS"},{"지점번호":159,"지점명":"부산","주소":"부산광역시 중구 대청동1가 9-305","위도":35.10468,"경도":129.03203,"높이":69.56,"구분":"ASOS"},{"지점번호":162,"지점명":"통영","주소":"경상남도 통영시 정량동 844","위도":34.84541,"경도":128.43561,"높이":31.24,"구분":"ASOS"},{"지점번호":192,"지점명":"진주","주소":"경상남도 진주시 평거동 695-244","위도":35.16378,"경도":128.04004,"높이":29.35,"구분":"ASOS"},{"지점번호":253,"지점명":"김해시","주소":"경상남도 김해시 부원동 112-3","위도":35.22981,"경도":128.89075,"높이":54.59,"구분":"ASOS"},{"지점번호":255,"지점명":"북창원","주소":"경상남도 창원시 성산구 내동 산27-10","위도":35.22655,"경도":128.6726,"높이":50.95,"구분":"ASOS"},{"지점번호":257,"지점명":"양산시","주소":"경상남도 양산시 동면 금산리 1501","위도":35.30737,"경도":129.02009,"높이":6.29,"구분":"ASOS"},{"지점번호":263,"지점명":"의령군","주소":"경상남도 의령군 의령읍 무전리 78","위도":35.32258,"경도":128.28812,"높이":14.1,"구분":"ASOS"},{"지점번호":264,"지점명":"함양군","주소":"경상남도 함양군 함양읍 용평리 915-63","위도":35.51138,"경도":127.74538,"높이":152.07,"구분":"ASOS"},{"지점번호":284,"지점명":"거창","주소":"경상남도 거창군 거창읍 정장리 967-8","위도":35.66739,"경도":127.9099,"높이":228.45,"구분":"ASOS"},{"지점번호":285,"지점명":"합천","주소":"경상남도 합천군 합천읍 합천리 129-4","위도":35.56505,"경도":128.16994,"높이":26.72,"구분":"ASOS"},{"지점번호":288,"지점명":"밀양","주소":"경상남도 밀양시 내이동 1073-3","위도":35.49147,"경도":128.74412,"높이":8.31,"구분":"ASOS"},{"지점번호":289,"지점명":"산청","주소":"경상남도 산청군 산청읍 지리 311-2","위도":35.413,"경도":127.8791,"높이":138.22,"구분":"ASOS"},{"지점번호":294,"지점명":"거제","주소":"경상남도 거제시 장평동 770-27","위도":34.88818,"경도":128.60459,"높이":44.83,"구분":"ASOS"},{"지점번호":295,"지점명":"남해","주소":"경상남도 남해군 이동면 다정리 797-2","위도":34.81662,"경도":127.92641,"높이":45.71,"구분":"ASOS"},{"지점번호":296,"지점명":"북부산","주소":"부산광역시 강서구 대저1동 1246","위도":35.217781,"경도":128.960242,"높이":3.0,"구분":"ASOS"},{"지점번호":45,"지점명":"하이","주소":"경상남도 고성군 하이면 덕호리 810-4","위도":34.91889,"경도":128.11806,"높이":15.0,"구분":"AWS"},{"지점번호":160,"지점명":"부산(레)","주소":"부산광역시 서구 서대신동3가 산32-10","위도":35.11885,"경도":128.99993,"높이":549.15,"구분":"AWS"},{"지점번호":311,"지점명":"가야산","주소":"경상남도 합천군 가야면 치인리 1230-112","위도":35.78915,"경도":128.08673,"높이":605.47,"구분":"AWS"},{"지점번호":313,"지점명":"양지암","주소":"경상남도 거제시 능포동 116-27","위도":34.88208,"경도":128.74127,"높이":70.0,"구분":"AWS"},{"지점번호":673,"지점명":"진영","주소":"경상남도 김해시 진영읍 우동리 262-1","위도":35.28223,"경도":128.7175,"높이":20.64,"구분":"AWS"},{"지점번호":854,"지점명":"삼동","주소":"울산광역시 울주군 삼동면 금곡리 547-15","위도":35.49528,"경도":129.13357,"높이":166.92,"구분":"AWS"},{"지점번호":872,"지점명":"지리산","주소":"경상남도 산청군 시천면 중산리 633-11","위도":35.31924,"경도":127.75642,"높이":869.44,"구분":"AWS"},{"지점번호":900,"지점명":"두서","주소":"울산광역시 울주군 두서면 구량리 500-7","위도":35.62027,"경도":129.14356,"높이":117.49,"구분":"AWS"},{"지점번호":901,"지점명":"울기","주소":"울산광역시 동구 방어동 산23","위도":35.48678,"경도":129.43531,"높이":67.64,"구분":"AWS"},{"지점번호":902,"지점명":"시천","주소":"경상남도 산청군 시천면 내공리 640-1","위도":35.24229,"경도":127.81897,"높이":137.13,"구분":"AWS"},{"지점번호":903,"지점명":"도천","주소":"경상남도 창녕군 도천면 우강리 841-36","위도":35.40387,"경도":128.51486,"높이":14.86,"구분":"AWS"},{"지점번호":904,"지점명":"사상","주소":"부산광역시 사상구 삼락동 29-43","위도":35.16944,"경도":128.97505,"높이":0.732,"구분":"AWS"},{"지점번호":905,"지점명":"양산상북","주소":"경상남도 양산시 상북면 좌삼리 497-9","위도":35.4414,"경도":129.04288,"높이":83.57,"구분":"AWS"},{"지점번호":906,"지점명":"화개","주소":"경상남도 하동군 화개면 용강리 400-2","위도":35.23236,"경도":127.64269,"높이":89.59,"구분":"AWS"},{"지점번호":907,"지점명":"삼천포","주소":"경상남도 사천시 대방동 136-3","위도":34.93211,"경도":128.06313,"높이":29.46,"구분":"AWS"},{"지점번호":908,"지점명":"진해","주소":"경상남도 창원시 진해구 성내동 476-2","위도":35.11221,"경도":128.7537,"높이":11.74,"구분":"AWS"},{"지점번호":909,"지점명":"서이말","주소":"경상남도 거제시 일운면 지세포리 산48-2","위도":34.78774,"경도":128.73825,"높이":109.74,"구분":"AWS"},{"지점번호":910,"지점명":"영도","주소":"부산광역시 영도구 동삼동 산2-1","위도":35.06609,"경도":129.07421,"높이":138.96,"구분":"AWS"},{"지점번호":911,"지점명":"매물도","주소":"경상남도 통영시 한산면 매죽리 39-9","위도":34.64893,"경도":128.57714,"높이":69.02,"구분":"AWS"},{"지점번호":912,"지점명":"백천","주소":"경상남도 함양군 함양읍 백천리 409-2","위도":35.52627,"경도":127.77836,"높이":140.33,"구분":"AWS"},{"지점번호":913,"지점명":"상주면","주소":"경상남도 남해군 상주면 상주리 1722","위도":34.7238,"경도":127.98155,"높이":19.65,"구분":"AWS"},{"지점번호":914,"지점명":"서하","주소":"경상남도 함양군 서하면 봉전리 1331-9","위도":35.63763,"경도":127.71556,"높이":353.86,"구분":"AWS"},{"지점번호":915,"지점명":"삼가","주소":"경상남도 합천군 삼가면 두모리 192-9","위도":35.41353,"경도":128.10178,"높이":85.28,"구분":"AWS"},{"지점번호":916,"지점명":"단성","주소":"경상남도 산청군 단성면 강누리 38-3","위도":35.31111,"경도":127.96696,"높이":55.0,"구분":"AWS"},{"지점번호":917,"지점명":"사천","주소":"경상남도 사천시 용현면 신복리 500-4","위도":35.03694,"경도":128.06768,"높이":25.79,"구분":"AWS"},{"지점번호":918,"지점명":"고성","주소":"경상남도 고성군 고성읍 죽계리 435-230","위도":34.99052,"경도":128.33089,"높이":7.03,"구분":"AWS"},{"지점번호":919,"지점명":"창녕","주소":"경상남도 창녕군 대지면 효정리 600","위도":35.55142,"경도":128.47669,"높이":30.0,"구분":"AWS"},{"지점번호":920,"지점명":"함안","주소":"경상남도 함안군 가야읍 산서리 928","위도":35.29613,"경도":128.39942,"높이":8.39,"구분":"AWS"},{"지점번호":921,"지점명":"가덕도","주소":"부산광역시 강서구 대항동 162-1","위도":34.99308,"경도":128.83141,"높이":75.63,"구분":"AWS"},{"지점번호":922,"지점명":"단장","주소":"경상남도 밀양시 단장면 고례리 1710","위도":35.48645,"경도":128.92911,"높이":138.03,"구분":"AWS"},{"지점번호":923,"지점명":"기장","주소":"부산광역시 기장군 일광읍 이천리 산1-3","위도":35.27505,"경도":129.25113,"높이":65.99,"구분":"AWS"},{"지점번호":924,"지점명":"간절곶","주소":"울산광역시 울주군 서생면 대송리 28-1","위도":35.35866,"경도":129.36028,"높이":22.23,"구분":"AWS"},{"지점번호":925,"지점명":"생림","주소":"경상남도 김해시 생림면 마사리 666-9","위도":35.37435,"경도":128.82299,"높이":8.68,"구분":"AWS"},{"지점번호":926,"지점명":"진북","주소":"경상남도 창원시 마산합포구 진북면 덕곡리 109-7","위도":35.12624,"경도":128.47483,"높이":13.33,"구분":"AWS"},{"지점번호":927,"지점명":"송백","주소":"경상남도 밀양시 산내면 송백리 1532-1","위도":35.58197,"경도":128.88365,"높이":126.74,"구분":"AWS"},{"지점번호":929,"지점명":"개천","주소":"경상남도 고성군 개천면 청광리 418-8","위도":35.11369,"경도":128.30701,"높이":129.52,"구분":"AWS"},{"지점번호":930,"지점명":"사량도","주소":"경상남도 통영시 사량면 양지리 187-15","위도":34.80992,"경도":128.23814,"높이":3.83,"구분":"AWS"},{"지점번호":931,"지점명":"욕지도","주소":"경상남도 통영시 욕지면 동항리 376-3","위도":34.6223,"경도":128.27351,"높이":73.75,"구분":"AWS"},{"지점번호":932,"지점명":"하동","주소":"경상남도 하동군 하동읍 신기리 441-2","위도":35.06058,"경도":127.76664,"높이":4.47,"구분":"AWS"},{"지점번호":933,"지점명":"금남","주소":"경상남도 하동군 금남면 덕천리 842-4","위도":34.99676,"경도":127.83238,"높이":32.22,"구분":"AWS"},{"지점번호":934,"지점명":"수곡","주소":"경상남도 진주시 수곡면 사곡리 96-9","위도":35.2214,"경도":127.92848,"높이":82.8,"구분":"AWS"},{"지점번호":935,"지점명":"청덕","주소":"경상남도 합천군 청덕면 가현리 776-1","위도":35.56979,"경도":128.34114,"높이":23.63,"구분":"AWS"},{"지점번호":936,"지점명":"신포","주소":"경상남도 의령군 칠곡면 신포리 326","위도":35.33263,"경도":128.2023,"높이":61.21,"구분":"AWS"},{"지점번호":937,"지점명":"해운대","주소":"부산광역시 해운대구 우동 41-3","위도":35.17721,"경도":129.16068,"높이":81.87,"구분":"AWS"},{"지점번호":938,"지점명":"부산진","주소":"부산광역시 부산진구 개금동 445","위도":35.15888,"경도":129.01929,"높이":114.38,"구분":"AWS"},{"지점번호":939,"지점명":"금정구","주소":"부산광역시 금정구 두구동 1641","위도":35.2932,"경도":129.10348,"높이":49.26,"구분":"AWS"},{"지점번호":940,"지점명":"동래","주소":"부산광역시 동래구 복천동 1-2","위도":35.20914,"경도":129.09013,"높이":70.07,"구분":"AWS"},{"지점번호":941,"지점명":"북구","주소":"부산광역시 북구 덕천동 763-29","위도":35.21304,"경도":129.00258,"높이":6.94,"구분":"AWS"},{"지점번호":942,"지점명":"부산남구","주소":"부산광역시 남구 감만동 산44-1","위도":35.11863,"경도":129.08841,"높이":124.26,"구분":"AWS"},{"지점번호":943,"지점명":"매곡","주소":"울산광역시 북구 매곡동 838-31","위도":35.66706,"경도":129.37502,"높이":460.23,"구분":"AWS"},{"지점번호":944,"지점명":"길곡","주소":"경상남도 창녕군 길곡면 증산리 901-1","위도":35.38516,"경도":128.57005,"높이":10.05,"구분":"AWS"},{"지점번호":945,"지점명":"대병","주소":"경상남도 합천군 대병면 하금리 575","위도":35.53452,"경도":127.9901,"높이":231.31,"구분":"AWS"},{"지점번호":946,"지점명":"북상","주소":"경상남도 거창군 북상면 갈계리 1458","위도":35.78,"경도":127.81826,"높이":324.25,"구분":"AWS"},{"지점번호":947,"지점명":"명사","주소":"경상남도 거제시 남부면 저구리 423-3","위도":34.72193,"경도":128.5908,"높이":30.51,"구분":"AWS"},{"지점번호":948,"지점명":"삼장","주소":"경상남도 산청군 삼장면 덕교리 618-3","위도":35.31074,"경도":127.83448,"높이":140.43,"구분":"AWS"},{"지점번호":949,"지점명":"정자","주소":"울산광역시 북구 산하동 958-5","위도":35.6375,"경도":129.4412,"높이":8.0,"구분":"AWS"},{"지점번호":950,"지점명":"사하","주소":"부산광역시 사하구 괴정동 619-61","위도":35.09006,"경도":128.98393,"높이":167.95,"구분":"AWS"},{"지점번호":953,"지점명":"장목","주소":"경상남도 거제시 장목면 장목리 360-12","위도":34.99839,"경도":128.67977,"높이":30.87,"구분":"AWS"},{"지점번호":954,"지점명":"온산","주소":"울산광역시 울주군 온산읍 이진리 산 45-1","위도":35.43103,"경도":129.36011,"높이":53.92,"구분":"AWS"},{"지점번호":974,"지점명":"대곡","주소":"경상남도 진주시 대곡면 단목리 1758-5","위도":35.24434,"경도":128.15605,"높이":17.52,"구분":"AWS"}];
 
-function byId(id) { return document.getElementById(id); }
-function escapeText(value) {
+function byId(id){ return document.getElementById(id); }
+
+function escapeText(value){
   return String(value == null ? "" : value)
-    .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
-}
-function showError(err, stage) {
-  byId("asosErrorMessage").innerHTML =
-    "<p><b>단계: "+escapeText(stage)+"</b></p><p><b>"+escapeText(err && err.message ? err.message : err)+"</b></p>";
-  byId("asosErrorStack").textContent = err && err.stack ? err.stack : "stack 정보 없음";
-  byId("asosError").style.display = "flex";
+    .replace(/&/g,"&amp;").replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 }
 
-var stations = stationData.map(function(s, i) {
+function showError(err,stage){
+  byId("stationErrorMessage").innerHTML =
+    "<p><b>단계: "+escapeText(stage)+"</b></p>"+
+    "<p><b>"+escapeText(err && err.message ? err.message : err)+"</b></p>";
+  byId("stationErrorStack").textContent =
+    err && err.stack ? err.stack : "stack 정보 없음";
+  byId("stationError").style.display="flex";
+}
+
+var stations = rawStations.map(function(s,i){
   return {
-    index:i, id:Number(s["지점번호"]), name:String(s["지점명"]), address:String(s["주소"]),
-    lat:Number(s["위도"]), lon:Number(s["경도"]), height:Number(s["높이"])
+    index:i,
+    type:String(s["구분"]),
+    id:Number(s["지점번호"]),
+    name:String(s["지점명"]),
+    address:String(s["주소"]),
+    lat:Number(s["위도"]),
+    lon:Number(s["경도"]),
+    height:Number(s["높이"])
   };
 });
-var lats=stations.map(function(s){return s.lat;}), lons=stations.map(function(s){return s.lon;});
+
+var lats=stations.map(function(s){return s.lat;});
+var lons=stations.map(function(s){return s.lon;});
 var centerLat=(Math.min.apply(null,lats)+Math.max.apply(null,lats))/2;
 var centerLon=(Math.min.apply(null,lons)+Math.max.apply(null,lons))/2;
-var homeHeight=300000;
-var viewerRef=null, originalTerrain=null, terrainOn=true, uiReady=false;
+var latSpan=(Math.max.apply(null,lats)-Math.min.apply(null,lats))*111;
+var lonSpan=(Math.max.apply(null,lons)-Math.min.apply(null,lons))*111*Math.cos(centerLat*Math.PI/180);
+var homeHeight=Math.max(260000,Math.min(480000,Math.max(latSpan,lonSpan)*2200));
 
-function installStationUi() {
-  if (uiReady) return;
+var mapInstance=null;
+var viewerRef=null;
+var originalTerrain=null;
+var terrainOn=true;
+var buildingLayer=null;
+var buildingsOn=true;
+var groupVisible={ASOS:true,AWS:true};
+var groupEntities={ASOS:[],AWS:[]};
+var uiReady=false;
+
+function makeMarkerDataUrl(type){
+  var c=document.createElement("canvas");
+  c.width=44;c.height=44;
+  var ctx=c.getContext("2d");
+  ctx.clearRect(0,0,44,44);
+
+  if(type==="ASOS"){
+    ctx.beginPath();
+    ctx.arc(22,22,10,0,Math.PI*2);
+    ctx.fillStyle="#38bdf8";
+    ctx.fill();
+    ctx.lineWidth=3;
+    ctx.strokeStyle="#ffffff";
+    ctx.stroke();
+  }else{
+    ctx.save();
+    ctx.translate(22,22);
+    ctx.rotate(Math.PI/4);
+    ctx.fillStyle="#fb923c";
+    ctx.strokeStyle="#ffffff";
+    ctx.lineWidth=3;
+    ctx.beginPath();
+    ctx.rect(-8,-8,16,16);
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
+  }
+  return c.toDataURL("image/png");
+}
+
+var markerImages={
+  ASOS:makeMarkerDataUrl("ASOS"),
+  AWS:makeMarkerDataUrl("AWS")
+};
+
+function updateStatus(customText){
+  if(customText){
+    byId("stationStatus").textContent=customText;
+    return;
+  }
+  var visibleCount =
+    (groupVisible.ASOS ? groupEntities.ASOS.length : 0) +
+    (groupVisible.AWS ? groupEntities.AWS.length : 0);
+  byId("stationStatus").textContent =
+    "ASOS "+(groupVisible.ASOS ? "ON" : "OFF")+" ("+groupEntities.ASOS.length+") · "+
+    "AWS "+(groupVisible.AWS ? "ON" : "OFF")+" ("+groupEntities.AWS.length+") · "+
+    "표시 "+visibleCount+"개";
+}
+
+function updateGroupButton(type){
+  var button=byId(type==="ASOS" ? "asosToggle" : "awsToggle");
+  var on=groupVisible[type];
+  button.textContent=type+" "+(on ? "ON" : "OFF");
+  if(on) button.classList.add("on");
+  else button.classList.remove("on");
+}
+
+function setGroupVisible(type,visible){
+  groupVisible[type]=visible;
+  groupEntities[type].forEach(function(entity){
+    entity.show=visible;
+  });
+  updateGroupButton(type);
+  updateStatus();
+}
+
+function resolveBuildingLayer(attempt){
+  try{
+    buildingLayer=mapInstance.getLayerElement("facility_build");
+    if(buildingLayer){
+      buildingLayer.show();
+      buildingsOn=true;
+      byId("buildingToggle").textContent="3D 건물 ON";
+      byId("buildingToggle").classList.add("on");
+      return;
+    }
+  }catch(e){
+    console.warn("facility_build 확인 중:",e);
+  }
+
+  if(attempt<12){
+    window.setTimeout(function(){resolveBuildingLayer(attempt+1);},500);
+  }else{
+    byId("buildingToggle").textContent="건물 레이어 대기";
+    byId("buildingToggle").classList.remove("on");
+  }
+}
+
+function addDropdownOptions(){
+  var select=byId("stationSelect");
+
+  ["ASOS","AWS"].forEach(function(type){
+    var group=document.createElement("optgroup");
+    group.label=type+" ("+(type==="ASOS" ? 17 : 60)+")";
+
+    stations.filter(function(s){return s.type===type;}).forEach(function(s){
+      var option=document.createElement("option");
+      option.value=String(s.index);
+      option.textContent=s.id+" · "+s.name;
+      group.appendChild(option);
+    });
+
+    select.appendChild(group);
+  });
+}
+
+function addStationEntity(s){
+  var entity=viewerRef.entities.add({
+    id:s.type.toLowerCase()+"-"+s.id,
+    name:s.name,
+    position:Cesium.Cartesian3.fromDegrees(s.lon,s.lat,0),
+
+    billboard:{
+      image:markerImages[s.type],
+      width:s.type==="ASOS" ? 27 : 24,
+      height:s.type==="ASOS" ? 27 : 24,
+      verticalOrigin:Cesium.VerticalOrigin.CENTER,
+      heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,
+      disableDepthTestDistance:Number.POSITIVE_INFINITY,
+      scaleByDistance:new Cesium.NearFarScalar(
+        1000,1.15,
+        300000,0.45
+      )
+    },
+
+    label:{
+      text:s.id+" "+s.name,
+      font:s.type==="ASOS" ? "700 13px Malgun Gothic" : "600 12px Malgun Gothic",
+      fillColor:s.type==="ASOS"
+        ? Cesium.Color.fromCssColorString("#e0f2fe")
+        : Cesium.Color.fromCssColorString("#ffedd5"),
+      outlineColor:Cesium.Color.BLACK,
+      outlineWidth:3,
+      style:Cesium.LabelStyle.FILL_AND_OUTLINE,
+      pixelOffset:new Cesium.Cartesian2(0,-22),
+      verticalOrigin:Cesium.VerticalOrigin.BOTTOM,
+      heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,
+      disableDepthTestDistance:Number.POSITIVE_INFINITY,
+      distanceDisplayCondition:new Cesium.DistanceDisplayCondition(
+        0,
+        s.type==="ASOS" ? 110000 : 65000
+      )
+    }
+  });
+
+  entity.__stationIndex=s.index;
+  entity.__stationType=s.type;
+  groupEntities[s.type].push(entity);
+}
+
+function flyHome(){
+  viewerRef.camera.flyTo({
+    destination:Cesium.Cartesian3.fromDegrees(centerLon,centerLat,homeHeight),
+    orientation:{
+      heading:Cesium.Math.toRadians(0),
+      pitch:Cesium.Math.toRadians(-50),
+      roll:0
+    },
+    duration:1.4
+  });
+}
+
+function flyToStation(target){
+  if(!groupVisible[target.type]){
+    setGroupVisible(target.type,true);
+  }
+
+  viewerRef.camera.flyTo({
+    destination:Cesium.Cartesian3.fromDegrees(target.lon,target.lat,1200),
+    orientation:{
+      heading:Cesium.Math.toRadians(20),
+      pitch:Cesium.Math.toRadians(-32),
+      roll:0
+    },
+    duration:1.6
+  });
+}
+
+function openStationPopup(click,s){
+  var badgeClass=s.type==="ASOS" ? "asos" : "aws";
+
+  byId("stationPopupContent").innerHTML=
+    "<b>"+escapeText(s.id+" · "+s.name)+"</b>"+
+    '<span class="typeBadge '+badgeClass+'">'+escapeText(s.type)+"</span>"+
+    "<table>"+
+    "<tr><th>관측망</th><td>"+escapeText(s.type)+"</td></tr>"+
+    "<tr><th>주소</th><td>"+escapeText(s.address)+"</td></tr>"+
+    "<tr><th>위도</th><td>"+s.lat.toFixed(6)+"</td></tr>"+
+    "<tr><th>경도</th><td>"+s.lon.toFixed(6)+"</td></tr>"+
+    "<tr><th>높이</th><td>"+s.height.toFixed(2)+" m</td></tr>"+
+    "</table>";
+
+  var popup=byId("stationPopup");
+  popup.style.display="block";
+  popup.style.left=
+    Math.max(8,Math.min(click.position.x+12,window.innerWidth-365))+"px";
+  popup.style.top=
+    Math.max(8,Math.min(click.position.y+12,window.innerHeight-250))+"px";
+}
+
+function installStationUi(){
+  if(uiReady) return;
   uiReady=true;
+
   viewerRef=ws3d.viewer;
   originalTerrain=viewerRef.terrainProvider;
 
-  var select=byId("asosStationSelect");
-  stations.forEach(function(s) {
-    var option=document.createElement("option");
-    option.value=String(s.index);
-    option.textContent=s.id+" · "+s.name;
-    select.appendChild(option);
+  // 화면 품질: 실제 원본 타일을 변경하지 않고 브라우저 렌더링 해상도만 활용
+  try{
+    viewerRef.resolutionScale=Math.min(window.devicePixelRatio || 1,2);
+  }catch(e){
+    console.warn("resolutionScale 적용 생략:",e);
+  }
 
-    var entity=viewerRef.entities.add({
-      id:"asos-"+s.id,
-      name:s.name,
-      position:Cesium.Cartesian3.fromDegrees(s.lon,s.lat,0),
-      point:{
-        pixelSize:13,color:Cesium.Color.CYAN,outlineColor:Cesium.Color.WHITE,outlineWidth:2,
-        heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,
-        disableDepthTestDistance:Number.POSITIVE_INFINITY
-      },
-      label:{
-        text:s.id+" "+s.name,font:"700 13px Malgun Gothic",fillColor:Cesium.Color.WHITE,
-        outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,
-        pixelOffset:new Cesium.Cartesian2(0,-22),verticalOrigin:Cesium.VerticalOrigin.BOTTOM,
-        heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,
-        disableDepthTestDistance:Number.POSITIVE_INFINITY
-      }
-    });
-    entity.__asosIndex=s.index;
-  });
+  resolveBuildingLayer(0);
+  addDropdownOptions();
 
-  byId("asosHome").addEventListener("click",function(){
-    viewerRef.camera.flyTo({
-      destination:Cesium.Cartesian3.fromDegrees(centerLon,centerLat,homeHeight),
-      orientation:{heading:0,pitch:Cesium.Math.toRadians(-50),roll:0},duration:1.3
-    });
-  });
+  stations.forEach(addStationEntity);
 
-  select.addEventListener("change",function(e){
+  byId("homeButton").addEventListener("click",flyHome);
+
+  byId("stationSelect").addEventListener("change",function(e){
     var idx=Number(e.target.value);
+    if(!Number.isFinite(idx)) return;
     var target=stations.filter(function(s){return s.index===idx;})[0];
-    if(!target)return;
-    viewerRef.camera.flyTo({
-      destination:Cesium.Cartesian3.fromDegrees(target.lon,target.lat,5000),
-      orientation:{heading:0,pitch:Cesium.Math.toRadians(-42),roll:0},duration:1.4
-    });
+    if(target) flyToStation(target);
   });
 
-  byId("asosTerrain").addEventListener("click",function(){
+  byId("asosToggle").addEventListener("click",function(){
+    setGroupVisible("ASOS",!groupVisible.ASOS);
+  });
+
+  byId("awsToggle").addEventListener("click",function(){
+    setGroupVisible("AWS",!groupVisible.AWS);
+  });
+
+  byId("terrainToggle").addEventListener("click",function(){
     terrainOn=!terrainOn;
-    viewerRef.terrainProvider=terrainOn?originalTerrain:new Cesium.EllipsoidTerrainProvider();
-    byId("asosTerrain").textContent=terrainOn?"3D 지형 ON":"3D 지형 OFF";
+    viewerRef.terrainProvider=
+      terrainOn ? originalTerrain : new Cesium.EllipsoidTerrainProvider();
+    byId("terrainToggle").textContent="3D 지형 "+(terrainOn ? "ON" : "OFF");
+    if(terrainOn) byId("terrainToggle").classList.add("on");
+    else byId("terrainToggle").classList.remove("on");
   });
 
-  byId("asosPopupClose").addEventListener("click",function(){byId("asosPopup").style.display="none";});
+  byId("buildingToggle").addEventListener("click",function(){
+    try{
+      if(!buildingLayer){
+        buildingLayer=mapInstance.getLayerElement("facility_build");
+      }
+      if(!buildingLayer){
+        updateStatus("3D 건물 레이어가 아직 로드되지 않았습니다.");
+        return;
+      }
+
+      buildingsOn=!buildingsOn;
+      if(buildingsOn) buildingLayer.show();
+      else buildingLayer.hide();
+
+      byId("buildingToggle").textContent=
+        "3D 건물 "+(buildingsOn ? "ON" : "OFF");
+      if(buildingsOn) byId("buildingToggle").classList.add("on");
+      else byId("buildingToggle").classList.remove("on");
+      updateStatus();
+    }catch(err){
+      showError(err,"3D 건물 레이어 제어");
+    }
+  });
+
+  byId("stationPopupClose").addEventListener("click",function(){
+    byId("stationPopup").style.display="none";
+  });
 
   var handler=new Cesium.ScreenSpaceEventHandler(viewerRef.scene.canvas);
   handler.setInputAction(function(click){
+    byId("stationPopup").style.display="none";
+
     var picked=viewerRef.scene.pick(click.position);
-    if(!Cesium.defined(picked)||!picked.id)return;
-    var idx=Number(picked.id.__asosIndex);
-    if(!Number.isFinite(idx))return;
+    if(!Cesium.defined(picked) || !picked.id) return;
+
+    var idx=Number(picked.id.__stationIndex);
+    if(!Number.isFinite(idx)) return;
+
     var s=stations.filter(function(v){return v.index===idx;})[0];
-    if(!s)return;
-    byId("asosPopupContent").innerHTML="<b>"+escapeText(s.id+" · "+s.name)+"</b><table>"+
-      "<tr><th>주소</th><td>"+escapeText(s.address)+"</td></tr>"+
-      "<tr><th>위도</th><td>"+s.lat.toFixed(6)+"</td></tr>"+
-      "<tr><th>경도</th><td>"+s.lon.toFixed(6)+"</td></tr>"+
-      "<tr><th>높이</th><td>"+s.height.toFixed(2)+" m</td></tr></table>";
-    var popup=byId("asosPopup");
-    popup.style.display="block";
-    popup.style.left=Math.max(8,Math.min(click.position.x+12,window.innerWidth-350))+"px";
-    popup.style.top=Math.max(8,Math.min(click.position.y+12,window.innerHeight-240))+"px";
+    if(s) openStationPopup(click,s);
   },Cesium.ScreenSpaceEventType.LEFT_CLICK);
 
-  byId("asosStatus").textContent="V-World 3D 지형 · ASOS 17개 지점 활성화";
+  updateGroupButton("ASOS");
+  updateGroupButton("AWS");
+  updateStatus();
+  window.setTimeout(flyHome,500);
 }
 
-try {
-  if(typeof vw==="undefined") throw new Error("V-World API 스크립트가 로드되지 않았습니다.");
+try{
+  if(typeof vw==="undefined"){
+    throw new Error("V-World API 스크립트가 로드되지 않았습니다.");
+  }
 
   vw.ws3dInitCallBack=function(){
-    try { installStationUi(); } catch(err) { showError(err,"ASOS 레이어 초기화"); }
+    try{
+      installStationUi();
+    }catch(err){
+      showError(err,"ASOS·AWS 레이어 초기화");
+    }
   };
 
   var mapOptions={
@@ -161,18 +534,22 @@ try {
     navigation:true
   };
 
-  var mapInstance=new vw.Map();
+  mapInstance=new vw.Map();
   mapInstance.setOption(mapOptions);
   mapInstance.start();
 
-  // 콜백이 누락되는 환경을 대비하되, V-World 로딩 완료 후만 접근
+  // 일부 환경에서 콜백이 누락될 경우에만 안전하게 보조 초기화
   window.setTimeout(function(){
-    try {
-      if(!uiReady && typeof ws3d!=="undefined" && ws3d.viewer) installStationUi();
-    } catch(err) { showError(err,"지연 초기화"); }
+    try{
+      if(!uiReady && typeof ws3d!=="undefined" && ws3d.viewer){
+        installStationUi();
+      }
+    }catch(err){
+      showError(err,"지연 초기화");
+    }
   },1500);
 
-} catch(err) {
+}catch(err){
   showError(err,"V-World map.start()");
 }
 })();
