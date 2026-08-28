@@ -116,6 +116,23 @@ html,body{
 @media(max-width:620px){
   #stationPanel{left:8px;right:8px;top:8px;width:auto}
 }
+
+#panelHeader{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  margin-bottom:8px
+}
+#panelTitleWrap{min-width:0}
+#panelCollapse{
+  flex:0 0 auto;width:34px!important;min-height:34px!important;margin:0!important;
+  border-radius:9px!important;font-size:16px!important;line-height:1!important
+}
+#stationPanel.collapsed{
+  width:auto;min-width:210px;padding:10px 11px
+}
+#stationPanel.collapsed #panelBody{display:none}
+#stationPanel.collapsed #panelHeader{margin-bottom:0}
+#stationPanel.collapsed #panelTitleWrap .sub{display:none}
+
 </style>
 </head>
 
@@ -123,24 +140,31 @@ html,body{
 <div id="map"></div>
 
 <div id="stationPanel">
-  <h1>부산관할 ASOS·AWS Active 3D 지형지도</h1>
-  <div class="sub">ASOS 17개 · AWS 60개 · 총 77개 지점 · V-World 3D 건물</div>
-
-  <select id="stationSelect">
-    <option value="">관측소를 선택하세요</option>
-  </select>
-
-  <div id="legend">
-    <span class="legendItem"><span class="asosDot"></span>ASOS 17</span>
-    <span class="legendItem"><span class="awsDiamond"></span>AWS 60</span>
+  <div id="panelHeader">
+    <div id="panelTitleWrap">
+      <h1>부산관할 ASOS·AWS Active 3D 지형지도</h1>
+      <div class="sub">ASOS 17개 · AWS 60개 · 총 77개 지점 · V-World 3D 건물</div>
+    </div>
+    <button id="panelCollapse" type="button" aria-expanded="true" title="패널 접기">⌃</button>
   </div>
 
-  <div id="toggleGrid">
-    <button id="asosToggle" class="toggleBtn on asos" type="button">ASOS ON</button>
-    <button id="awsToggle" class="toggleBtn on aws" type="button">AWS ON</button>
-    <button id="terrainToggle" class="toggleBtn on base" type="button">3D 지형 ON</button>
-    <button id="buildingToggle" class="toggleBtn on base" type="button">3D 건물 ON</button>
-    <button id="homeButton" class="wide" type="button">전체 77개 지점 보기</button>
+  <div id="panelBody">
+    <select id="stationSelect">
+      <option value="">관측소를 선택하세요</option>
+    </select>
+
+    <div id="legend">
+      <span class="legendItem"><span class="asosDot"></span>ASOS 17</span>
+      <span class="legendItem"><span class="awsDiamond"></span>AWS 60</span>
+    </div>
+
+    <div id="toggleGrid">
+      <button id="asosToggle" class="toggleBtn on asos" type="button">ASOS ON</button>
+      <button id="awsToggle" class="toggleBtn on aws" type="button">AWS ON</button>
+      <button id="terrainToggle" class="toggleBtn on base" type="button">3D 지형 ON</button>
+      <button id="buildingToggle" class="toggleBtn on base" type="button">3D 건물 ON</button>
+      <button id="homeButton" class="wide" type="button">전체 77개 지점 보기</button>
+    </div>
   </div>
 </div>
 
@@ -436,6 +460,15 @@ function installStationUi(){
   addDropdownOptions();
 
   stations.forEach(addStationEntity);
+
+  byId("panelCollapse").addEventListener("click",function(){
+    var panel=byId("stationPanel");
+    var collapsed=panel.classList.toggle("collapsed");
+    var button=byId("panelCollapse");
+    button.textContent=collapsed ? "⌄" : "⌃";
+    button.setAttribute("aria-expanded",collapsed ? "false" : "true");
+    button.title=collapsed ? "패널 펼치기" : "패널 접기";
+  });
 
   byId("homeButton").addEventListener("click",flyHome);
 
