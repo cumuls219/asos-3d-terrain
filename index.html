@@ -11,7 +11,8 @@
    아래 문자열만 발급받은 WebGL 3D API 키로 교체하세요.
    공개 운영 시에는 실제 서비스 도메인을 V-World에 등록하세요.
    ============================================================ */
-const API_KEY = "YOUR_VWORLD_API_KEY";
+const API_KEY = "CD9939DD-4087-326C-A1F8-F077628FF9FB";
+const SERVICE_DOMAIN = "https://cumuls219.github.io";
 
 /* ============================================================
    ASOS 지점정보
@@ -681,7 +682,9 @@ function loadVWorldScript() {
   script.type = "text/javascript";
   script.src =
     "https://map.vworld.kr/js/webglMapInit.js.do?version=3.0&apiKey=" +
-    encodeURIComponent(API_KEY);
+    encodeURIComponent(API_KEY) +
+    "&domain=" +
+    encodeURIComponent(SERVICE_DOMAIN);
 
   script.onload = () => {
     scriptLoaded = true;
