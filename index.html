@@ -157,7 +157,7 @@ const WEATHER_STATIONS = [
 ];
 
 </script>
-<script type="text/javascript" src="https://map.vworld.kr/js/webglMapInit.js.do?version=3.0&amp;apiKey=CD9939DD-4087-326C-A1F8-F077628FF9FB&amp;domain=https%3A%2F%2Fcumuls219.github.io"></script>
+<script type="text/javascript" src="https://map.vworld.kr/js/webglMapInit.js.do?version=3.0&amp;apiKey=CD9939DD-4087-326C-A1F8-F077628FF9FB"></script>
 
 
 <style>
@@ -591,7 +591,7 @@ function startVWorld() {
   if (typeof vw === "undefined" || !vw.Map) {
     fatal(
       "<p><b>V-World API 스크립트가 로드되지 않았습니다.</b></p>" +
-      "<p>개발키의 서비스 URL 또는 허용 도메인 설정을 확인하세요.</p>" +
+      "<p>V-World 개발키에서 WebGL 3D지도 API가 선택되어 있고 서비스 URL이 현재 GitHub Pages 주소와 일치하는지 확인하세요.</p>" +
       "<p>현재 페이지: <code>https://cumuls219.github.io/asos-3d-terrain/</code></p>"
     );
     return;
