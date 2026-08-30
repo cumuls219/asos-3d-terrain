@@ -60,6 +60,71 @@ button,.fileLabel,select{border:1px solid var(--l);border-radius:9px;background:
 #apiState.bad{color:#fecaca}
 #apiHelp{margin-top:6px;font-size:9.5px;color:#94a3b8;line-height:1.45}
 
+
+/* 패널이 화면 밖으로 내려가지 않도록 고정 */
+#panel{
+  max-height:calc(100vh - 28px);
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+}
+#panelHeader{
+  flex:0 0 auto;
+}
+#panelBody{
+  overflow-y:auto;
+  overflow-x:hidden;
+  padding-right:4px;
+  scrollbar-width:thin;
+  scrollbar-color:rgba(148,163,184,.55) transparent;
+}
+#panelBody::-webkit-scrollbar{width:7px}
+#panelBody::-webkit-scrollbar-track{background:transparent}
+#panelBody::-webkit-scrollbar-thumb{
+  background:rgba(148,163,184,.45);
+  border-radius:999px;
+}
+#panelBody::-webkit-scrollbar-thumb:hover{
+  background:rgba(148,163,184,.7);
+}
+
+/* 컨트롤 높이를 약간 압축 */
+#panel button,
+#panel select,
+#panel input[type="text"],
+#panel input[type="password"],
+#panel input[type="datetime-local"],
+.fileLabel{
+  min-height:34px;
+}
+#apiBox{padding:8px}
+.section,.sec{
+  margin-top:8px;
+  padding-top:8px;
+}
+.slider{
+  margin-top:5px;
+}
+#toggleGrid,.g2,.g3{
+  gap:5px;
+}
+
+/* 접힌 상태에서는 스크롤 불필요 */
+#panel.collapsed{
+  max-height:none;
+  overflow:visible;
+}
+#panel.collapsed #panelBody{
+  overflow:visible;
+}
+
+
+@media(max-width:680px){
+  #panel{
+    max-height:calc(100vh - 16px);
+  }
+}
+
 </style></head>
 <body><div id="map"></div>
 <div id="panel"><div id="head"><div id="tw"><h1>3D 기상 분석지도 <span style="font-size:10px;color:#fbbf24">시범</span></h1><div class="sub">ASOS 17 · AWS 60 · 기본: 위성 OFF / 지형 ON / 건물 OFF</div></div><button id="collapse">⌃</button></div>
@@ -68,12 +133,10 @@ button,.fileLabel,select{border:1px solid var(--l);border-radius:9px;background:
   <div class="apiTitle">기상청 API허브 · AWS 매분자료</div>
   <div id="apiGrid">
     <input id="apiTime" class="wide" type="datetime-local" step="60" aria-label="자료시각">
-    <input id="apiKey" class="wide" type="password" autocomplete="off" placeholder="API 인증키 입력">
-    <input id="proxyUrl" class="wide" type="text" placeholder="선택: 프록시 URL (직접호출 CORS 실패 시)">
   </div>
   <button id="apiFetchBtn" type="button">선택 시각 관측자료 조회</button>
-  <div id="apiState">인증키는 HTML에 저장하지 않고 현재 탭의 브라우저 메모리에서만 사용합니다.</div>
-  <div id="apiHelp">조회: nph-aws2_min · stn=0 · TA / WD1·WS1 / WD10·WS10 자동 매칭</div>
+  <div id="apiState">날짜·시각을 선택한 뒤 조회하세요.</div>
+  <div id="apiHelp">TA / WD1·WS1 / WD10·WS10 자동 매칭 · 현재 지도 77개 지점만 사용</div>
 </div>
 
 <div class="sec" style="margin-top:0;padding-top:0;border-top:0">
@@ -410,30 +473,36 @@ function parseKmaAwsText(txt){
   });
   return rows;
 }
-function apiRequestUrl(tm,key){
-  return 'https://apihub.kma.go.kr/api/typ01/cgi-bin/url/nph-aws2_min?tm2='+
-    encodeURIComponent(tm)+'&stn=0&disp=0&help=0&authKey='+encodeURIComponent(key);
-}
-function proxyRequestUrl(base,tm){
+
+/* 최초 1회: Cloudflare Worker 배포 후 아래 URL만 교체.
+   이후 사용자는 페이지에서 날짜·시각만 선택한다. */
+var KMA_PROXY_URL='YOUR_CLOUDFLARE_WORKER_URL';
+
+function proxyRequestUrl(tm){
+  var base=KMA_PROXY_URL;
   var sep=base.indexOf('?')>=0?'&':'?';
-  return base+sep+'tm2='+encodeURIComponent(tm)+'&stn=0&disp=0&help=0';
+  return base+sep+'tm2='+encodeURIComponent(tm);
 }
 async function fetchKmaData(){
-  var tm=localDateTimeToKma(e('apiTime').value),
-      key=e('apiKey').value.trim(),
-      proxy=e('proxyUrl').value.trim();
-
-  if(!tm){e('apiState').textContent='자료시각을 선택하세요.';e('apiState').className='bad';return}
-  if(!proxy&&!key){e('apiState').textContent='API 인증키를 입력하세요.';e('apiState').className='bad';return}
+  var tm=localDateTimeToKma(e('apiTime').value);
+  if(!tm){
+    e('apiState').textContent='자료시각을 선택하세요.';
+    e('apiState').className='bad';
+    return;
+  }
+  if(!KMA_PROXY_URL || KMA_PROXY_URL.indexOf('YOUR_CLOUDFLARE_WORKER_URL')>=0){
+    e('apiState').textContent='최초 1회 설정이 필요합니다: analysis.html의 KMA_PROXY_URL에 Worker 주소를 입력하세요.';
+    e('apiState').className='bad';
+    return;
+  }
 
   var btn=e('apiFetchBtn');
   btn.disabled=true;btn.textContent='자료 조회 중…';
   e('apiState').className='';
-  e('apiState').textContent='기상청 API허브에서 '+tm+' KST 자료를 조회 중입니다.';
+  e('apiState').textContent='기상청 API허브 '+tm+' KST 자료 조회 중…';
 
   try{
-    var url=proxy?proxyRequestUrl(proxy,tm):apiRequestUrl(tm,key);
-    var res=await fetch(url,{method:'GET',cache:'no-store',mode:'cors'});
+    var res=await fetch(proxyRequestUrl(tm),{method:'GET',cache:'no-store'});
     if(!res.ok)throw new Error('HTTP '+res.status+' '+res.statusText);
     var body=await res.text();
 
@@ -444,8 +513,10 @@ async function fetchKmaData(){
     var all=parseKmaAwsText(body);
     if(!all.length)throw new Error('API 응답에서 관측자료 행을 찾지 못했습니다.');
 
-    var target=all.filter(function(r){return stationById.has(Number(r['지점번호']))});
-    if(!target.length)throw new Error('응답은 받았지만 현재 77개 지점과 매칭되는 자료가 없습니다.');
+    var target=all.filter(function(r){
+      return stationById.has(Number(r['지점번호']));
+    });
+    if(!target.length)throw new Error('현재 77개 지점과 매칭되는 자료가 없습니다.');
 
     rawRows=target;
     sourceFileName='KMA API '+tm;
@@ -453,16 +524,18 @@ async function fetchKmaData(){
     configureWindSelector();
     applyRows(rawRows,sourceFileName,true);
 
-    var uniq=new Set(target.map(function(r){return Number(r['지점번호'])}));
+    var uniq=new Set(target.map(function(r){return Number(r['지점번호']);}));
     e('apiState').className='ok';
-    e('apiState').innerHTML='<b>조회 성공</b> · API 전체 '+all.length+'행 중 현재 지도 '+uniq.size+'개 지점 매칭<br>'+
-      '자료시각 '+tm.slice(0,4)+'-'+tm.slice(4,6)+'-'+tm.slice(6,8)+' '+tm.slice(8,10)+':'+tm.slice(10,12)+' KST';
+    e('apiState').innerHTML=
+      '<b>조회 성공</b> · API 전체 '+all.length+'행 중 지도 '+uniq.size+'개 지점 매칭<br>'+
+      '자료시각 '+tm.slice(0,4)+'-'+tm.slice(4,6)+'-'+tm.slice(6,8)+' '+
+      tm.slice(8,10)+':'+tm.slice(10,12)+' KST';
   }catch(x){
     e('apiState').className='bad';
-    var corsHint=!proxy?' 직접호출이 브라우저 CORS 정책으로 막힌 경우 프록시 URL을 입력하면 같은 페이지를 그대로 사용할 수 있습니다.':'';
-    e('apiState').textContent='조회 실패: '+(x&&x.message?x.message:x)+corsHint;
+    e('apiState').textContent='조회 실패: '+(x&&x.message?x.message:x);
   }finally{
-    btn.disabled=false;btn.textContent='선택 시각 관측자료 조회';
+    btn.disabled=false;
+    btn.textContent='선택 시각 관측자료 조회';
   }
 }
 
