@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- analysis-worker-v2 : KMA proxy fixed to pch21927 workers.dev -->
+<!-- analysis-worker-accordion-v1 : per-section collapsible controls -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
@@ -124,6 +124,67 @@ button,.fileLabel,select{border:1px solid var(--l);border-radius:9px;background:
   #panel{
     max-height:calc(100vh - 16px);
   }
+}
+
+
+/* ===== 개별 분석 섹션 접이식 ===== */
+#body .foldable{
+  position:relative;
+}
+#body .fold-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  cursor:pointer;
+  user-select:none;
+  min-height:28px;
+}
+#body .fold-head::after{
+  content:"▼";
+  flex:0 0 auto;
+  font-size:10px;
+  color:#cbd5e1;
+  transition:transform .16s ease;
+}
+#body .foldable.section-collapsed .fold-head::after{
+  transform:rotate(-90deg);
+}
+#body .fold-content{
+  display:block;
+}
+#body .foldable.section-collapsed .fold-content{
+  display:none;
+}
+
+/* API 제목을 기존 디자인 유지하면서 클릭 가능하게 */
+#apiBox .apiTitle.fold-head{
+  margin-bottom:8px;
+}
+
+/* 기존 sec 제목 */
+.sec > .ttl.fold-head{
+  margin-bottom:6px;
+}
+
+/* 접힌 섹션은 세로 공간 최소화 */
+#body .foldable.section-collapsed{
+  padding-bottom:6px;
+}
+
+/* 분석 기준 접이식 */
+#methodFold{
+  margin-top:10px;
+  padding-top:9px;
+  border-top:1px solid rgba(255,255,255,.12);
+}
+#methodFold .methodTitle{
+  font-size:11px;
+  font-weight:800;
+  color:#e2e8f0;
+}
+#methodFold .fold-content{
+  padding-top:6px;
 }
 
 </style></head>
@@ -638,4 +699,117 @@ e('wdensity').oninput=function(){e('wdensityVal').textContent=this.value;if(wgri
 e('wscale').oninput=function(){e('wval').textContent=Number(this.value).toFixed(1)+'×';if(wgridOn)gridWind();if(wobsOn)obsWind()};
 e('wthick').oninput=function(){e('wthickVal').textContent=Number(this.value).toFixed(1);if(wgridOn)gridWind();if(wobsOn)obsWind()};e('popupClose').onclick=()=>e('popup').style.display='none';var h=new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);h.setInputAction(function(c){e('popup').style.display='none';var p=viewer.scene.pick(c.position);if(!Cesium.defined(p)||!p.id)return;var i=Number(p.id.__idx);if(Number.isFinite(i)&&S[i])popup(c,S[i])},Cesium.ScreenSpaceEventType.LEFT_CLICK);e('status').textContent='분석모드 · 위성 OFF · 지형 ON · 관측자료를 불러오세요';setTimeout(home,500)}
 try{if(typeof vw==='undefined')throw new Error('V-World API 스크립트가 로드되지 않았습니다.');vw.ws3dInitCallBack=function(){try{install()}catch(x){err(x,'분석 UI 초기화')}};var o={mapId:'map',initPosition:new vw.CameraPosition(new vw.CoordZ(clon,clat,homeH),new vw.Direction(0,-90,0)),logo:true,navigation:true};map=new vw.Map();map.setOption(o);map.start();setTimeout(function(){try{if(!ready&&typeof ws3d!=='undefined'&&ws3d.viewer)install()}catch(x){err(x,'지연 초기화')}},1500)}catch(x){err(x,'V-World map.start()')}
-})();</script></body></html>
+})();</script>
+<script>
+(function(){
+  'use strict';
+
+  function wrapChildrenExceptHeader(box, header){
+    if(!box || !header || box.querySelector(':scope > .fold-content')) return;
+    box.classList.add('foldable');
+    header.classList.add('fold-head');
+    header.setAttribute('role','button');
+    header.setAttribute('tabindex','0');
+    header.setAttribute('aria-expanded','true');
+
+    var content=document.createElement('div');
+    content.className='fold-content';
+
+    var nodes=[];
+    Array.prototype.slice.call(box.childNodes).forEach(function(n){
+      if(n!==header) nodes.push(n);
+    });
+    nodes.forEach(function(n){content.appendChild(n);});
+    box.appendChild(content);
+
+    function toggle(){
+      var closed=box.classList.toggle('section-collapsed');
+      header.setAttribute('aria-expanded', closed?'false':'true');
+    }
+    header.addEventListener('click',toggle);
+    header.addEventListener('keydown',function(ev){
+      if(ev.key==='Enter'||ev.key===' '){
+        ev.preventDefault();
+        toggle();
+      }
+    });
+  }
+
+  function initAccordion(){
+    var body=document.getElementById('body');
+    if(!body) return;
+
+    /* 1. 기상청 API 조회 */
+    var api=document.getElementById('apiBox');
+    if(api){
+      var apiHead=api.querySelector(':scope > .apiTitle');
+      wrapChildrenExceptHeader(api,apiHead);
+    }
+
+    /* 2. 각 sec: 비상용 파일 / 분석장 / 배경·관측망 / 지점 이동 */
+    var sections=Array.prototype.slice.call(body.querySelectorAll(':scope > .sec'));
+    sections.forEach(function(sec){
+      var head=sec.querySelector(':scope > .ttl');
+      wrapChildrenExceptHeader(sec,head);
+    });
+
+    /* 기본 접힘 상태:
+       - API: 펼침
+       - 비상용 파일: 접힘
+       - 분석장: 펼침
+       - 배경·관측망: 접힘
+       - 지점 이동: 접힘
+    */
+    sections.forEach(function(sec){
+      var title=sec.querySelector(':scope > .ttl');
+      var t=title ? title.textContent.trim() : '';
+      if(/비상용 파일|배경 · 관측망|배경·관측망|지점 이동/.test(t)){
+        sec.classList.add('section-collapsed');
+        if(title) title.setAttribute('aria-expanded','false');
+      }
+    });
+
+    /* 3. 기존 분석 설명(note)도 별도 접이식으로 */
+    var note=document.getElementById('note');
+    if(note && !document.getElementById('methodFold')){
+      var method=document.createElement('div');
+      method.id='methodFold';
+      method.className='foldable section-collapsed';
+
+      var mh=document.createElement('div');
+      mh.className='methodTitle fold-head';
+      mh.textContent='분석 기준 · 방법';
+      mh.setAttribute('role','button');
+      mh.setAttribute('tabindex','0');
+      mh.setAttribute('aria-expanded','false');
+
+      var mc=document.createElement('div');
+      mc.className='fold-content';
+
+      note.parentNode.insertBefore(method,note);
+      method.appendChild(mh);
+      method.appendChild(mc);
+      mc.appendChild(note);
+
+      function toggleMethod(){
+        var closed=method.classList.toggle('section-collapsed');
+        mh.setAttribute('aria-expanded',closed?'false':'true');
+      }
+      mh.addEventListener('click',toggleMethod);
+      mh.addEventListener('keydown',function(ev){
+        if(ev.key==='Enter'||ev.key===' '){
+          ev.preventDefault(); toggleMethod();
+        }
+      });
+    }
+  }
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',initAccordion);
+  }else{
+    initAccordion();
+  }
+})();
+</script>
+
+</body></html>
