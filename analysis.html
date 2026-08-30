@@ -476,7 +476,7 @@ function parseKmaAwsText(txt){
 
 /* 최초 1회: Cloudflare Worker 배포 후 아래 URL만 교체.
    이후 사용자는 페이지에서 날짜·시각만 선택한다. */
-var KMA_PROXY_URL='YOUR_CLOUDFLARE_WORKER_URL';
+var KMA_PROXY_URL='https://kma-weather-proxy.pch21927.workers.dev/';
 
 function proxyRequestUrl(tm){
   var base=KMA_PROXY_URL;
