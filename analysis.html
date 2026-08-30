@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- analysis-worker-v2 : KMA proxy fixed to pch21927 workers.dev -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
@@ -487,11 +488,6 @@ async function fetchKmaData(){
   var tm=localDateTimeToKma(e('apiTime').value);
   if(!tm){
     e('apiState').textContent='자료시각을 선택하세요.';
-    e('apiState').className='bad';
-    return;
-  }
-  if(!KMA_PROXY_URL || KMA_PROXY_URL.indexOf('YOUR_CLOUDFLARE_WORKER_URL')>=0){
-    e('apiState').textContent='최초 1회 설정이 필요합니다: analysis.html의 KMA_PROXY_URL에 Worker 주소를 입력하세요.';
     e('apiState').className='bad';
     return;
   }
