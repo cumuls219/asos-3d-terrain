@@ -36,12 +36,53 @@ button,.fileLabel,select{border:1px solid var(--l);border-radius:9px;background:
 #windDetectInfo .ok{color:#bfdbfe}
 #windDetectInfo .warn{color:#fde68a}
 
+
+#apiBox{
+  padding:10px;border-radius:10px;background:rgba(59,130,246,.075);
+  border:1px solid rgba(96,165,250,.18);margin-bottom:9px
+}
+#apiBox .apiTitle{font-size:11px;font-weight:800;color:#dbeafe;margin-bottom:7px}
+#apiGrid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+#apiGrid input{
+  width:100%;min-height:38px;padding:0 9px;border-radius:9px;
+  border:1px solid var(--l);background:#0f172a;color:#fff;font-family:inherit
+}
+#apiGrid .wide{grid-column:1/-1}
+#apiFetchBtn{
+  width:100%;margin-top:7px;background:rgba(37,99,235,.24);
+  border-color:rgba(96,165,250,.75)
+}
+#apiState{
+  margin-top:7px;padding:7px 8px;border-radius:8px;background:rgba(255,255,255,.045);
+  color:#cbd5e1;font-size:10px;line-height:1.5
+}
+#apiState.ok{color:#bfdbfe}
+#apiState.bad{color:#fecaca}
+#apiHelp{margin-top:6px;font-size:9.5px;color:#94a3b8;line-height:1.45}
+
 </style></head>
 <body><div id="map"></div>
 <div id="panel"><div id="head"><div id="tw"><h1>3D 기상 분석지도 <span style="font-size:10px;color:#fbbf24">시범</span></h1><div class="sub">ASOS 17 · AWS 60 · 기본: 위성 OFF / 지형 ON / 건물 OFF</div></div><button id="collapse">⌃</button></div>
 <div id="body">
-<label class="fileLabel" for="file">기온·바람 관측자료 불러오기</label><input id="file" type="file" accept=".xlsx,.xls,.csv,.txt"><button id="template" style="width:100%;margin-top:7px">CSV 입력양식 다운로드</button>
-<div id="dataInfo">자료 미입력 · 관측자료 없이는 기온장·바람장을 생성하지 않습니다.</div>
+<div id="apiBox">
+  <div class="apiTitle">기상청 API허브 · AWS 매분자료</div>
+  <div id="apiGrid">
+    <input id="apiTime" class="wide" type="datetime-local" step="60" aria-label="자료시각">
+    <input id="apiKey" class="wide" type="password" autocomplete="off" placeholder="API 인증키 입력">
+    <input id="proxyUrl" class="wide" type="text" placeholder="선택: 프록시 URL (직접호출 CORS 실패 시)">
+  </div>
+  <button id="apiFetchBtn" type="button">선택 시각 관측자료 조회</button>
+  <div id="apiState">인증키는 HTML에 저장하지 않고 현재 탭의 브라우저 메모리에서만 사용합니다.</div>
+  <div id="apiHelp">조회: nph-aws2_min · stn=0 · TA / WD1·WS1 / WD10·WS10 자동 매칭</div>
+</div>
+
+<div class="sec" style="margin-top:0;padding-top:0;border-top:0">
+  <div class="ttl">비상용 파일 입력</div>
+  <label class="fileLabel" for="file">XLSX / CSV 관측자료 불러오기</label>
+  <input id="file" type="file" accept=".xlsx,.xls,.csv,.txt">
+  <button id="template" style="width:100%;margin-top:7px">CSV 입력양식 다운로드</button>
+</div>
+<div id="dataInfo">자료 미입력 · API 조회 또는 파일 입력 후 분석장을 생성합니다.</div>
 <div class="sec"><div class="ttl">분석장</div><div class="g3"><button id="tempBtn" class="temp" disabled>기온장 OFF</button><button id="windGridBtn" class="wind" disabled>바람장 OFF</button><button id="windObsBtn" class="wind" disabled>관측바람 OFF</button></div>
 <div id="windSourceBox">
   <div id="windSourceTitle">사용할 바람자료</div>
@@ -59,7 +100,7 @@ button,.fileLabel,select{border:1px solid var(--l);border-radius:9px;background:
 <div class="slider"><span>벡터 두께</span><input id="wthick" type="range" min="1.5" max="8.0" step="0.5" value="4.0"><span id="wthickVal" class="sv">4.0</span></div></div>
 <div class="sec"><div class="ttl">배경 · 관측망</div><div class="g2"><button id="satBtn">위성 OFF</button><button id="bldBtn">3D 건물 OFF</button><button id="asosBtn" class="on asos">ASOS ON</button><button id="awsBtn" class="on aws">AWS ON</button></div></div>
 <div class="sec"><div class="ttl">지점 이동</div><select id="stationSelect"><option value="">관측소를 선택하세요</option></select><button id="homeBtn" style="width:100%;margin-top:7px">전체 77개 지점 보기</button></div>
-<div id="note">기온장: 관측값 IDW(p=2), 유효 관측지점의 볼록껍질 내부만 표출. 640px 경계 mask + feathering 적용.<br>바람장: 선택한 1분 또는 10분 풍향·풍속 → U/V 변환 → U/V 각각 IDW. 풍향 자체는 보간하지 않음.<br>1분·10분 자료가 함께 있으면 자동 혼합하지 않고 사용자가 선택.</div>
+<div id="note">기온장: API 또는 파일 관측값 IDW(p=2), 유효 관측지점의 볼록껍질 내부만 표출. 640px 경계 mask + feathering 적용.<br>바람장: 선택한 1분 또는 10분 풍향·풍속 → U/V 변환 → U/V 각각 IDW. 풍향 자체는 보간하지 않음.<br>1분·10분 자료가 함께 있으면 자동 혼합하지 않고 사용자가 선택.</div>
 </div></div>
 <div id="status">V-World 3D 분석지형 초기화 중…</div>
 <div id="popup"><button id="popupClose">닫기</button><div id="popupContent"></div></div>
@@ -319,6 +360,112 @@ function obsWind(){clearW(wobs);wx.forEach(function(w,id){var s=stationById.get(
   return true;
 }
 function csv(t){var R=[],r=[],c='',q=false;for(var i=0;i<t.length;i++){var h=t[i],n=t[i+1];if(h==='"'){if(q&&n==='"'){c+='"';i++}else q=!q}else if((h===','||h==='\t')&&!q){r.push(c);c=''}else if((h==='\n'||h==='\r')&&!q){if(h==='\r'&&n==='\n')i++;r.push(c);c='';if(r.some(v=>String(v).trim()!==''))R.push(r);r=[]}else c+=h}if(c||r.length){r.push(c);R.push(r)}if(!R.length)return[];var H=R[0].map(v=>String(v).trim());return R.slice(1).map(function(a){var o={};H.forEach((h,i)=>o[h]=a[i]===undefined?'':a[i]);return o})}
+
+function pad2(v){return String(v).padStart(2,'0')}
+function localDateTimeToKma(value){
+  if(!value)return '';
+  var m=String(value).match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+  if(!m)return '';
+  return m[1]+m[2]+m[3]+m[4]+m[5];
+}
+function setDefaultApiTime(){
+  var d=new Date();
+  d.setMinutes(d.getMinutes()-5,0,0);
+  var v=d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate())+'T'+pad2(d.getHours())+':'+pad2(d.getMinutes());
+  e('apiTime').value=v;
+}
+function validTa(v){
+  return fin(v)&&v>-90&&v<70;
+}
+function validWd(v){
+  return fin(v)&&v>=0&&v<=360;
+}
+function validWs(v){
+  return fin(v)&&v>=0&&v<100;
+}
+function parseKmaAwsText(txt){
+  var rows=[];
+  String(txt||'').split(/\r?\n/).forEach(function(line){
+    var s=line.trim();
+    if(!s||s.charAt(0)==='#')return;
+    var a=s.split(/\s+/);
+    if(a.length<18)return;
+
+    var tm=a[0],id=Math.trunc(num(a[1]));
+    if(!Number.isFinite(id))return;
+
+    var wd1=num(a[2]),ws1=num(a[3]),
+        wd10=num(a[6]),ws10=num(a[7]),
+        ta=num(a[8]);
+
+    rows.push({
+      '지점번호':id,
+      '관측시각':tm,
+      '기온':validTa(ta)?ta:'',
+      '풍향1분':validWd(wd1)?wd1:'',
+      '풍속1분':validWs(ws1)?ws1:'',
+      '풍향10분':validWd(wd10)?wd10:'',
+      '풍속10분':validWs(ws10)?ws10:''
+    });
+  });
+  return rows;
+}
+function apiRequestUrl(tm,key){
+  return 'https://apihub.kma.go.kr/api/typ01/cgi-bin/url/nph-aws2_min?tm2='+
+    encodeURIComponent(tm)+'&stn=0&disp=0&help=0&authKey='+encodeURIComponent(key);
+}
+function proxyRequestUrl(base,tm){
+  var sep=base.indexOf('?')>=0?'&':'?';
+  return base+sep+'tm2='+encodeURIComponent(tm)+'&stn=0&disp=0&help=0';
+}
+async function fetchKmaData(){
+  var tm=localDateTimeToKma(e('apiTime').value),
+      key=e('apiKey').value.trim(),
+      proxy=e('proxyUrl').value.trim();
+
+  if(!tm){e('apiState').textContent='자료시각을 선택하세요.';e('apiState').className='bad';return}
+  if(!proxy&&!key){e('apiState').textContent='API 인증키를 입력하세요.';e('apiState').className='bad';return}
+
+  var btn=e('apiFetchBtn');
+  btn.disabled=true;btn.textContent='자료 조회 중…';
+  e('apiState').className='';
+  e('apiState').textContent='기상청 API허브에서 '+tm+' KST 자료를 조회 중입니다.';
+
+  try{
+    var url=proxy?proxyRequestUrl(proxy,tm):apiRequestUrl(tm,key);
+    var res=await fetch(url,{method:'GET',cache:'no-store',mode:'cors'});
+    if(!res.ok)throw new Error('HTTP '+res.status+' '+res.statusText);
+    var body=await res.text();
+
+    if(/인증|auth|error|fail|denied/i.test(body)&&body.indexOf('#START7777')<0){
+      throw new Error('API 응답 오류: '+body.slice(0,180));
+    }
+
+    var all=parseKmaAwsText(body);
+    if(!all.length)throw new Error('API 응답에서 관측자료 행을 찾지 못했습니다.');
+
+    var target=all.filter(function(r){return stationById.has(Number(r['지점번호']))});
+    if(!target.length)throw new Error('응답은 받았지만 현재 77개 지점과 매칭되는 자료가 없습니다.');
+
+    rawRows=target;
+    sourceFileName='KMA API '+tm;
+    windFields=detectWindFields(rawRows);
+    configureWindSelector();
+    applyRows(rawRows,sourceFileName,true);
+
+    var uniq=new Set(target.map(function(r){return Number(r['지점번호'])}));
+    e('apiState').className='ok';
+    e('apiState').innerHTML='<b>조회 성공</b> · API 전체 '+all.length+'행 중 현재 지도 '+uniq.size+'개 지점 매칭<br>'+
+      '자료시각 '+tm.slice(0,4)+'-'+tm.slice(4,6)+'-'+tm.slice(6,8)+' '+tm.slice(8,10)+':'+tm.slice(10,12)+' KST';
+  }catch(x){
+    e('apiState').className='bad';
+    var corsHint=!proxy?' 직접호출이 브라우저 CORS 정책으로 막힌 경우 프록시 URL을 입력하면 같은 페이지를 그대로 사용할 수 있습니다.':'';
+    e('apiState').textContent='조회 실패: '+(x&&x.message?x.message:x)+corsHint;
+  }finally{
+    btn.disabled=false;btn.textContent='선택 시각 관측자료 조회';
+  }
+}
+
 function timeText(v){if(typeof XLSX!=='undefined'&&typeof v==='number'&&v>20000&&XLSX.SSF){var d=XLSX.SSF.parse_date_code(v);if(d)return d.y+'-'+String(d.m).padStart(2,'0')+'-'+String(d.d).padStart(2,'0')+' '+String(d.H).padStart(2,'0')+':'+String(d.M).padStart(2,'0')}return String(v==null?'':v)}
 function applyRows(R,name,autoDraw){
   if(autoDraw===undefined)autoDraw=true;
@@ -411,7 +558,9 @@ async function load(f){try{
 }catch(x){err(x,'관측자료 읽기')}}
 function template(){var H=['관측망','지점번호','지점명','관측시각','기온','풍향1분','풍속1분','풍향10분','풍속10분'],L=[H.join(',')];S.forEach(function(s){L.push([s.type,s.id,'"'+String(s.name).replace(/"/g,'""')+'"','','','','','',''].join(','))});var b=new Blob(['\ufeff'+L.join('\r\n')],{type:'text/csv;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='기온_바람_입력양식_77지점_1분10분.csv';document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href)},1000);a.remove()}
 function popup(click,s){var w=wx.get(s.id),bc=s.type==='ASOS'?'asos':'aws',rows='<tr><th>관측망</th><td>'+s.type+'</td></tr><tr><th>주소</th><td>'+esc(s.address)+'</td></tr><tr><th>위도/경도</th><td>'+s.lat.toFixed(6)+', '+s.lon.toFixed(6)+'</td></tr><tr><th>높이</th><td>'+s.height.toFixed(2)+' m</td></tr>';if(w){var wm=windMode==='m10'?'10분 평균':windMode==='m1'?'1분 평균':windMode==='generic'?'평균주기 불명':'-';rows='<tr><th>관측시각</th><td>'+esc(w.time||'-')+'</td></tr><tr><th>기온</th><td>'+(fin(w.temp)?w.temp.toFixed(1)+' ℃':'-')+'</td></tr><tr><th>바람 기준</th><td>'+wm+'</td></tr><tr><th>풍향</th><td>'+(fin(w.wd)?w.wd.toFixed(0)+'°':'-')+'</td></tr><tr><th>풍속</th><td>'+(fin(w.ws)?w.ws.toFixed(1)+' m/s':'-')+'</td></tr>'+rows;}e('popupContent').innerHTML='<b>'+s.id+' · '+esc(s.name)+'</b><span class="badge '+bc+'">'+s.type+'</span><table>'+rows+'</table>';var p=e('popup');p.style.display='block';p.style.left=Math.max(8,Math.min(click.position.x+12,window.innerWidth-375))+'px';p.style.top=Math.max(8,Math.min(click.position.y+12,window.innerHeight-310))+'px'}
-function install(){if(ready)return;ready=true;viewer=ws3d.viewer;terrainMode();resolveB(0);fillSelect();S.forEach(addStation);e('collapse').onclick=function(){var c=e('panel').classList.toggle('collapsed');this.textContent=c?'⌄':'⌃'};e('file').onchange=function(){if(this.files&&this.files[0])load(this.files[0])};e('template').onclick=template;
+function install(){if(ready)return;ready=true;viewer=ws3d.viewer;terrainMode();resolveB(0);fillSelect();S.forEach(addStation);e('collapse').onclick=function(){var c=e('panel').classList.toggle('collapsed');this.textContent=c?'⌄':'⌃'};e('file').onchange=function(){if(this.files&&this.files[0])load(this.files[0])};e('apiFetchBtn').onclick=fetchKmaData;
+setDefaultApiTime();
+e('template').onclick=template;
 e('wind1Btn').onclick=function(){if(windFields.m1)setWindMode('m1',true)};
 e('wind10Btn').onclick=function(){if(windFields.m10)setWindMode('m10',true)};
 e('windUnknownBtn').onclick=function(){if(windFields.generic)setWindMode('generic',true)};
