@@ -232,7 +232,7 @@ button,.fileLabel,select{border:1px solid var(--l);border-radius:9px;background:
 
 </style></head>
 <body><div id="map"></div>
-<div id="panel"><div id="head"><div id="tw"><h1>3D 기상 분석지도 <span style="font-size:10px;color:#fbbf24">시범</span></h1><div class="sub">ASOS 17 · AWS 60 · 항만 2 · 특정시각/일극값 · 위성 OFF / 지형 ON</div></div><button id="collapse">⌃</button></div>
+<div id="panel"><div id="head"><div id="tw"><h1>3D 기상 분석지도 <span style="font-size:10px;color:#fbbf24">시범</span></h1><div class="sub">ASOS 17 · AWS 60 · 항만 2 · 특정시각/일극값 · 위성 ON / 지형 ON</div></div><button id="collapse">⌃</button></div>
 <div id="body">
 <div id="apiBox">
   <div class="apiTitle">기상청 API허브 · 관측 분석 조회</div>
@@ -303,7 +303,7 @@ button,.fileLabel,select{border:1px solid var(--l);border-radius:9px;background:
 <div class="slider"><span>바람 길이</span><input id="wscale" type="range" min="0.5" max="2.0" step="0.1" value="1.0"><span id="wval" class="sv">1.0×</span></div>
 <div class="slider"><span>벡터 두께</span><input id="wthick" type="range" min="1.5" max="8.0" step="0.5" value="4.0"><span id="wthickVal" class="sv">4.0</span></div>
 </div>
-<div class="sec"><div class="ttl">배경 · 관측망</div><div class="g2"><button id="satBtn">위성 OFF</button><button id="bldBtn">3D 건물 OFF</button><button id="asosBtn" class="on asos">ASOS ON</button><button id="awsBtn" class="on aws">AWS ON</button><button id="portBtn" class="on port full">항만 ON</button></div></div>
+<div class="sec"><div class="ttl">배경 · 관측망</div><div class="g2"><button id="satBtn" class="on">위성 ON</button><button id="bldBtn">3D 건물 OFF</button><button id="asosBtn" class="on asos">ASOS ON</button><button id="awsBtn" class="on aws">AWS ON</button><button id="portBtn" class="on port full">항만 ON</button></div></div>
 <div class="sec"><div class="ttl">지점 이동</div><select id="stationSelect"><option value="">관측소를 선택하세요</option></select><button id="homeBtn" style="width:100%;margin-top:7px">전체 79개 지점 보기</button></div>
 <div id="note">특정시각 스칼라장: API 또는 파일 관측값을 IDW(p=2)로 보간하고 유효 관측지점의 볼록껍질 내부만 표출합니다. 경계는 640px mask + feathering을 적용합니다.<br>
 습도장: 상대습도 HM(%). 강수장: RN-15m / RN-60m / RN-12H / RN-DAY 중 사용자가 누적기준 선택.<br>
@@ -457,7 +457,7 @@ function network(t,on){shown[t]=on;ents[t].forEach(x=>x.show=on);var id=t==='ASO
 function satellite(on){sat=on;baseImgs.forEach(function(l){try{l.show=on}catch(x){}});e('satBtn').textContent='위성 '+(on?'ON':'OFF');e('satBtn').classList.toggle('on',on)}
 function buildings(on){try{if(!bld)bld=map.getLayerElement('facility_build');if(!bld){e('status').textContent='3D 건물 레이어가 아직 준비되지 않았습니다.';return}bldOn=on;if(on)bld.show();else bld.hide();e('bldBtn').textContent='3D 건물 '+(on?'ON':'OFF');e('bldBtn').classList.toggle('on',on)}catch(x){err(x,'건물 레이어')}}
 function resolveB(n){try{bld=map.getLayerElement('facility_build');if(bld){bld.hide();return}}catch(x){}if(n<12)setTimeout(()=>resolveB(n+1),500)}
-function terrainMode(){var sc=viewer.scene;try{sc.globe.baseColor=Cesium.Color.fromCssColorString('#d6d1c7');sc.globe.enableLighting=true;sc.globe.showGroundAtmosphere=false;if(sc.fog)sc.fog.enabled=false;viewer.resolutionScale=Math.min(window.devicePixelRatio||1,2);sc.globe.maximumScreenSpaceError=1.2}catch(x){}for(var i=0;i<sc.imageryLayers.length;i++)baseImgs.push(sc.imageryLayers.get(i));satellite(false);setTimeout(function(){for(var i=0;i<sc.imageryLayers.length;i++){var l=sc.imageryLayers.get(i);if(l!==tempLayer&&baseImgs.indexOf(l)<0)baseImgs.push(l)}satellite(false)},1200)}
+function terrainMode(){var sc=viewer.scene;try{sc.globe.baseColor=Cesium.Color.fromCssColorString('#d6d1c7');sc.globe.enableLighting=true;sc.globe.showGroundAtmosphere=false;if(sc.fog)sc.fog.enabled=false;viewer.resolutionScale=Math.min(window.devicePixelRatio||1,2);sc.globe.maximumScreenSpaceError=1.2}catch(x){}for(var i=0;i<sc.imageryLayers.length;i++)baseImgs.push(sc.imageryLayers.get(i));satellite(true);setTimeout(function(){for(var i=0;i<sc.imageryLayers.length;i++){var l=sc.imageryLayers.get(i);if(l!==tempLayer&&baseImgs.indexOf(l)<0)baseImgs.push(l)}satellite(true)},1200)}
 function fillSelect(){var s=e('stationSelect');['ASOS','AWS','PORT'].forEach(function(t){var g=document.createElement('optgroup');g.label=t==='PORT'?'항만기상관측장비':t;S.filter(x=>x.type===t).forEach(function(x){var o=document.createElement('option');o.value=x.type+'-'+x.id;o.textContent=x.id+' · '+x.name;g.appendChild(o)});s.appendChild(g)})}
 function home(){viewer.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(clon,clat,homeH),orientation:{heading:0,pitch:Cesium.Math.toRadians(-50),roll:0},duration:1.3})}function fly(s){if(!shown[s.type])network(s.type,true);viewer.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(s.lon,s.lat,1200),orientation:{heading:Cesium.Math.toRadians(20),pitch:Cesium.Math.toRadians(-32),roll:0},duration:1.5})}
 function hull(P){if(P.length<=2)return P.slice();P=P.slice().sort((a,b)=>a.x===b.x?a.y-b.y:a.x-b.x);function c(o,a,b){return(a.x-o.x)*(b.y-o.y)-(a.y-o.y)*(b.x-o.x)}var l=[],u=[];P.forEach(p=>{while(l.length>=2&&c(l[l.length-2],l[l.length-1],p)<=0)l.pop();l.push(p)});for(var i=P.length-1;i>=0;i--){var p=P[i];while(u.length>=2&&c(u[u.length-2],u[u.length-1],p)<=0)u.pop();u.push(p)}l.pop();u.pop();return l.concat(u)}function inside(x,y,p){var z=false;for(var i=0,j=p.length-1;i<p.length;j=i++){var a=p[i],b=p[j];if(((a.y>y)!=(b.y>y))&&(x<(b.x-a.x)*(y-a.y)/(b.y-a.y+1e-30)+a.x))z=!z}return z}function km(a,b,c,d){var R=6371,r=Math.PI/180,da=(c-a)*r,do1=(d-b)*r,q=Math.sin(da/2)**2+Math.cos(a*r)*Math.cos(c*r)*Math.sin(do1/2)**2;return 2*R*Math.asin(Math.sqrt(q))}function idw(lat,lon,P,k){var sw=0,sv=0;for(var i=0;i<P.length;i++){var d=km(lat,lon,P[i].lat,P[i].lon);if(d<.03)return P[i][k];var w=1/(d*d);sw+=w;sv+=w*P[i][k]}return sw?sv/sw:NaN}
@@ -904,7 +904,7 @@ function install(){
 
   var h=new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
   h.setInputAction(function(c){e('popup').style.display='none';var p=viewer.scene.pick(c.position);if(!Cesium.defined(p)||!p.id)return;var i=Number(p.id.__idx);if(Number.isFinite(i)&&S[i])popup(c,S[i])},Cesium.ScreenSpaceEventType.LEFT_CLICK);
-  e('status').textContent='분석모드 · 79지점 · 위성 OFF · 지형 ON · 관측자료를 불러오세요';
+  e('status').textContent='분석모드 · 79지점 · 위성 ON · 지형 ON · 관측자료를 불러오세요';
   setTimeout(home,500)
 }
 try{if(typeof vw==='undefined')throw new Error('V-World API 스크립트가 로드되지 않았습니다.');vw.ws3dInitCallBack=function(){try{install()}catch(x){err(x,'분석 UI 초기화')}};var o={mapId:'map',initPosition:new vw.CameraPosition(new vw.CoordZ(clon,clat,homeH),new vw.Direction(0,-90,0)),logo:true,navigation:true};map=new vw.Map();map.setOption(o);map.start();setTimeout(function(){try{if(!ready&&typeof ws3d!=='undefined'&&ws3d.viewer)install()}catch(x){err(x,'지연 초기화')}},1500)}catch(x){err(x,'V-World map.start()')}
