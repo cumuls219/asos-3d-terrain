@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v17.6 operational final: bottom-right display legend + reference stations OFF by default -->
+<!-- v17.7 operational final: display legend removed, reference stations OFF by default -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
@@ -37,7 +37,6 @@ button,.fileLabel,select{border:1px solid var(--l);border-radius:9px;background:
 #windDetectInfo .ok{color:#bfdbfe}
 #windDetectInfo .warn{color:#fde68a}
 
-
 #apiBox{
   padding:10px;border-radius:10px;background:rgba(59,130,246,.075);
   border:1px solid rgba(96,165,250,.18);margin-bottom:9px
@@ -59,7 +58,6 @@ button,.fileLabel,select{border:1px solid var(--l);border-radius:9px;background:
 }
 #apiState.ok{color:#bfdbfe}
 #apiState.bad{color:#fecaca}
-
 
 /* 패널이 화면 밖으로 내려가지 않도록 고정 */
 #panel{
@@ -98,7 +96,6 @@ button,.fileLabel,select{border:1px solid var(--l);border-radius:9px;background:
     max-height:calc(100vh - 16px);
   }
 }
-
 
 /* ===== v3 표시 최적화 / 다요소 분석 ===== */
 #body{
@@ -141,7 +138,6 @@ button,.fileLabel,select{border:1px solid var(--l);border-radius:9px;background:
 #grad.temp{background:linear-gradient(90deg,#313695,#4575b4,#74add1,#abd9e9,#e0f3f8,#ffffbf,#fee090,#fdae61,#f46d43,#d73027,#a50026)}
 .modeTag{display:inline-block;padding:1px 5px;border-radius:999px;background:rgba(255,255,255,.08);font-size:9px;color:#cbd5e1}
 
-
 /* ===== 시군구 경계 + 사용자 설명서 ===== */
 #headBtns{display:flex;gap:6px;align-items:center;flex:0 0 auto}
 #guideBtn{width:auto;min-width:62px;height:34px;min-height:34px;padding:0 10px;background:rgba(14,165,233,.14);border-color:rgba(56,189,248,.55)}
@@ -159,11 +155,9 @@ button,.fileLabel,select{border:1px solid var(--l);border-radius:9px;background:
 #guideContent .warn{color:#fde68a}.guideKey{display:inline-block;min-width:92px;color:#93c5fd;font-weight:800}
 @media(max-width:680px){#guideBtn{min-width:54px;padding:0 7px;font-size:11px}#guideModal{padding:8px}#guideCard{max-height:92vh}}
 
-
 /* ===== 주요 산 표출 ===== */
 #mountainBtn.on{background:rgba(245,158,11,.18)!important;border-color:rgba(253,224,71,.88)!important;color:#fef3c7}
 .badge.mountain{background:rgba(245,158,11,.22);color:#fde68a}
-
 
 /* ===== v6 Professional GIS UI ===== */
 :root{
@@ -369,7 +363,6 @@ button,.fileLabel,select{font-family:inherit}
 
 #stationSelect{margin-top:0}
 
-
 #guideModal{background:rgba(3,8,18,.72);backdrop-filter:none}
 #guideCard{
   width:min(720px,100%);border-radius:10px;border:1px solid #35445a;
@@ -394,7 +387,6 @@ button,.fileLabel,select{font-family:inherit}
   #panel{left:8px;right:8px;top:8px;width:auto;max-width:none;max-height:calc(100vh - 16px)}
   #body{padding:8px}
 }
-
 
 /* ===== v7 접근성 · 고령 사용자 가독성 보강 ===== */
 #panel{
@@ -494,17 +486,14 @@ button,.fileLabel,select{font-family:inherit}
   }
 }
 
-
 /* v10 지형 노출형 분석면 */
 #terrainDisplayDetails .sectionCaption{margin-top:7px;color:#94a3b8;line-height:1.5}
 #surfaceMode{width:100%;height:40px}
-
 
 /* v16 operational UI cleanup */
 .compactSetting{margin-top:9px}
 .mapNavGrid{margin-top:7px}
 #labelModeSelect{min-width:120px}
-
 
 /* v17 분석면 고도: 슬라이더 + 직접 입력 */
 .heightControl{
@@ -540,7 +529,6 @@ button,.fileLabel,select{font-family:inherit}
 }
 .heightNumberWrap span{font-size:11px;color:#9aa9bc}
 
-
 /* v17.3 특정시각 24시간제 입력 */
 .instantTimeGrid{
   display:grid;
@@ -568,46 +556,6 @@ button,.fileLabel,select{font-family:inherit}
   .instantTimeGrid{
     grid-template-columns:minmax(130px,1.5fr) 72px 72px;
   }
-}
-
-
-/* v17.6 우측 하단 표시 범례 */
-#displayLegend{
-  position:absolute;z-index:1190;right:12px;bottom:12px;
-  min-width:126px;padding:8px 10px 9px;
-  border:1px solid rgba(148,163,184,.38);border-radius:7px;
-  background:rgba(8,17,30,.88);box-shadow:0 4px 14px rgba(0,0,0,.22);
-  color:#e5edf7;font:600 10px "Malgun Gothic","Noto Sans KR",Arial,sans-serif;
-  backdrop-filter:blur(3px);pointer-events:none;
-}
-.displayLegendTitle{
-  margin-bottom:6px;padding-bottom:5px;border-bottom:1px solid rgba(148,163,184,.25);
-  color:#f8fafc;font-size:10.5px;font-weight:800
-}
-.displayLegendItem{
-  display:grid;grid-template-columns:20px 1fr;gap:5px;align-items:center;
-  min-height:20px;transition:opacity .15s ease
-}
-.displayLegendItem.off{opacity:.30}
-.legendSymbol{
-  position:relative;display:block;justify-self:center;width:11px;height:11px;
-  box-sizing:border-box;border:1.5px solid #fff;
-  filter:drop-shadow(0 1px 1px rgba(0,0,0,.7))
-}
-.legendAsos{border-radius:50%;background:#38bdf8}
-.legendAws{background:#fb923c;transform:rotate(45deg);width:10px;height:10px}
-.legendRef{
-  width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;
-  border-bottom:11px solid #10b981;border-top:0;
-  filter:drop-shadow(0 0 1px #fff) drop-shadow(0 1px 1px rgba(0,0,0,.7))
-}
-.legendMountain{width:8px;height:8px;border-radius:50%;background:#facc15}
-.legendWindArrow{
-  justify-self:center;color:#050b16;-webkit-text-stroke:.45px #f8fafc;
-  font-size:19px;font-family:Arial,sans-serif;font-weight:900;line-height:16px
-}
-@media(max-width:680px){
-  #displayLegend{right:8px;bottom:8px;min-width:112px;padding:7px 8px;font-size:9.5px}
 }
 
 </style></head>
@@ -929,25 +877,6 @@ button,.fileLabel,select{font-family:inherit}
 </div>
 <div id="status">V-World 3D 분석지형 초기화 중…</div>
 
-<div id="displayLegend" aria-label="지도 표시 범례">
-  <div class="displayLegendTitle">표시 범례</div>
-  <div id="legendAsos" class="displayLegendItem">
-    <span class="legendSymbol legendAsos"></span><span>ASOS</span>
-  </div>
-  <div id="legendAws" class="displayLegendItem">
-    <span class="legendSymbol legendAws"></span><span>AWS</span>
-  </div>
-  <div id="legendRef" class="displayLegendItem off">
-    <span class="legendSymbol legendRef"></span><span>참고지점</span>
-  </div>
-  <div id="legendMountain" class="displayLegendItem">
-    <span class="legendSymbol legendMountain"></span><span>주요 산</span>
-  </div>
-  <div id="legendWind" class="displayLegendItem off">
-    <span class="legendWindArrow">→</span><span>바람벡터</span>
-  </div>
-</div>
-
 <div id="popup"><button id="popupClose">닫기</button><div id="popupContent"></div></div>
 
 <div id="guideModal" role="dialog" aria-modal="true" aria-labelledby="guideTitle">
@@ -957,7 +886,7 @@ button,.fileLabel,select{font-family:inherit}
       <h3>1. 빠른 사용 순서</h3>
       <div class="guideBox"><span class="guideKey">특정 시각</span> 날짜·시각 선택 → 관측자료 조회 → 기온/습도/강수 또는 바람 분석장을 선택합니다.<br><span class="guideKey">일극값</span> 날짜와 요소(일강수량·일최고기온·일최저기온·일최대풍속) 선택 → 조회 → 일극값장을 켭니다.</div>
       <h3>2. 지도 · 관측망</h3>
-      <ul><li><b>위성</b>: 기본 ON. 배경 위성영상을 켜거나 끕니다.</li><li><b>3D 건물</b>: V-World 건물 레이어를 켜거나 끕니다.</li><li><b>시군구 경계</b>: V-World WMS <code>LT_C_ADSIGG</code> 행정구역 경계를 표출합니다. 분석장과 독립적으로 ON/OFF 됩니다.</li><li><b>주요 산</b>: 기상청 산악예보 지점정보의 정상 좌표·고도를 기준으로 <code>산명(고도m)</code>를 표출합니다. 고도가 높은 산은 넓은 시야에서, 낮은 산은 확대 시 나타나도록 자동으로 과밀을 줄입니다. 산 표시를 클릭하면 좌표·고도·자료 기준을 확인할 수 있습니다.</li><li><b>ASOS / AWS / 참고</b>: 관측망별 마커·라벨을 독립적으로 제어합니다. 참고지점은 기본 OFF이며 화면에서 숨겨져도 기온·습도·강수·바람 공간계산에는 그대로 포함됩니다. 지점표시는 바람벡터보다 앞에 보이도록 우선 처리됩니다.</li><li><b>표시 범례</b>: 지도 우측 하단에서 ASOS·AWS·참고지점·주요 산·바람벡터 표식을 확인할 수 있으며 OFF 항목은 흐리게 표시됩니다.</li><li><b>라벨 표시</b>: 자동(권장)은 줌과 충돌을 고려해 필요한 라벨만 표시하고, 간소는 ASOS·고산 위주, 전체는 넓은 범위에서 모든 관측망 라벨을 후보로 표시합니다.</li></ul>
+      <ul><li><b>위성</b>: 기본 ON. 배경 위성영상을 켜거나 끕니다.</li><li><b>3D 건물</b>: V-World 건물 레이어를 켜거나 끕니다.</li><li><b>시군구 경계</b>: V-World WMS <code>LT_C_ADSIGG</code> 행정구역 경계를 표출합니다. 분석장과 독립적으로 ON/OFF 됩니다.</li><li><b>주요 산</b>: 기상청 산악예보 지점정보의 정상 좌표·고도를 기준으로 <code>산명(고도m)</code>를 표출합니다. 고도가 높은 산은 넓은 시야에서, 낮은 산은 확대 시 나타나도록 자동으로 과밀을 줄입니다. 산 표시를 클릭하면 좌표·고도·자료 기준을 확인할 수 있습니다.</li><li><b>ASOS / AWS / 참고</b>: 관측망별 마커·라벨을 독립적으로 제어합니다. 참고지점은 기본 OFF이며 화면에서 숨겨져도 기온·습도·강수·바람 공간계산에는 그대로 포함됩니다. 지점표시는 바람벡터보다 앞에 보이도록 우선 처리됩니다.</li><li><b>라벨 표시</b>: 자동(권장)은 줌과 충돌을 고려해 필요한 라벨만 표시하고, 간소는 ASOS·고산 위주, 전체는 넓은 범위에서 모든 관측망 라벨을 후보로 표시합니다.</li></ul>
       <h3>3. 스칼라 분석장</h3>
       <ul><li>기온, 상대습도, 강수, 일극값을 관측지점 값으로부터 <b>IDW(p=2)</b> 보간합니다.</li><li>시트4의 <b>모든 관측지점</b>을 지도 표출과 공간계산에 동일하게 사용하고, 전체 관측망의 <b>볼록껍질 내부</b>를 광역 분석영역으로 사용합니다.</li><li>강수는 15분·60분·12시간·일누적 중 선택할 수 있습니다.</li><li>기본값은 <b>지형 밀착형</b>입니다. 필요할 때 지형 노출형으로 전환하고 기준고도를 0~1,400m에서 슬라이더 또는 숫자로 직접 입력할 수 있습니다. 이 고도는 시각화용이며 관측값을 보정하지 않습니다.</li><li>분석장 투명도를 조절하여 지형·위성영상과 함께 볼 수 있습니다.</li></ul>
       <h3>4. 바람 분석장</h3>
@@ -979,7 +908,6 @@ var DEFAULT_STATIONS=[{"type":"ASOS","id":152,"name":"울산","address":"울산�
 var S=DEFAULT_STATIONS.slice();
 var STATION_CONFIG_FILE='./ASOS, AWS 지점정보(부산관할)_수정.xlsx';
 var stationConfigSource='내장 기본지점';
-
 
 function stationNormKey(v){
   return String(v==null?'':v).trim().toLowerCase().replace(/[^a-z0-9가-힣]/g,'');
@@ -1588,7 +1516,7 @@ function mountains(on){
   mountainOn=!!on;
   mountainEnts.forEach(function(en){en.show=mountainOn});scheduleLabelDeclutter();requestSceneRender();
   var b=e('mountainBtn');if(b){b.textContent='주요 산 '+(mountainOn?'ON':'OFF');b.classList.toggle('on',mountainOn)}
-  updateDisplayLegend();
+  
 }
 function mountainPopup(click,m){
   var ht=Number(m.height).toLocaleString('ko-KR',{maximumFractionDigits:1}),rows=
@@ -1599,14 +1527,7 @@ function mountainPopup(click,m){
   e('popupContent').innerHTML='<b>'+esc(m.name)+'('+ht+'m)</b><span class="badge mountain">산악지점</span><table>'+rows+'</table>';
   var p=e('popup');p.style.display='block';p.style.left=Math.max(8,Math.min(click.position.x+12,window.innerWidth-375))+'px';p.style.top=Math.max(8,Math.min(click.position.y+12,window.innerHeight-330))+'px';
 }
-function updateDisplayLegend(){
-  var a=e('legendAsos'),w=e('legendAws'),r=e('legendRef'),m=e('legendMountain'),v=e('legendWind');
-  if(a)a.classList.toggle('off',!shown.ASOS);
-  if(w)w.classList.toggle('off',!shown.AWS);
-  if(r)r.classList.toggle('off',!shown.REF);
-  if(m)m.classList.toggle('off',!mountainOn);
-  if(v)v.classList.toggle('off',!(wgridOn||wobsOn));
-}
+
 function network(t,on){
   shown[t]=on;
   ents[t].forEach(function(x){x.show=on});
@@ -1615,7 +1536,7 @@ function network(t,on){
       nm=t==='REF'?'참고':t,b=e(id);
   b.textContent=nm+' '+(on?'ON':'OFF');
   b.classList.toggle('on',on);
-  updateDisplayLegend();
+  
 }
 function satellite(on){sat=on;baseImgs.forEach(function(l){try{l.show=on}catch(x){}});e('satBtn').textContent='위성 '+(on?'ON':'OFF');e('satBtn').classList.toggle('on',on)}
 function buildings(on){try{if(!bld)bld=map.getLayerElement('facility_build');if(!bld){e('status').textContent='3D 건물 레이어가 아직 준비되지 않았습니다.';return}bldOn=on;if(on)bld.show();else bld.hide();e('bldBtn').textContent='3D 건물 '+(on?'ON':'OFF');e('bldBtn').classList.toggle('on',on)}catch(x){err(x,'건물 레이어')}}
@@ -2201,7 +2122,7 @@ function applyRows(R,name,autoDraw,preserveVisuals){
       wobsOn=false;e('windObsBtn').textContent='관측바람 OFF';e('windObsBtn').classList.remove('on');
     }
   }
-  updateDisplayLegend();
+  
 }
 function applyDailyRows(R,name,obs,tm,autoDraw){
   if(autoDraw===undefined)autoDraw=true;
@@ -2224,7 +2145,7 @@ function applyDailyRows(R,name,obs,tm,autoDraw){
   var meta=dailyMeta(obs),msg='<b>'+esc(name)+'</b><br>매칭 '+M.size+' / '+S.length+' · '+esc(meta.label)+' 유효 '+c+'지점<br>날짜: '+tm.slice(0,4)+'-'+tm.slice(4,6)+'-'+tm.slice(6,8);
   if(unk.size)msg+='<br>미등록 지점번호 '+Array.from(unk).slice(0,10).join(', ')+(unk.size>10?' …':'');
   if(bad)msg+='<br>지점번호 해석 불가 행 '+bad+'개';
-  e('dataInfo').innerHTML=msg;e('status').textContent='일극값 자료 적용 · '+meta.label+' '+c+'지점';updateDisplayLegend();
+  e('dataInfo').innerHTML=msg;e('status').textContent='일극값 자료 적용 · '+meta.label+' '+c+'지점';
   S.forEach(label);
   if(autoDraw&&c>=3)buildDaily();
 }
@@ -2370,8 +2291,8 @@ function install(){
   e('dailyBtn').onclick=function(){toggleScalar('daily')};
   e('rainAccum').onchange=function(){updateRainAvailability()};
 
-  e('windGridBtn').onclick=function(){wgridOn=!wgridOn;if(wgridOn){if(gridWind()){this.textContent='바람장 ON';this.classList.add('on')}else wgridOn=false}else{clearW(wgrid);this.textContent='바람장 OFF';this.classList.remove('on')}updateDisplayLegend()};
-  e('windObsBtn').onclick=function(){wobsOn=!wobsOn;if(wobsOn){obsWind();this.textContent='관측바람 ON';this.classList.add('on')}else{clearW(wobs);this.textContent='관측바람 OFF';this.classList.remove('on')}updateDisplayLegend()};
+  e('windGridBtn').onclick=function(){wgridOn=!wgridOn;if(wgridOn){if(gridWind()){this.textContent='바람장 ON';this.classList.add('on')}else wgridOn=false}else{clearW(wgrid);this.textContent='바람장 OFF';this.classList.remove('on')}};
+  e('windObsBtn').onclick=function(){wobsOn=!wobsOn;if(wobsOn){obsWind();this.textContent='관측바람 ON';this.classList.add('on')}else{clearW(wobs);this.textContent='관측바람 OFF';this.classList.remove('on')}};
   e('alpha').oninput=function(){
     e('aval').textContent=Math.round(Number(this.value)*100)+'%';
     setAnalysisSurfaceAlpha(Number(this.value));
@@ -2470,7 +2391,7 @@ function install(){
     e('status').textContent='⚠ 시트4 미로드 · 내장 '+S.length+'지점만 사용 중';
     e('status').style.background='rgba(127,29,29,.95)';
   }
-  updateDisplayLegend();setTimeout(home,500);setTimeout(function(){adminBoundary(true)},1500)
+  setTimeout(home,500);setTimeout(function(){adminBoundary(true)},1500)
 }
 function startVworldMap(){try{refreshStationDerived();if(typeof vw==='undefined')throw new Error('V-World API 스크립트가 로드되지 않았습니다.');vw.ws3dInitCallBack=function(){try{install()}catch(x){err(x,'분석 UI 초기화')}};var o={mapId:'map',initPosition:new vw.CameraPosition(new vw.CoordZ(analysisExtent.clon,analysisExtent.clat,analysisExtent.homeH),new vw.Direction(0,-90,0)),logo:true,navigation:true};map=new vw.Map();map.setOption(o);map.start();setTimeout(function(){try{if(!ready&&typeof ws3d!=='undefined'&&ws3d.viewer)install()}catch(x){err(x,'지연 초기화')}},1500)}catch(x){err(x,'V-World map.start()')}}
 loadStationConfig().then(function(ok){
@@ -2494,8 +2415,6 @@ loadStationConfig().then(function(ok){
   startVworldMap();
 })
 })();</script>
-
-
 
 <script>
 (function(){
