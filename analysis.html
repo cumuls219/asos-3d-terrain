@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v6 professional GIS UI: query / analysis / map -->
+<!-- v7 accessible GIS UI: larger controls + dynamic label decluttering -->
 <!-- mountains-v1: KMA mountain forecast summit metadata, distance-decluttered -->
 <!-- perf-optimized-v2 + sigungu-boundary + user-guide -->
 <!-- rain-palette-v2: yellow-lime-green-orange-red-magenta -->
@@ -490,6 +490,105 @@ button,.fileLabel,select{font-family:inherit}
   #body{padding:8px}
 }
 
+
+/* ===== v7 접근성 · 고령 사용자 가독성 보강 ===== */
+#panel{
+  width:390px;
+}
+#tw h1,#head h1{
+  font-size:17px;
+}
+#head .sub{
+  font-size:11.5px;
+}
+#headBtns button{
+  font-size:12px;
+  min-height:34px;
+  height:34px;
+}
+#workspaceTabs{
+  padding:0 8px;
+}
+#workspaceTabs .workspaceTab{
+  height:48px;
+  min-height:48px;
+  font-size:15px;
+  font-weight:700;
+  letter-spacing:-.2px;
+}
+#workspaceTabs .workspaceTab.active::after{
+  left:14px;
+  right:14px;
+  height:3px;
+}
+.workSection{
+  padding:12px 11px 13px;
+}
+.sectionTitle{
+  font-size:13.5px;
+}
+.sectionCaption{
+  font-size:10.5px;
+  line-height:1.45;
+}
+.fieldLabel,
+.settingLabel{
+  font-size:11.5px;
+}
+#apiMode,#dailyObs,#rainAccum,#apiDate,#apiTime,#stationSelect{
+  height:40px;
+  min-height:40px;
+  font-size:13.5px;
+  padding:0 10px;
+}
+#panel button,.fileLabel{
+  min-height:40px;
+  font-size:13px;
+  font-weight:650;
+}
+.primaryAction{
+  font-size:13.5px!important;
+  min-height:44px!important;
+}
+.secondaryDetails summary{
+  font-size:12px;
+  min-height:40px;
+  display:flex;
+  align-items:center;
+}
+.compactState,#apiState,#dataInfo{
+  font-size:11px;
+  line-height:1.55;
+}
+.inlineSetting{
+  grid-template-columns:82px 1fr!important;
+}
+.cleanSlider,.slider{
+  grid-template-columns:68px 1fr 46px;
+  font-size:11px;
+}
+#windSourceTitle{
+  font-size:11px;
+}
+#windSourceButtons button{
+  font-size:12px;
+  min-height:38px;
+}
+#scale{
+  font-size:10.5px;
+}
+#guideModal .guideCard{
+  font-size:13px;
+}
+@media(max-width:680px){
+  #panel{
+    width:calc(100% - 16px);
+    max-width:none;
+    right:8px;
+    top:8px;
+  }
+}
+
 </style></head>
 <body><div id="map"></div>
 <div id="panel">
@@ -856,8 +955,38 @@ function scalarMeta(field){
 }
 function label(s){var en=entMap.get(s.type+'-'+s.id),w=wx.get(s.id),t=s.id+' '+s.name;
 if(w){var fld=activeScalar||(dataMode==='daily'?'daily':'temp'),meta=scalarMeta(fld),v=w[fld];if(fin(v))t+='\n'+v.toFixed(meta.unit==='%'?0:1)+meta.unit}
-if(en&&en.label)en.label.text=new Cesium.ConstantProperty(t)}
-function addStation(s,i){var isA=s.type==='ASOS',isP=s.type==='PORT',en=viewer.entities.add({id:'st-'+s.type+'-'+s.id,position:Cesium.Cartesian3.fromDegrees(s.lon,s.lat,0),billboard:{image:MI[s.type],width:isA?34:isP?32:31,height:isA?34:isP?32:31,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,disableDepthTestDistance:Number.POSITIVE_INFINITY,scaleByDistance:new Cesium.NearFarScalar(1000,1.12,300000,.44)},label:{text:s.id+' '+s.name,font:isA?'700 13px Malgun Gothic':isP?'700 12px Malgun Gothic':'600 12px Malgun Gothic',fillColor:isA?Cesium.Color.fromCssColorString('#e0f2fe'):isP?Cesium.Color.fromCssColorString('#d1fae5'):Cesium.Color.fromCssColorString('#ffedd5'),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,pixelOffset:new Cesium.Cartesian2(0,-25),verticalOrigin:Cesium.VerticalOrigin.BOTTOM,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,disableDepthTestDistance:Number.POSITIVE_INFINITY,distanceDisplayCondition:new Cesium.DistanceDisplayCondition(0,isA?115000:isP?90000:70000)}});en.__idx=i;ents[s.type].push(en);entMap.set(s.type+'-'+s.id,en)}
+if(en&&en.label){en.label.text=new Cesium.ConstantProperty(t);scheduleLabelDeclutter()}}
+function addStation(s,i){
+  var isA=s.type==='ASOS',isP=s.type==='PORT',maxD=isA?125000:isP?100000:78000;
+  var en=viewer.entities.add({
+    id:'st-'+s.type+'-'+s.id,
+    position:Cesium.Cartesian3.fromDegrees(s.lon,s.lat,0),
+    billboard:{
+      image:MI[s.type],width:isA?34:isP?32:31,height:isA?34:isP?32:31,
+      heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,
+      disableDepthTestDistance:Number.POSITIVE_INFINITY,
+      scaleByDistance:new Cesium.NearFarScalar(1000,1.12,300000,.44)
+    },
+    label:{
+      text:s.id+' '+s.name,
+      font:isA?'700 15px Malgun Gothic':isP?'700 14px Malgun Gothic':'650 14px Malgun Gothic',
+      fillColor:isA?Cesium.Color.fromCssColorString('#e0f2fe'):isP?Cesium.Color.fromCssColorString('#d1fae5'):Cesium.Color.fromCssColorString('#ffedd5'),
+      outlineColor:Cesium.Color.BLACK,outlineWidth:4,
+      style:Cesium.LabelStyle.FILL_AND_OUTLINE,
+      pixelOffset:new Cesium.Cartesian2(0,-28),
+      verticalOrigin:Cesium.VerticalOrigin.BOTTOM,
+      heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,
+      disableDepthTestDistance:Number.POSITIVE_INFINITY,
+      distanceDisplayCondition:new Cesium.DistanceDisplayCondition(0,maxD)
+    }
+  });
+  en.__idx=i;
+  en.__labelKind='station';
+  en.__labelPriority=isA?600:isP?480:400;
+  en.__labelMaxDistance=maxD;
+  ents[s.type].push(en);
+  entMap.set(s.type+'-'+s.id,en);
+}
 function mountainMaxDistance(h){
   if(h>=1300)return 560000;
   if(h>=1100)return 470000;
@@ -867,19 +996,163 @@ function mountainMaxDistance(h){
   return 135000;
 }
 function addMountain(m,i){
-  var maxD=mountainMaxDistance(m.height),labelText=m.name+'('+Number(m.height).toLocaleString('ko-KR',{maximumFractionDigits:1})+'m)';
+  var maxD=mountainMaxDistance(m.height),
+      labelText=m.name+'('+Number(m.height).toLocaleString('ko-KR',{maximumFractionDigits:1})+'m)';
   var en=viewer.entities.add({
     id:'mt-'+i,
     position:Cesium.Cartesian3.fromDegrees(m.lon,m.lat,0),
-    point:{pixelSize:m.height>=1100?7:6,color:Cesium.Color.fromCssColorString('#fde047'),outlineColor:Cesium.Color.fromCssColorString('#111827'),outlineWidth:2,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,disableDepthTestDistance:Number.POSITIVE_INFINITY,distanceDisplayCondition:new Cesium.DistanceDisplayCondition(0,maxD)},
-    label:{text:labelText,font:m.height>=1100?'700 13px Malgun Gothic':'700 12px Malgun Gothic',fillColor:Cesium.Color.WHITE,outlineColor:Cesium.Color.BLACK,outlineWidth:4,style:Cesium.LabelStyle.FILL_AND_OUTLINE,pixelOffset:new Cesium.Cartesian2(0,-18),verticalOrigin:Cesium.VerticalOrigin.BOTTOM,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,disableDepthTestDistance:Number.POSITIVE_INFINITY,distanceDisplayCondition:new Cesium.DistanceDisplayCondition(0,maxD),scaleByDistance:new Cesium.NearFarScalar(25000,1.05,maxD,.72)}
+    point:{
+      pixelSize:m.height>=1100?8:7,
+      color:Cesium.Color.fromCssColorString('#fde047'),
+      outlineColor:Cesium.Color.fromCssColorString('#111827'),outlineWidth:2,
+      heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,
+      disableDepthTestDistance:Number.POSITIVE_INFINITY,
+      distanceDisplayCondition:new Cesium.DistanceDisplayCondition(0,maxD)
+    },
+    label:{
+      text:labelText,
+      font:m.height>=1100?'700 15px Malgun Gothic':'700 14px Malgun Gothic',
+      fillColor:Cesium.Color.WHITE,
+      outlineColor:Cesium.Color.BLACK,outlineWidth:5,
+      style:Cesium.LabelStyle.FILL_AND_OUTLINE,
+      pixelOffset:new Cesium.Cartesian2(0,-22),
+      verticalOrigin:Cesium.VerticalOrigin.BOTTOM,
+      heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,
+      disableDepthTestDistance:Number.POSITIVE_INFINITY,
+      distanceDisplayCondition:new Cesium.DistanceDisplayCondition(0,maxD),
+      scaleByDistance:new Cesium.NearFarScalar(25000,1.05,maxD,.78)
+    }
   });
   en.__mountainIndex=i;
+  en.__labelKind='mountain';
+  en.__labelPriority=m.height>=1300?570:m.height>=1100?540:m.height>=900?500:m.height>=700?440:360;
+  en.__labelMaxDistance=maxD;
   mountainEnts.push(en);
 }
+
+/* ===== 지도 라벨 충돌 회피 =====
+   - 마커/산 정상점은 그대로 유지
+   - 라벨만 우선순위에 따라 숨김 또는 위치 보정
+   - 카메라 이동 시 requestAnimationFrame 1회로 제한 */
+var labelDeclutterPending=false;
+
+function labelScreenPoint(pos){
+  try{
+    if(Cesium.SceneTransforms.wgs84ToWindowCoordinates)
+      return Cesium.SceneTransforms.wgs84ToWindowCoordinates(viewer.scene,pos);
+    if(Cesium.SceneTransforms.worldToWindowCoordinates)
+      return Cesium.SceneTransforms.worldToWindowCoordinates(viewer.scene,pos);
+  }catch(x){}
+  return null;
+}
+function labelCurrentText(en){
+  try{
+    var p=en.label&&en.label.text;
+    if(!p)return'';
+    return String(typeof p.getValue==='function'?p.getValue(Cesium.JulianDate.now()):p);
+  }catch(x){return''}
+}
+function labelFontPx(en){
+  try{
+    var p=en.label&&en.label.font,v=typeof p.getValue==='function'?p.getValue(Cesium.JulianDate.now()):p;
+    var m=String(v||'14px').match(/(\d+(?:\.\d+)?)px/);
+    return m?Number(m[1]):14;
+  }catch(x){return 14}
+}
+function boxesOverlap(a,b,pad){
+  return !(a.r+pad<b.l || a.l-pad>b.r || a.b+pad<b.t || a.t-pad>b.b);
+}
+function declutterLabels(){
+  if(!viewer||!viewer.scene||!viewer.camera)return;
+  var canvas=viewer.scene.canvas,w=canvas.clientWidth||canvas.width,h=canvas.clientHeight||canvas.height;
+  if(!w||!h)return;
+
+  var now=Cesium.JulianDate.now(),occupied=[],items=[];
+
+  function pushEntity(en,enabled){
+    if(!en||!en.label||!enabled)return;
+    var pos;
+    try{pos=en.position.getValue(now)}catch(x){return}
+    if(!pos)return;
+
+    var dist;
+    try{dist=Cesium.Cartesian3.distance(viewer.camera.positionWC,pos)}catch(x){dist=0}
+    var maxD=Number(en.__labelMaxDistance)||Number.POSITIVE_INFINITY;
+    if(dist>maxD){
+      en.label.show=false;
+      return;
+    }
+
+    var sp=labelScreenPoint(pos);
+    if(!sp || sp.x<-80 || sp.x>w+80 || sp.y<-60 || sp.y>h+60){
+      en.label.show=false;
+      return;
+    }
+
+    items.push({
+      en:en,
+      x:sp.x,y:sp.y,
+      priority:Number(en.__labelPriority)||0,
+      kind:en.__labelKind||'station',
+      text:labelCurrentText(en),
+      font:labelFontPx(en)
+    });
+  }
+
+  ents.ASOS.forEach(function(en){pushEntity(en,shown.ASOS)});
+  ents.PORT.forEach(function(en){pushEntity(en,shown.PORT)});
+  ents.AWS.forEach(function(en){pushEntity(en,shown.AWS)});
+  mountainEnts.forEach(function(en){pushEntity(en,mountainOn)});
+
+  items.sort(function(a,b){return b.priority-a.priority});
+
+  items.forEach(function(it){
+    var lines=String(it.text||'').split('\n'),
+        longest=lines.reduce(function(m,s){return Math.max(m,s.length)},0),
+        bw=Math.max(42,longest*it.font*.60+14),
+        bh=Math.max(18,lines.length*(it.font+4)+4),
+        mountain=it.kind==='mountain',
+        tries=mountain
+          ? [[0,-23],[18,-19],[-18,-19],[0,-39]]
+          : [[0,-29],[18,-23],[-18,-23],[0,-44]],
+        chosen=null;
+
+    for(var k=0;k<tries.length;k++){
+      var ox=tries[k][0],oy=tries[k][1],
+          box={
+            l:it.x+ox-bw/2,
+            r:it.x+ox+bw/2,
+            b:it.y+oy,
+            t:it.y+oy-bh
+          },
+          collide=false;
+      for(var j=0;j<occupied.length;j++){
+        if(boxesOverlap(box,occupied[j],6)){collide=true;break}
+      }
+      if(!collide){chosen={ox:ox,oy:oy,box:box};break}
+    }
+
+    if(chosen){
+      it.en.label.show=true;
+      it.en.label.pixelOffset=new Cesium.Cartesian2(chosen.ox,chosen.oy);
+      occupied.push(chosen.box);
+    }else{
+      it.en.label.show=false;
+    }
+  });
+}
+function scheduleLabelDeclutter(){
+  if(labelDeclutterPending||!viewer)return;
+  labelDeclutterPending=true;
+  requestAnimationFrame(function(){
+    labelDeclutterPending=false;
+    declutterLabels();
+  });
+}
+
 function mountains(on){
   mountainOn=!!on;
-  mountainEnts.forEach(function(en){en.show=mountainOn});
+  mountainEnts.forEach(function(en){en.show=mountainOn});scheduleLabelDeclutter();
   var b=e('mountainBtn');if(b){b.textContent='주요 산 '+(mountainOn?'ON':'OFF');b.classList.toggle('on',mountainOn)}
 }
 function mountainPopup(click,m){
@@ -891,7 +1164,7 @@ function mountainPopup(click,m){
   e('popupContent').innerHTML='<b>'+esc(m.name)+'('+ht+'m)</b><span class="badge mountain">산악지점</span><table>'+rows+'</table>';
   var p=e('popup');p.style.display='block';p.style.left=Math.max(8,Math.min(click.position.x+12,window.innerWidth-375))+'px';p.style.top=Math.max(8,Math.min(click.position.y+12,window.innerHeight-330))+'px';
 }
-function network(t,on){shown[t]=on;ents[t].forEach(x=>x.show=on);var id=t==='ASOS'?'asosBtn':t==='AWS'?'awsBtn':'portBtn',nm=t==='PORT'?'항만':t,b=e(id);b.textContent=nm+' '+(on?'ON':'OFF');b.classList.toggle('on',on)}
+function network(t,on){shown[t]=on;ents[t].forEach(x=>x.show=on);scheduleLabelDeclutter();var id=t==='ASOS'?'asosBtn':t==='AWS'?'awsBtn':'portBtn',nm=t==='PORT'?'항만':t,b=e(id);b.textContent=nm+' '+(on?'ON':'OFF');b.classList.toggle('on',on)}
 function satellite(on){sat=on;baseImgs.forEach(function(l){try{l.show=on}catch(x){}});e('satBtn').textContent='위성 '+(on?'ON':'OFF');e('satBtn').classList.toggle('on',on)}
 function buildings(on){try{if(!bld)bld=map.getLayerElement('facility_build');if(!bld){e('status').textContent='3D 건물 레이어가 아직 준비되지 않았습니다.';return}bldOn=on;if(on)bld.show();else bld.hide();e('bldBtn').textContent='3D 건물 '+(on?'ON':'OFF');e('bldBtn').classList.toggle('on',on)}catch(x){err(x,'건물 레이어')}}
 function resolveB(n){try{bld=map.getLayerElement('facility_build');if(bld){bld.hide();return}}catch(x){}if(n<12)setTimeout(()=>resolveB(n+1),500)}
@@ -1502,6 +1775,11 @@ function popup(click,s){
 function toggleScalar(field){if(tempOn&&activeScalar===field)clearTemp();else buildScalar(field)}
 function install(){
   if(ready)return;ready=true;viewer=ws3d.viewer;terrainMode();resolveB(0);fillSelect();S.forEach(addStation);MOUNTAINS.forEach(addMountain);
+  try{
+    viewer.camera.percentageChanged=.025;
+    viewer.camera.changed.addEventListener(scheduleLabelDeclutter);
+  }catch(x){}
+  setTimeout(scheduleLabelDeclutter,250);
   e('collapse').onclick=function(){var c=e('panel').classList.toggle('collapsed');this.textContent=c?'⌄':'⌃'};
   e('guideBtn').onclick=openGuide;e('guideClose').onclick=closeGuide;e('guideModal').onclick=function(ev){if(ev.target===this)closeGuide()};
   document.addEventListener('keydown',function(ev){if(ev.key==='Escape')closeGuide()});
