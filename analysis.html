@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- rain-palette-v2: yellow-lime-green-orange-red-magenta -->
 <!-- analysis-v3 : 79 stations + temp/humidity/rain + daily extremes -->
 <html lang="ko">
 <head>
@@ -464,7 +465,7 @@ function hull(P){if(P.length<=2)return P.slice();P=P.slice().sort((a,b)=>a.x===b
 function interpRamp(t,q){t=Math.max(0,Math.min(1,t));for(var i=1;i<q.length;i++)if(t<=q[i][0]){var a=q[i-1],b=q[i],f=(t-a[0])/(b[0]-a[0]);return a[1].map((v,j)=>Math.round(v+f*(b[1][j]-v)))}return q[q.length-1][1]}
 function rampTemp(t){return interpRamp(t,[[0,[49,54,149]],[.1,[69,117,180]],[.2,[116,173,209]],[.3,[171,217,233]],[.4,[224,243,248]],[.5,[255,255,191]],[.6,[254,224,144]],[.7,[253,174,97]],[.8,[244,109,67]],[.9,[215,48,39]],[1,[165,0,38]]])}
 function rampHumidity(t){return interpRamp(t,[[0,[161,98,7]],[.2,[253,230,138]],[.4,[217,249,157]],[.6,[94,234,212]],[.8,[14,165,233]],[1,[29,78,216]]])}
-function rampRain(t){return interpRamp(t,[[0,[248,250,252]],[.18,[219,234,254]],[.4,[147,197,253]],[.65,[59,130,246]],[.82,[29,78,216]],[1,[49,46,129]]])}
+function rampRain(t){return interpRamp(t,[[0,[255,245,70]],[.16,[185,255,70]],[.34,[35,210,105]],[.52,[255,205,0]],[.70,[255,120,0]],[.86,[235,45,45]],[1,[185,35,215]]])}
 function rampWindMax(t){return interpRamp(t,[[0,[254,252,232]],[.25,[253,230,138]],[.5,[251,146,60]],[.75,[239,68,68]],[1,[153,27,27]]])}
 function scalarColor(t,palette){if(palette==='humidity')return rampHumidity(t);if(palette==='rain')return rampRain(Math.sqrt(Math.max(0,t)));if(palette==='windmax')return rampWindMax(t);return rampTemp(t)}
 function clearTemp(updateLabels){
