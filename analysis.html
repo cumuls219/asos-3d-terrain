@@ -1,4 +1,7 @@
 <!DOCTYPE html>
+<!-- v6 professional GIS UI: query / analysis / map -->
+<!-- mountains-v1: KMA mountain forecast summit metadata, distance-decluttered -->
+<!-- perf-optimized-v2 + sigungu-boundary + user-guide -->
 <!-- rain-palette-v2: yellow-lime-green-orange-red-magenta -->
 <!-- analysis-v3 : 79 stations + temp/humidity/rain + daily extremes -->
 <html lang="ko">
@@ -226,98 +229,496 @@ button,.fileLabel,select{border:1px solid var(--l);border-radius:9px;background:
 }
 #rainBasis .rbTitle{font-size:10px;color:#cbd5e1;align-self:center}
 #grad.humidity{background:linear-gradient(90deg,#a16207,#fde68a,#d9f99d,#5eead4,#0ea5e9,#1d4ed8)}
-#grad.rain{background:linear-gradient(90deg,#f8fafc,#dbeafe,#93c5fd,#3b82f6,#1d4ed8,#312e81)}
+#grad.rain{background:linear-gradient(90deg,#fff546,#b9ff46,#23d269,#ffcd00,#ff7800,#eb2d2d,#b923d7)}
 #grad.windmax{background:linear-gradient(90deg,#fefce8,#fde68a,#fb923c,#ef4444,#991b1b)}
 #grad.temp{background:linear-gradient(90deg,#313695,#4575b4,#74add1,#abd9e9,#e0f3f8,#ffffbf,#fee090,#fdae61,#f46d43,#d73027,#a50026)}
 .modeTag{display:inline-block;padding:1px 5px;border-radius:999px;background:rgba(255,255,255,.08);font-size:9px;color:#cbd5e1}
 
+
+/* ===== 시군구 경계 + 사용자 설명서 ===== */
+#headBtns{display:flex;gap:6px;align-items:center;flex:0 0 auto}
+#guideBtn{width:auto;min-width:62px;height:34px;min-height:34px;padding:0 10px;background:rgba(14,165,233,.14);border-color:rgba(56,189,248,.55)}
+#adminBtn.on{background:rgba(168,85,247,.18)!important;border-color:rgba(216,180,254,.82)!important}
+#guideModal{display:none;position:fixed;z-index:10050;inset:0;background:rgba(2,6,23,.74);backdrop-filter:blur(5px);align-items:center;justify-content:center;padding:18px}
+#guideModal.open{display:flex}
+#guideCard{width:min(780px,100%);max-height:min(86vh,900px);overflow:auto;border:1px solid rgba(255,255,255,.16);border-radius:16px;background:#0b1728;color:#fff;box-shadow:0 24px 70px rgba(0,0,0,.48)}
+#guideHead{position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;background:rgba(11,23,40,.97);border-bottom:1px solid rgba(255,255,255,.1)}
+#guideHead h2{font-size:16px;margin:0}#guideClose{width:auto;min-height:32px;padding:0 10px}
+#guideContent{padding:14px 16px 18px;font-size:11px;line-height:1.65;color:#dbe4f0}
+#guideContent h3{font-size:12px;color:#fff;margin:14px 0 6px;padding-bottom:4px;border-bottom:1px solid rgba(255,255,255,.08)}
+#guideContent h3:first-child{margin-top:0}#guideContent ul{padding-left:18px;margin:5px 0 8px}#guideContent li{margin:3px 0}
+#guideContent .guideBox{padding:9px 10px;border-radius:9px;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.07);margin:7px 0}
+#guideContent code{font-family:Consolas,monospace;color:#bfdbfe;font-size:10px}
+#guideContent .warn{color:#fde68a}.guideKey{display:inline-block;min-width:92px;color:#93c5fd;font-weight:800}
+@media(max-width:680px){#guideBtn{min-width:54px;padding:0 7px;font-size:11px}#guideModal{padding:8px}#guideCard{max-height:92vh}}
+
+
+/* ===== 주요 산 표출 ===== */
+#mountainBtn.on{background:rgba(245,158,11,.18)!important;border-color:rgba(253,224,71,.88)!important;color:#fef3c7}
+.badge.mountain{background:rgba(245,158,11,.22);color:#fde68a}
+
+
+/* ===== v6 Professional GIS UI ===== */
+:root{
+  --ui-bg:#111827;
+  --ui-panel:#0f172a;
+  --ui-line:#334155;
+  --ui-line-soft:#253247;
+  --ui-text:#e5e7eb;
+  --ui-muted:#94a3b8;
+  --ui-accent:#4f8fcf;
+  --ui-accent-strong:#6aa7e0;
+  --ui-danger:#dc6b6b;
+}
+#panel{
+  top:16px;right:16px;width:356px;max-width:calc(100% - 32px);
+  padding:0;border-radius:10px;
+  border:1px solid rgba(148,163,184,.28);
+  background:rgba(15,23,42,.965);
+  backdrop-filter:none;
+  box-shadow:0 10px 32px rgba(0,0,0,.28);
+  color:var(--ui-text);
+  max-height:calc(100vh - 32px);
+  overflow:hidden;
+}
+#head{
+  min-height:58px;padding:12px 12px 10px 14px;
+  align-items:center;border-bottom:1px solid var(--ui-line-soft);
+}
+#tw h1,#head h1{
+  font-size:15px;font-weight:700;letter-spacing:-.25px;margin:0 0 3px;color:#f8fafc
+}
+#head .sub{font-size:10.5px;color:var(--ui-muted);line-height:1.3}
+#headBtns{gap:5px}
+#headBtns button{
+  height:30px;min-height:30px;border-radius:6px;
+  border:1px solid var(--ui-line);
+  background:#172033;color:#cbd5e1;
+  font-size:10.5px;font-weight:600;padding:0 9px;
+}
+#collapse{width:30px!important;padding:0!important;font-size:16px!important}
+#guideBtn{min-width:52px!important;background:#172033!important;border-color:var(--ui-line)!important}
+
+#workspaceTabs{
+  flex:0 0 auto;display:grid;grid-template-columns:repeat(3,1fr);
+  padding:0 10px;background:#0d1525;border-bottom:1px solid var(--ui-line-soft)
+}
+#workspaceTabs .workspaceTab{
+  position:relative;height:39px;min-height:39px;border:0;border-radius:0;
+  background:transparent;color:#94a3b8;font-size:11.5px;font-weight:600;
+}
+#workspaceTabs .workspaceTab:hover{color:#e2e8f0}
+#workspaceTabs .workspaceTab.active{color:#f8fafc;background:transparent!important}
+#workspaceTabs .workspaceTab.active::after{
+  content:"";position:absolute;left:18px;right:18px;bottom:-1px;height:2px;
+  background:var(--ui-accent-strong);border-radius:2px 2px 0 0
+}
+
+#body{
+  flex:1;min-height:0;margin:0;padding:10px 10px 12px;
+  overflow-y:auto;overflow-x:hidden;
+}
+.workspacePage{display:none}
+.workspacePage.active{display:block}
+.workSection{
+  padding:10px 10px 11px;margin:0 0 8px;
+  border:1px solid var(--ui-line-soft);border-radius:8px;
+  background:#111b2e;
+}
+.sectionTitleRow{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:9px}
+.sectionTitle{font-size:11.5px;font-weight:700;color:#e8edf5;letter-spacing:-.1px}
+.sectionCaption{margin-top:2px;font-size:9.5px;color:#7f8da3;font-weight:400}
+.fieldLabel{
+  display:block;font-size:9.5px;font-weight:600;color:#8fa0b7;
+  margin:0;line-height:1.3
+}
+.fieldLabel select,.fieldLabel input{margin-top:4px}
+#apiModeGrid{display:block;margin:0 0 8px}
+#apiGrid{display:block}
+#dailyQuery{grid-template-columns:1fr;gap:7px}
+#dailyQuery .wide{grid-column:auto}
+#apiMode,#dailyObs,#rainAccum,#apiDate,#apiTime,#stationSelect{
+  width:100%;height:34px;min-height:34px;padding:0 9px;
+  border:1px solid #344257;border-radius:6px;background:#0c1526;
+  color:#e5e7eb;font-family:inherit;font-size:11px;font-weight:500;
+  outline:none;
+}
+#apiMode:focus,#dailyObs:focus,#rainAccum:focus,#apiDate:focus,#apiTime:focus,#stationSelect:focus{
+  border-color:#648fbd;box-shadow:0 0 0 2px rgba(79,143,207,.12)
+}
+button,.fileLabel,select{font-family:inherit}
+#panel button,.fileLabel{
+  min-height:34px;border-radius:6px;border:1px solid #344257;
+  background:#172033;color:#dce4ee;font-size:10.5px;font-weight:600;
+  box-shadow:none;transition:background .12s,border-color .12s,color .12s;
+}
+#panel button:hover:not(:disabled),.fileLabel:hover{background:#1d2940;border-color:#465870}
+#panel button:disabled{opacity:.34}
+.primaryAction{
+  width:100%;margin-top:9px!important;
+  background:#315f8f!important;border-color:#477fae!important;color:#fff!important;
+  font-size:11px!important;font-weight:700!important
+}
+.primaryAction:hover:not(:disabled){background:#386b9f!important}
+.secondaryAction{width:100%;margin-top:7px}
+
+.compactState,#apiState{
+  margin-top:7px;padding:7px 8px;border-radius:5px;
+  background:#0d1727;border:1px solid #243248;
+  color:#9cabc0;font-size:9.5px;line-height:1.4
+}
+#apiState.ok{color:#a9c8e8;border-color:#315372}
+#apiState.bad{color:#e7a1a1;border-color:#663c46}
+#apiHelp{display:none}
+#dataInfo{
+  margin:0 0 8px;padding:7px 9px;border-radius:6px;
+  background:#0d1727;border:1px solid #243248;color:#9cabc0;
+  font-size:9.5px;line-height:1.4
+}
+
+.secondaryDetails{
+  margin:0 0 8px;border:1px solid var(--ui-line-soft);border-radius:8px;background:#101a2b
+}
+.secondaryDetails summary{
+  list-style:none;cursor:pointer;padding:9px 10px;color:#9aa9bd;
+  font-size:10.5px;font-weight:600;user-select:none
+}
+.secondaryDetails summary::-webkit-details-marker{display:none}
+.secondaryDetails summary::after{
+  content:"+";float:right;color:#7f8da3;font-size:14px;font-weight:400;line-height:12px
+}
+.secondaryDetails[open] summary::after{content:"−"}
+.secondaryDetails[open] summary{border-bottom:1px solid var(--ui-line-soft);color:#d8e0ea}
+.detailsBody{padding:9px 10px 10px}
+.detailsBody .fileLabel,#template{width:100%}
+#template{margin-top:6px!important}
+#file{display:none}
+
+.compactToggleGrid,.mapToggleGrid,.networkGrid{
+  gap:6px!important
+}
+.scalarGrid{grid-template-columns:repeat(2,1fr)}
+.g2{grid-template-columns:repeat(2,1fr)}
+.g3{grid-template-columns:repeat(3,1fr)}
+#panel button.on,
+#panel button.on.temp,
+#panel button.on.wind,
+#panel button.on.humidity,
+#panel button.on.rain,
+#panel button.on.daily,
+#panel button.on.asos,
+#panel button.on.aws,
+#panel button.on.port,
+#panel #adminBtn.on,
+#panel #mountainBtn.on{
+  background:#1d2d42!important;
+  border-color:#547ca5!important;
+  color:#f3f7fb!important;
+}
+.compactToggleGrid button,.mapToggleGrid button,.networkGrid button{
+  position:relative;text-align:left;padding:0 24px 0 10px
+}
+.compactToggleGrid button.on::after,.mapToggleGrid button.on::after,.networkGrid button.on::after{
+  content:"";position:absolute;right:10px;top:50%;width:6px;height:6px;
+  margin-top:-3px;border-radius:50%;background:#75a9d8
+}
+#asosBtn.on{box-shadow:inset 2px 0 0 #38bdf8!important}
+#awsBtn.on{box-shadow:inset 2px 0 0 #fb923c!important}
+#portBtn.on{box-shadow:inset 2px 0 0 #34d399!important}
+
+.inlineSetting{
+  display:grid!important;grid-template-columns:72px 1fr!important;gap:7px!important;
+  align-items:center!important;margin-top:7px!important;padding:7px!important;
+  background:#0d1727!important;border:1px solid #243248!important;border-radius:6px!important
+}
+.settingLabel{font-size:9.5px;color:#8fa0b7;font-weight:600}
+#rainBasis select{margin:0}
+
+#tempLegend{
+  margin-top:8px;padding:8px;border-radius:6px;
+  background:#0d1727;border:1px solid #243248
+}
+#grad{height:7px;border-radius:3px}
+#scale{font-size:9px;color:#8796aa;margin-top:5px}
+.cleanSlider,.slider{
+  grid-template-columns:58px 1fr 40px;gap:7px;margin-top:8px;
+  font-size:9.5px;color:#8fa0b7
+}
+.slider input[type="range"]{accent-color:#6d99c6}
+.sv{color:#cfd8e4;font-variant-numeric:tabular-nums}
+
+.windSection{margin-top:0}
+#windSourceBox{
+  margin:0;padding:0;border:0;background:transparent
+}
+#windSourceTitle{font-size:9.5px;color:#8fa0b7;margin-bottom:6px}
+#windSourceButtons{gap:5px}
+#windSourceButtons button{font-size:10px;min-height:31px}
+#windSourceButtons button.selected{
+  background:#1d2d42!important;border-color:#547ca5!important;color:#f3f7fb!important
+}
+#windDetectInfo{
+  margin-top:6px;padding:6px 7px;border-radius:5px;
+  background:#0d1727;color:#7f8da3;font-size:9px;line-height:1.35
+}
+
+#stationSelect{margin-top:0}
+#note{display:none!important}
+
+#guideModal{background:rgba(3,8,18,.72);backdrop-filter:none}
+#guideCard{
+  width:min(720px,100%);border-radius:10px;border:1px solid #35445a;
+  background:#111827;box-shadow:0 18px 50px rgba(0,0,0,.4)
+}
+#guideHead{
+  padding:12px 14px;background:#111827;border-bottom:1px solid #2b394d
+}
+#guideHead h2{font-size:14px;font-weight:700}
+#guideContent{font-size:10.5px;color:#c7d0dc;padding:12px 14px 16px}
+#guideContent h3{font-size:11px}
+#guideContent .guideBox{border-radius:6px;background:#0d1727;border-color:#243248}
+
+#panel.collapsed{
+  width:244px!important;padding:0!important;
+}
+#panel.collapsed #workspaceTabs,#panel.collapsed #body{display:none}
+#panel.collapsed #head{border-bottom:0}
+#panel.collapsed .sub{display:none}
+
+@media(max-width:680px){
+  #panel{left:8px;right:8px;top:8px;width:auto;max-width:none;max-height:calc(100vh - 16px)}
+  #body{padding:8px}
+}
+
 </style></head>
 <body><div id="map"></div>
-<div id="panel"><div id="head"><div id="tw"><h1>3D 기상 분석지도 <span style="font-size:10px;color:#fbbf24">시범</span></h1><div class="sub">ASOS 17 · AWS 60 · 항만 2 · 특정시각/일극값 · 위성 ON / 지형 ON</div></div><button id="collapse">⌃</button></div>
-<div id="body">
-<div id="apiBox">
-  <div class="apiTitle">기상청 API허브 · 관측 분석 조회</div>
-  <div id="apiModeGrid">
-    <div><label for="apiMode">조회 방식</label><select id="apiMode">
-      <option value="instant">특정 시각</option>
-      <option value="daily">일극값</option>
-    </select></div>
-    <div><label>자료 범위</label><div style="height:34px;display:flex;align-items:center;padding:0 9px;border:1px solid var(--l);border-radius:9px;background:#0f172a;font-size:10px;color:#cbd5e1">부산관할 79지점</div></div>
+<div id="panel">
+  <div id="head">
+    <div id="tw">
+      <h1>부산관할 3D 기상분석</h1>
+      <div class="sub">관측 79지점 · 3D 지형 기반 분석</div>
+    </div>
+    <div id="headBtns">
+      <button id="guideBtn" type="button" title="사용 설명서">도움말</button>
+      <button id="collapse" type="button" title="패널 접기">−</button>
+    </div>
   </div>
-  <div id="instantQuery">
-    <div id="apiGrid"><input id="apiTime" class="wide" type="datetime-local" step="60" aria-label="자료시각"></div>
-  </div>
-  <div id="dailyQuery">
-    <input id="apiDate" type="date" class="wide" aria-label="일자료 날짜">
-    <select id="dailyObs" class="wide" aria-label="일극값 요소">
-      <option value="rn_day">일강수량 (mm)</option>
-      <option value="ta_max">일최고기온 (℃)</option>
-      <option value="ta_min">일최저기온 (℃)</option>
-      <option value="ws_max">일최대풍속 (m/s)</option>
-    </select>
-  </div>
-  <button id="apiFetchBtn" type="button">선택 시각 관측자료 조회</button>
-  <div id="apiState">조회 방식을 선택한 뒤 자료를 불러오세요.</div>
-  <div id="apiHelp">특정시각: TA / HM / RN-15m·60m·12H·DAY / WD1·WS1 / WD10·WS10 · 일극값: KMA 일통계 요소별 조회</div>
-</div>
 
-<div class="sec" style="margin-top:0;padding-top:0;border-top:0">
-  <div class="ttl">비상용 파일 입력</div>
-  <label class="fileLabel" for="file">XLSX / CSV 관측자료 불러오기</label>
-  <input id="file" type="file" accept=".xlsx,.xls,.csv,.txt">
-  <button id="template" style="width:100%;margin-top:7px">CSV 입력양식 다운로드</button>
-</div>
-<div id="dataInfo">자료 미입력 · API 조회 또는 파일 입력 후 분석장을 생성합니다.</div>
-<div class="sec"><div class="ttl">분석장</div>
-<div class="miniTitle">스칼라 분석장</div>
-<div class="scalarGrid">
-  <button id="tempBtn" class="temp" disabled>기온장 OFF</button>
-  <button id="hmBtn" disabled>습도장 OFF</button>
-  <button id="rainBtn" disabled>강수장 OFF</button>
-  <button id="dailyBtn" disabled>일극값장 OFF</button>
-</div>
-<div id="rainBasis">
-  <div class="rbTitle">강수장 누적기준</div>
-  <select id="rainAccum">
-    <option value="rn15">15분</option>
-    <option value="rn60" selected>60분</option>
-    <option value="rn12">12시간</option>
-    <option value="rnday">일누적</option>
-  </select>
-</div>
+  <nav id="workspaceTabs" aria-label="주요 기능">
+    <button type="button" class="workspaceTab active" data-page="query">조회</button>
+    <button type="button" class="workspaceTab" data-page="analysis">분석</button>
+    <button type="button" class="workspaceTab" data-page="map">지도</button>
+  </nav>
 
-<div id="tempLegend"><div id="grad" class="temp"></div><div id="scale"><span id="tmin">-</span><span id="legendTitle">IDW p=2</span><span id="tmax">-</span></div></div>
-<div class="slider"><span>분석장 투명도</span><input id="alpha" type="range" min="0.25" max="0.95" step="0.05" value="0.72"><span id="aval" class="sv">72%</span></div>
+  <div id="body">
+    <section class="workspacePage active" data-page="query">
+      <div id="apiBox" class="workSection">
+        <div class="sectionTitleRow">
+          <div>
+            <div class="sectionTitle">관측자료 조회</div>
+            <div class="sectionCaption">기상청 APIHub · 부산관할 79지점</div>
+          </div>
+        </div>
 
-<div class="miniTitle">바람 분석장 <span class="modeTag">특정 시각 전용</span></div>
-<div class="g2"><button id="windGridBtn" class="wind" disabled>바람장 OFF</button><button id="windObsBtn" class="wind" disabled>관측바람 OFF</button></div>
-<div id="windSourceBox">
-  <div id="windSourceTitle">사용할 바람자료</div>
-  <div id="windSourceButtons">
-    <button id="wind1Btn" class="unavailable" disabled type="button">1분 평균</button>
-    <button id="wind10Btn" class="unavailable" disabled type="button">10분 평균</button>
-    <button id="windUnknownBtn" class="unavailable" disabled type="button" style="display:none">평균주기 불명</button>
-  </div>
-  <div id="windDetectInfo">특정 시각 자료를 불러오면 1분/10분 풍향·풍속 열을 별도로 탐색합니다.</div>
-</div>
-<div class="slider"><span>바람장 밀도</span><input id="wdensity" type="range" min="14" max="32" step="1" value="24"><span id="wdensityVal" class="sv">24</span></div>
-<div class="slider"><span>바람 길이</span><input id="wscale" type="range" min="0.5" max="2.0" step="0.1" value="1.0"><span id="wval" class="sv">1.0×</span></div>
-<div class="slider"><span>벡터 두께</span><input id="wthick" type="range" min="1.5" max="8.0" step="0.5" value="4.0"><span id="wthickVal" class="sv">4.0</span></div>
-</div>
-<div class="sec"><div class="ttl">배경 · 관측망</div><div class="g2"><button id="satBtn" class="on">위성 ON</button><button id="bldBtn">3D 건물 OFF</button><button id="asosBtn" class="on asos">ASOS ON</button><button id="awsBtn" class="on aws">AWS ON</button><button id="portBtn" class="on port full">항만 ON</button></div></div>
-<div class="sec"><div class="ttl">지점 이동</div><select id="stationSelect"><option value="">관측소를 선택하세요</option></select><button id="homeBtn" style="width:100%;margin-top:7px">전체 79개 지점 보기</button></div>
-<div id="note">특정시각 스칼라장: API 또는 파일 관측값을 IDW(p=2)로 보간하고 유효 관측지점의 볼록껍질 내부만 표출합니다. 경계는 640px mask + feathering을 적용합니다.<br>
+        <div id="apiModeGrid" class="fieldGrid">
+          <label class="fieldLabel">조회 유형
+            <select id="apiMode">
+              <option value="instant">특정 시각</option>
+              <option value="daily">일극값</option>
+            </select>
+          </label>
+        </div>
+
+        <div id="instantQuery">
+          <div id="apiGrid">
+            <label class="fieldLabel">자료 시각
+              <input id="apiTime" class="wide" type="datetime-local" step="60" aria-label="자료시각">
+            </label>
+          </div>
+        </div>
+
+        <div id="dailyQuery">
+          <label class="fieldLabel">날짜
+            <input id="apiDate" type="date" class="wide" aria-label="일자료 날짜">
+          </label>
+          <label class="fieldLabel">일극값 요소
+            <select id="dailyObs" class="wide" aria-label="일극값 요소">
+              <option value="rn_day">일강수량 (mm)</option>
+              <option value="ta_max">일최고기온 (℃)</option>
+              <option value="ta_min">일최저기온 (℃)</option>
+              <option value="ws_max">일최대풍속 (m/s)</option>
+            </select>
+          </label>
+        </div>
+
+        <button id="apiFetchBtn" type="button" class="primaryAction">선택 시각 관측자료 조회</button>
+        <div id="apiState" class="compactState">날짜·시각을 선택한 뒤 조회하세요.</div>
+        <div id="apiHelp">특정시각: TA / HM / RN-15m·60m·12H·DAY / WD1·WS1 / WD10·WS10 · 일극값: KMA 일통계 요소별 조회</div>
+      </div>
+
+      <div id="dataInfo">자료 미입력 · API 조회 또는 파일 입력 후 분석장을 생성합니다.</div>
+
+      <details id="fallbackDetails" class="secondaryDetails">
+        <summary>대체 입력 · 파일</summary>
+        <div class="detailsBody">
+          <label class="fileLabel" for="file">XLSX / CSV 불러오기</label>
+          <input id="file" type="file" accept=".xlsx,.xls,.csv,.txt">
+          <button id="template" type="button">CSV 입력양식</button>
+        </div>
+      </details>
+    </section>
+
+    <section class="workspacePage" data-page="analysis">
+      <div class="workSection">
+        <div class="sectionTitleRow">
+          <div>
+            <div class="sectionTitle">분석 요소</div>
+            <div class="sectionCaption">관측값 기반 공간분석</div>
+          </div>
+        </div>
+
+        <div class="scalarGrid compactToggleGrid">
+          <button id="tempBtn" class="temp" disabled>기온장 OFF</button>
+          <button id="hmBtn" disabled>습도장 OFF</button>
+          <button id="rainBtn" disabled>강수장 OFF</button>
+          <button id="dailyBtn" disabled>일극값장 OFF</button>
+        </div>
+
+        <div id="rainBasis" class="inlineSetting">
+          <span class="settingLabel">강수 누적</span>
+          <select id="rainAccum">
+            <option value="rn15">15분</option>
+            <option value="rn60" selected>60분</option>
+            <option value="rn12">12시간</option>
+            <option value="rnday">일누적</option>
+          </select>
+        </div>
+
+        <div id="tempLegend">
+          <div id="grad" class="temp"></div>
+          <div id="scale"><span id="tmin">-</span><span id="legendTitle">IDW p=2</span><span id="tmax">-</span></div>
+        </div>
+
+        <div class="slider cleanSlider">
+          <span>투명도</span>
+          <input id="alpha" type="range" min="0.25" max="0.95" step="0.05" value="0.72">
+          <span id="aval" class="sv">72%</span>
+        </div>
+      </div>
+
+      <div class="workSection windSection">
+        <div class="sectionTitleRow">
+          <div>
+            <div class="sectionTitle">바람</div>
+            <div class="sectionCaption">특정 시각 자료에서 사용</div>
+          </div>
+        </div>
+
+        <div class="g2 compactToggleGrid">
+          <button id="windGridBtn" class="wind" disabled>바람장 OFF</button>
+          <button id="windObsBtn" class="wind" disabled>관측바람 OFF</button>
+        </div>
+
+        <details id="windAdvanced" class="secondaryDetails">
+          <summary>바람 세부 설정</summary>
+          <div class="detailsBody">
+            <div id="windSourceBox">
+              <div id="windSourceTitle">평균 주기</div>
+              <div id="windSourceButtons">
+                <button id="wind1Btn" class="unavailable" disabled type="button">1분 평균</button>
+                <button id="wind10Btn" class="unavailable" disabled type="button">10분 평균</button>
+                <button id="windUnknownBtn" class="unavailable" disabled type="button" style="display:none">평균주기 불명</button>
+              </div>
+              <div id="windDetectInfo">자료를 불러오면 사용 가능한 평균주기를 자동 확인합니다.</div>
+            </div>
+            <div class="slider cleanSlider"><span>밀도</span><input id="wdensity" type="range" min="14" max="32" step="1" value="24"><span id="wdensityVal" class="sv">24</span></div>
+            <div class="slider cleanSlider"><span>길이</span><input id="wscale" type="range" min="0.5" max="2.0" step="0.1" value="1.0"><span id="wval" class="sv">1.0×</span></div>
+            <div class="slider cleanSlider"><span>두께</span><input id="wthick" type="range" min="1.5" max="8.0" step="0.5" value="4.0"><span id="wthickVal" class="sv">4.0</span></div>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <section class="workspacePage" data-page="map">
+      <div class="workSection">
+        <div class="sectionTitleRow">
+          <div>
+            <div class="sectionTitle">지도 레이어</div>
+            <div class="sectionCaption">배경 및 보조정보</div>
+          </div>
+        </div>
+        <div class="g2 mapToggleGrid">
+          <button id="satBtn" class="on">위성 ON</button>
+          <button id="bldBtn">3D 건물 OFF</button>
+          <button id="adminBtn" class="on" type="button">시군구 경계 ON</button>
+          <button id="mountainBtn" class="on" type="button">주요 산 ON</button>
+        </div>
+      </div>
+
+      <div class="workSection">
+        <div class="sectionTitleRow">
+          <div>
+            <div class="sectionTitle">관측망</div>
+            <div class="sectionCaption">지점 마커 표시</div>
+          </div>
+        </div>
+        <div class="g3 networkGrid">
+          <button id="asosBtn" class="on asos">ASOS ON</button>
+          <button id="awsBtn" class="on aws">AWS ON</button>
+          <button id="portBtn" class="on port">항만 ON</button>
+        </div>
+      </div>
+
+      <div class="workSection">
+        <div class="sectionTitleRow">
+          <div>
+            <div class="sectionTitle">지점 이동</div>
+            <div class="sectionCaption">관측소 선택 또는 전체영역 복귀</div>
+          </div>
+        </div>
+        <select id="stationSelect"><option value="">관측소 선택</option></select>
+        <button id="homeBtn" type="button" class="secondaryAction">전체 79개 지점 보기</button>
+      </div>
+
+      <div id="note">특정시각 스칼라장: API 또는 파일 관측값을 IDW(p=2)로 보간하고 유효 관측지점의 볼록껍질 내부만 표출합니다. 경계는 640px mask + feathering을 적용합니다.<br>
 습도장: 상대습도 HM(%). 강수장: RN-15m / RN-60m / RN-12H / RN-DAY 중 사용자가 누적기준 선택.<br>
 바람장: 선택한 1분 또는 10분 풍향·풍속 → U/V 변환 → U/V 각각 IDW. 풍향 자체는 보간하지 않습니다.<br>
-일극값장: 일강수량·일최고기온·일최저기온·일최대풍속을 날짜별로 조회하여 동일한 공간분석 방식으로 표출합니다.</div>
-</div></div>
+일극값장: 일강수량·일최고기온·일최저기온·일최대풍속을 날짜별로 조회하여 동일한 공간분석 방식으로 표출합니다.<br>주요 산: 기상청 산악예보 지점정보의 산명·위경도·고도를 사용하며, 지도 과밀 방지를 위해 고도별 표출거리를 자동 제한합니다.</div>
+    </section>
+  </div>
+</div>
 <div id="status">V-World 3D 분석지형 초기화 중…</div>
 <div id="popup"><button id="popupClose">닫기</button><div id="popupContent"></div></div>
+
+<div id="guideModal" role="dialog" aria-modal="true" aria-labelledby="guideTitle">
+  <div id="guideCard">
+    <div id="guideHead"><h2 id="guideTitle">3D 기상 분석지도 · 사용 설명서</h2><button id="guideClose" type="button">닫기</button></div>
+    <div id="guideContent">
+      <h3>1. 빠른 사용 순서</h3>
+      <div class="guideBox"><span class="guideKey">특정 시각</span> 날짜·시각 선택 → 관측자료 조회 → 기온/습도/강수 또는 바람 분석장을 선택합니다.<br><span class="guideKey">일극값</span> 날짜와 요소(일강수량·일최고기온·일최저기온·일최대풍속) 선택 → 조회 → 일극값장을 켭니다.</div>
+      <h3>2. 지도 · 관측망</h3>
+      <ul><li><b>위성</b>: 기본 ON. 배경 위성영상을 켜거나 끕니다.</li><li><b>3D 건물</b>: V-World 건물 레이어를 켜거나 끕니다.</li><li><b>시군구 경계</b>: V-World WMS <code>LT_C_ADSIGG</code> 행정구역 경계를 표출합니다. 분석장과 독립적으로 ON/OFF 됩니다.</li><li><b>주요 산</b>: 기상청 산악예보 지점정보의 정상 좌표·고도를 기준으로 <code>산명(고도m)</code>를 표출합니다. 고도가 높은 산은 넓은 시야에서, 낮은 산은 확대 시 나타나도록 자동으로 과밀을 줄입니다. 산 표시를 클릭하면 좌표·고도·자료 기준을 확인할 수 있습니다.</li><li><b>ASOS / AWS / 항만</b>: 관측망별 마커·라벨을 독립적으로 제어합니다.</li></ul>
+      <h3>3. 스칼라 분석장</h3>
+      <ul><li>기온, 상대습도, 강수, 일극값을 관측지점 값으로부터 <b>IDW(p=2)</b> 보간합니다.</li><li>임의 외삽을 줄이기 위해 유효 관측지점의 <b>볼록껍질 내부</b>만 분석장으로 표출합니다.</li><li>강수는 15분·60분·12시간·일누적 중 선택할 수 있습니다.</li><li>분석장 투명도를 조절하여 지형·위성영상과 함께 볼 수 있습니다.</li></ul>
+      <h3>4. 바람 분석장</h3>
+      <ul><li>1분 또는 10분 풍향·풍속을 선택합니다. 둘 다 있으면 10분 평균을 우선 사용합니다.</li><li>풍향을 직접 보간하지 않고 관측 풍향·풍속을 U/V 성분으로 변환한 뒤 각각 IDW 보간합니다.</li><li>밀도·길이·벡터 두께를 조절할 수 있습니다.</li></ul>
+      <h3>5. 색상과 해석</h3>
+      <ul><li>기온: 청색 → 황색 → 적색 계열</li><li>습도: 갈색/황색 → 청록/청색 계열</li><li>강수: 노랑 → 연두/초록 → 주황 → 적색 → 자주 계열</li><li>일최대풍속: 연황 → 주황 → 적색 계열</li></ul>
+      <h3>6. 자료와 주의사항</h3>
+      <div class="guideBox"><b>관측값과 분석장은 구분해야 합니다.</b> 지점 팝업·라벨 값은 관측자료이고, 배경에 연속적으로 보이는 색상장은 IDW 보간 결과입니다. 분석장은 관측되지 않은 위치의 실제값을 의미하지 않습니다.</div>
+      <div class="guideBox"><span class="warn">경계 레이어가 나타나지 않을 경우</span> V-World WMS 인증 범위 또는 네트워크 상태를 확인하세요. 경계 실패가 기상자료 조회·분석 계산을 중단시키지는 않습니다.</div>
+      <h3>7. 현재 구성</h3>
+      <div class="guideBox">관측망 79지점(ASOS 17 · AWS 60 · 항만 2) · V-World 3D · KMA APIHub 자료 · 시군구 경계 <code>LT_C_ADSIGG</code> · 주요 산 23개(기상청 산악예보 지점정보) · 성능 최적화 캐시/벡터 debounce 적용</div>
+    </div>
+  </div>
+</div>
+
 <div id="error"><div id="ecard"><h2>시범 분석지도 오류</h2><div id="emsg"></div><pre id="estack"></pre></div></div>
 <script>(function(){'use strict';
 var S=[{"type":"ASOS","id":152,"name":"울산","address":"울산광역시 중구 약사동 308","lat":35.58237,"lon":129.33469,"height":81.14},{"type":"ASOS","id":155,"name":"창원","address":"경상남도 창원시 마산합포구 가포동 473-1","lat":35.17019,"lon":128.57282,"height":34.97},{"type":"ASOS","id":159,"name":"부산","address":"부산광역시 중구 대청동1가 9-305","lat":35.10468,"lon":129.03203,"height":69.56},{"type":"ASOS","id":162,"name":"통영","address":"경상남도 통영시 정량동 844","lat":34.84541,"lon":128.43561,"height":31.24},{"type":"ASOS","id":192,"name":"진주","address":"경상남도 진주시 평거동 695-244","lat":35.16378,"lon":128.04004,"height":29.35},{"type":"ASOS","id":253,"name":"김해시","address":"경상남도 김해시 부원동 112-3","lat":35.22981,"lon":128.89075,"height":54.59},{"type":"ASOS","id":255,"name":"북창원","address":"경상남도 창원시 성산구 내동 산27-10","lat":35.22655,"lon":128.6726,"height":50.95},{"type":"ASOS","id":257,"name":"양산시","address":"경상남도 양산시 동면 금산리 1501","lat":35.30737,"lon":129.02009,"height":6.29},{"type":"ASOS","id":263,"name":"의령군","address":"경상남도 의령군 의령읍 무전리 78","lat":35.32258,"lon":128.28812,"height":14.1},{"type":"ASOS","id":264,"name":"함양군","address":"경상남도 함양군 함양읍 용평리 915-63","lat":35.51138,"lon":127.74538,"height":152.07},{"type":"ASOS","id":284,"name":"거창","address":"경상남도 거창군 거창읍 정장리 967-8","lat":35.66739,"lon":127.9099,"height":228.45},{"type":"ASOS","id":285,"name":"합천","address":"경상남도 합천군 합천읍 합천리 129-4","lat":35.56505,"lon":128.16994,"height":26.72},{"type":"ASOS","id":288,"name":"밀양","address":"경상남도 밀양시 내이동 1073-3","lat":35.49147,"lon":128.74412,"height":8.31},{"type":"ASOS","id":289,"name":"산청","address":"경상남도 산청군 산청읍 지리 311-2","lat":35.413,"lon":127.8791,"height":138.22},{"type":"ASOS","id":294,"name":"거제","address":"경상남도 거제시 장평동 770-27","lat":34.88818,"lon":128.60459,"height":44.83},{"type":"ASOS","id":295,"name":"남해","address":"경상남도 남해군 이동면 다정리 797-2","lat":34.81662,"lon":127.92641,"height":45.71},{"type":"ASOS","id":296,"name":"북부산","address":"부산광역시 강서구 대저1동 1246","lat":35.217781,"lon":128.960242,"height":3.0},{"type":"AWS","id":45,"name":"하이","address":"경상남도 고성군 하이면 덕호리 810-4","lat":34.91889,"lon":128.11806,"height":15.0},{"type":"AWS","id":160,"name":"부산(레)","address":"부산광역시 서구 서대신동3가 산32-10","lat":35.11885,"lon":128.99993,"height":549.15},{"type":"AWS","id":311,"name":"가야산","address":"경상남도 합천군 가야면 치인리 1230-112","lat":35.78915,"lon":128.08673,"height":605.47},{"type":"AWS","id":313,"name":"양지암","address":"경상남도 거제시 능포동 116-27","lat":34.88208,"lon":128.74127,"height":70.0},{"type":"AWS","id":673,"name":"진영","address":"경상남도 김해시 진영읍 우동리 262-1","lat":35.28223,"lon":128.7175,"height":20.64},{"type":"AWS","id":854,"name":"삼동","address":"울산광역시 울주군 삼동면 금곡리 547-15","lat":35.49528,"lon":129.13357,"height":166.92},{"type":"AWS","id":872,"name":"지리산","address":"경상남도 산청군 시천면 중산리 633-11","lat":35.31924,"lon":127.75642,"height":869.44},{"type":"AWS","id":900,"name":"두서","address":"울산광역시 울주군 두서면 구량리 500-7","lat":35.62027,"lon":129.14356,"height":117.49},{"type":"AWS","id":901,"name":"울기","address":"울산광역시 동구 방어동 산23","lat":35.48678,"lon":129.43531,"height":67.64},{"type":"AWS","id":902,"name":"시천","address":"경상남도 산청군 시천면 내공리 640-1","lat":35.24229,"lon":127.81897,"height":137.13},{"type":"AWS","id":903,"name":"도천","address":"경상남도 창녕군 도천면 우강리 841-36","lat":35.40387,"lon":128.51486,"height":14.86},{"type":"AWS","id":904,"name":"사상","address":"부산광역시 사상구 삼락동 29-43","lat":35.16944,"lon":128.97505,"height":0.732},{"type":"AWS","id":905,"name":"양산상북","address":"경상남도 양산시 상북면 좌삼리 497-9","lat":35.4414,"lon":129.04288,"height":83.57},{"type":"AWS","id":906,"name":"화개","address":"경상남도 하동군 화개면 용강리 400-2","lat":35.23236,"lon":127.64269,"height":89.59},{"type":"AWS","id":907,"name":"삼천포","address":"경상남도 사천시 대방동 136-3","lat":34.93211,"lon":128.06313,"height":29.46},{"type":"AWS","id":908,"name":"진해","address":"경상남도 창원시 진해구 성내동 476-2","lat":35.11221,"lon":128.7537,"height":11.74},{"type":"AWS","id":909,"name":"서이말","address":"경상남도 거제시 일운면 지세포리 산48-2","lat":34.78774,"lon":128.73825,"height":109.74},{"type":"AWS","id":910,"name":"영도","address":"부산광역시 영도구 동삼동 산2-1","lat":35.06609,"lon":129.07421,"height":138.96},{"type":"AWS","id":911,"name":"매물도","address":"경상남도 통영시 한산면 매죽리 39-9","lat":34.64893,"lon":128.57714,"height":69.02},{"type":"AWS","id":912,"name":"백천","address":"경상남도 함양군 함양읍 백천리 409-2","lat":35.52627,"lon":127.77836,"height":140.33},{"type":"AWS","id":913,"name":"상주면","address":"경상남도 남해군 상주면 상주리 1722","lat":34.7238,"lon":127.98155,"height":19.65},{"type":"AWS","id":914,"name":"서하","address":"경상남도 함양군 서하면 봉전리 1331-9","lat":35.63763,"lon":127.71556,"height":353.86},{"type":"AWS","id":915,"name":"삼가","address":"경상남도 합천군 삼가면 두모리 192-9","lat":35.41353,"lon":128.10178,"height":85.28},{"type":"AWS","id":916,"name":"단성","address":"경상남도 산청군 단성면 강누리 38-3","lat":35.31111,"lon":127.96696,"height":55.0},{"type":"AWS","id":917,"name":"사천","address":"경상남도 사천시 용현면 신복리 500-4","lat":35.03694,"lon":128.06768,"height":25.79},{"type":"AWS","id":918,"name":"고성","address":"경상남도 고성군 고성읍 죽계리 435-230","lat":34.99052,"lon":128.33089,"height":7.03},{"type":"AWS","id":919,"name":"창녕","address":"경상남도 창녕군 대지면 효정리 600","lat":35.55142,"lon":128.47669,"height":30.0},{"type":"AWS","id":920,"name":"함안","address":"경상남도 함안군 가야읍 산서리 928","lat":35.29613,"lon":128.39942,"height":8.39},{"type":"AWS","id":921,"name":"가덕도","address":"부산광역시 강서구 대항동 162-1","lat":34.99308,"lon":128.83141,"height":75.63},{"type":"AWS","id":922,"name":"단장","address":"경상남도 밀양시 단장면 고례리 1710","lat":35.48645,"lon":128.92911,"height":138.03},{"type":"AWS","id":923,"name":"기장","address":"부산광역시 기장군 일광읍 이천리 산1-3","lat":35.27505,"lon":129.25113,"height":65.99},{"type":"AWS","id":924,"name":"간절곶","address":"울산광역시 울주군 서생면 대송리 28-1","lat":35.35866,"lon":129.36028,"height":22.23},{"type":"AWS","id":925,"name":"생림","address":"경상남도 김해시 생림면 마사리 666-9","lat":35.37435,"lon":128.82299,"height":8.68},{"type":"AWS","id":926,"name":"진북","address":"경상남도 창원시 마산합포구 진북면 덕곡리 109-7","lat":35.12624,"lon":128.47483,"height":13.33},{"type":"AWS","id":927,"name":"송백","address":"경상남도 밀양시 산내면 송백리 1532-1","lat":35.58197,"lon":128.88365,"height":126.74},{"type":"AWS","id":929,"name":"개천","address":"경상남도 고성군 개천면 청광리 418-8","lat":35.11369,"lon":128.30701,"height":129.52},{"type":"AWS","id":930,"name":"사량도","address":"경상남도 통영시 사량면 양지리 187-15","lat":34.80992,"lon":128.23814,"height":3.83},{"type":"AWS","id":931,"name":"욕지도","address":"경상남도 통영시 욕지면 동항리 376-3","lat":34.6223,"lon":128.27351,"height":73.75},{"type":"AWS","id":932,"name":"하동","address":"경상남도 하동군 하동읍 신기리 441-2","lat":35.06058,"lon":127.76664,"height":4.47},{"type":"AWS","id":933,"name":"금남","address":"경상남도 하동군 금남면 덕천리 842-4","lat":34.99676,"lon":127.83238,"height":32.22},{"type":"AWS","id":934,"name":"수곡","address":"경상남도 진주시 수곡면 사곡리 96-9","lat":35.2214,"lon":127.92848,"height":82.8},{"type":"AWS","id":935,"name":"청덕","address":"경상남도 합천군 청덕면 가현리 776-1","lat":35.56979,"lon":128.34114,"height":23.63},{"type":"AWS","id":936,"name":"신포","address":"경상남도 의령군 칠곡면 신포리 326","lat":35.33263,"lon":128.2023,"height":61.21},{"type":"AWS","id":937,"name":"해운대","address":"부산광역시 해운대구 우동 41-3","lat":35.17721,"lon":129.16068,"height":81.87},{"type":"AWS","id":938,"name":"부산진","address":"부산광역시 부산진구 개금동 445","lat":35.15888,"lon":129.01929,"height":114.38},{"type":"AWS","id":939,"name":"금정구","address":"부산광역시 금정구 두구동 1641","lat":35.2932,"lon":129.10348,"height":49.26},{"type":"AWS","id":940,"name":"동래","address":"부산광역시 동래구 복천동 1-2","lat":35.20914,"lon":129.09013,"height":70.07},{"type":"AWS","id":941,"name":"북구","address":"부산광역시 북구 덕천동 763-29","lat":35.21304,"lon":129.00258,"height":6.94},{"type":"AWS","id":942,"name":"부산남구","address":"부산광역시 남구 감만동 산44-1","lat":35.11863,"lon":129.08841,"height":124.26},{"type":"AWS","id":943,"name":"매곡","address":"울산광역시 북구 매곡동 838-31","lat":35.66706,"lon":129.37502,"height":460.23},{"type":"AWS","id":944,"name":"길곡","address":"경상남도 창녕군 길곡면 증산리 901-1","lat":35.38516,"lon":128.57005,"height":10.05},{"type":"AWS","id":945,"name":"대병","address":"경상남도 합천군 대병면 하금리 575","lat":35.53452,"lon":127.9901,"height":231.31},{"type":"AWS","id":946,"name":"북상","address":"경상남도 거창군 북상면 갈계리 1458","lat":35.78,"lon":127.81826,"height":324.25},{"type":"AWS","id":947,"name":"명사","address":"경상남도 거제시 남부면 저구리 423-3","lat":34.72193,"lon":128.5908,"height":30.51},{"type":"AWS","id":948,"name":"삼장","address":"경상남도 산청군 삼장면 덕교리 618-3","lat":35.31074,"lon":127.83448,"height":140.43},{"type":"AWS","id":949,"name":"정자","address":"울산광역시 북구 산하동 958-5","lat":35.6375,"lon":129.4412,"height":8.0},{"type":"AWS","id":950,"name":"사하","address":"부산광역시 사하구 괴정동 619-61","lat":35.09006,"lon":128.98393,"height":167.95},{"type":"AWS","id":953,"name":"장목","address":"경상남도 거제시 장목면 장목리 360-12","lat":34.99839,"lon":128.67977,"height":30.87},{"type":"AWS","id":954,"name":"온산","address":"울산광역시 울주군 온산읍 이진리 산 45-1","lat":35.43103,"lon":129.36011,"height":53.92},{"type":"AWS","id":974,"name":"대곡","address":"경상남도 진주시 대곡면 단목리 1758-5","lat":35.24434,"lon":128.15605,"height":17.52},{"type":"PORT","id":899,"name":"마산회원","address":"경상남도 창원시 마산회원구 삼호로 63","lat":35.22354,"lon":128.58215,"height":33.3},{"type":"PORT","id":898,"name":"장생포","address":"울산광역시 남구 매암동 139-90","lat":35.50482,"lon":129.386,"height":1.57}];
 function e(id){return document.getElementById(id)}function esc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}function err(x,s){e('emsg').innerHTML='<p><b>단계: '+esc(s)+'</b></p><p>'+esc(x&&x.message?x.message:x)+'</p>';e('estack').textContent=x&&x.stack?x.stack:'stack 없음';e('error').style.display='flex'}
 function num(v){if(v===null||v===undefined||v==='')return NaN;var n=Number(String(v).replace(/,/g,'').trim());return Number.isFinite(n)?n:NaN}function fin(v){return Number.isFinite(v)}function nk(k){return String(k==null?'':k).toLowerCase().replace(/[℃°%㎧]/g,'').replace(/\(.*?\)/g,'').replace(/[\s_\-./]/g,'')}
+var MOUNTAINS=[{"name":"지리산","lat":35.3371,"lon":127.7306,"height":1915,"src":"기상청 산악예보 지점정보"},{"name":"가야산","lat":35.823125,"lon":128.120825,"height":1430,"src":"기상청 산악예보 지점정보"},{"name":"기백산","lat":35.706667,"lon":127.781944,"height":1331,"src":"기상청 산악예보 지점정보"},{"name":"가지산","lat":35.620356,"lon":129.003089,"height":1240,"src":"기상청 산악예보 지점정보"},{"name":"황석산","lat":35.6552,"lon":127.7554,"height":1193,"src":"기상청 산악예보 지점정보"},{"name":"운문산","lat":35.615556,"lon":128.959167,"height":1188,"src":"기상청 산악예보 지점정보"},{"name":"신불산","lat":35.5397,"lon":129.0525,"height":1159,"src":"기상청 산악예보 지점정보"},{"name":"황매산","lat":35.495556,"lon":127.974167,"height":1108,"src":"기상청 산악예보 지점정보"},{"name":"웅석봉","lat":35.363611,"lon":127.876944,"height":1099,"src":"기상청 산악예보 지점정보"},{"name":"재약산","lat":35.545321,"lon":128.980166,"height":1078,"src":"기상청 산악예보 지점정보"},{"name":"천성산","lat":35.401319,"lon":129.106255,"height":915,"src":"기상청 산악예보 지점정보"},{"name":"금정산","lat":35.28,"lon":129.051111,"height":802,"src":"기상청 산악예보 지점정보"},{"name":"무학산","lat":35.209722,"lon":128.535,"height":761,"src":"기상청 산악예보 지점정보"},{"name":"화왕산","lat":35.5468,"lon":128.5325,"height":756,"src":"기상청 산악예보 지점정보"},{"name":"금산","lat":34.7531,"lon":127.9804,"height":705,"src":"기상청 산악예보 지점정보"},{"name":"장산","lat":35.194167,"lon":129.144444,"height":634,"src":"기상청 산악예보 지점정보"},{"name":"천태산","lat":35.420278,"lon":128.903056,"height":631,"src":"기상청 산악예보 지점정보"},{"name":"호구산","lat":34.791111,"lon":127.905278,"height":618,"src":"기상청 산악예보 지점정보"},{"name":"대성산","lat":35.385556,"lon":127.942778,"height":599,"src":"기상청 산악예보 지점정보"},{"name":"방어산","lat":35.253333,"lon":128.292778,"height":530,"src":"기상청 산악예보 지점정보"},{"name":"연화산","lat":35.071,"lon":128.265,"height":524,"src":"기상청 산악예보 지점정보"},{"name":"미륵산","lat":34.8104,"lon":128.4161,"height":458,"src":"기상청 산악예보 지점정보"},{"name":"봉명산","lat":35.085983,"lon":127.915081,"height":407,"src":"기상청 산악예보 지점정보"}];
 var A={id:['지점번호','지점','stn','stnid','stationid','id'],time:['관측시각','관측시간','시각','tm','time','datetime','date'],temp:['기온','ta','temp','temperature','airtemperature'],humidity:['습도','상대습도','hm','humidity','relativehumidity'],rn15:['강수15분','15분강수량','rn15','rn15m','rn-15m'],rn60:['강수60분','60분강수량','1시간강수량','rn60','rn60m','rn-60m','rnhr1'],rn12:['강수12시간','12시간강수량','rn12','rn12h','rn-12h'],rnday:['일강수량','강수일누적','rnday','rn-day'],daily:['일극값','dailyvalue','value'],wd:['풍향','wd','winddirection','winddir'],ws:['풍속','ws','windspeed']};Object.keys(A).forEach(function(k){A[k]=A[k].map(nk)});
 
 /* 바람 열은 평균주기 숫자를 보존해서 별도로 탐지한다.
@@ -392,7 +793,7 @@ function setWindMode(mode,rebuild){
     var id=m==='m1'?'wind1Btn':m==='m10'?'wind10Btn':'windUnknownBtn';
     e(id).classList.toggle('selected',m===mode);
   });
-  if(rebuild&&rawRows.length)applyRows(rawRows,sourceFileName,false);
+  if(rebuild&&rawRows.length)applyRows(rawRows,sourceFileName,false,true);
 }
 function configureWindSelector(){
   var c1=countWindForMode(rawRows,'m1'),c10=countWindForMode(rawRows,'m10'),cg=countWindForMode(rawRows,'generic');
@@ -428,7 +829,10 @@ function configureWindSelector(){
 
 function fv(r,k){var ks=Object.keys(r);for(var i=0;i<ks.length;i++)if(A[k].indexOf(nk(ks[i]))>=0)return r[ks[i]]}
 var stationById=new Map(S.map(function(s){return[Number(s.id),s]})),lats=S.map(s=>s.lat),lons=S.map(s=>s.lon),clat=(Math.min(...lats)+Math.max(...lats))/2,clon=(Math.min(...lons)+Math.max(...lons))/2;var latkm=(Math.max(...lats)-Math.min(...lats))*111,lonkm=(Math.max(...lons)-Math.min(...lons))*111*Math.cos(clat*Math.PI/180),homeH=Math.max(260000,Math.min(480000,Math.max(latkm,lonkm)*2200));
-var map,viewer,baseImgs=[],sat=false,bld=null,bldOn=false,shown={ASOS:true,AWS:true,PORT:true},ents={ASOS:[],AWS:[],PORT:[]},entMap=new Map(),wx=new Map(),tempLayer=null,tempOn=false,activeScalar=null,dataMode='instant',dailyObs='rn_day',wgridOn=false,wobsOn=false,wgrid=[],wobs=[],ready=false;
+var map,viewer,baseImgs=[],sat=false,bld=null,bldOn=false,adminLayer=null,adminOn=true,adminBusy=false,adminErrorShown=false,mountainOn=true,mountainEnts=[],shown={ASOS:true,AWS:true,PORT:true},ents={ASOS:[],AWS:[],PORT:[]},entMap=new Map(),wx=new Map(),tempLayer=null,tempOn=false,activeScalar=null,dataMode='instant',dailyObs='rn_day',wgridOn=false,wobsOn=false,wgrid=[],wobs=[],ready=false;
+var VWORLD_WMS_KEY='CD9939DD-4087-326C-A1F8-F077628FF9FB',VWORLD_WMS_DOMAIN='https://cumuls219.github.io/asos-3d-terrain/';
+/* 성능 최적화 상태: 분석장 캐시 / API 단기 캐시 / 바람 재렌더 지연 */
+var scalarCache=new Map(),dataRevision=0,apiCache=new Map(),windRedrawTimer=null,dataOpSeq=0;
 function marker(t){var c=document.createElement('canvas');c.width=c.height=48;var x=c.getContext('2d');
 if(t==='ASOS'){x.beginPath();x.arc(24,24,12,0,Math.PI*2);x.fillStyle='#38bdf8';x.fill();x.lineWidth=3;x.strokeStyle='#fff';x.stroke()}
 else if(t==='PORT'){x.beginPath();x.moveTo(24,11);x.lineTo(37,35);x.lineTo(11,35);x.closePath();x.fillStyle='#10b981';x.fill();x.lineWidth=3;x.strokeStyle='#fff';x.stroke()}
@@ -454,11 +858,102 @@ function label(s){var en=entMap.get(s.type+'-'+s.id),w=wx.get(s.id),t=s.id+' '+s
 if(w){var fld=activeScalar||(dataMode==='daily'?'daily':'temp'),meta=scalarMeta(fld),v=w[fld];if(fin(v))t+='\n'+v.toFixed(meta.unit==='%'?0:1)+meta.unit}
 if(en&&en.label)en.label.text=new Cesium.ConstantProperty(t)}
 function addStation(s,i){var isA=s.type==='ASOS',isP=s.type==='PORT',en=viewer.entities.add({id:'st-'+s.type+'-'+s.id,position:Cesium.Cartesian3.fromDegrees(s.lon,s.lat,0),billboard:{image:MI[s.type],width:isA?34:isP?32:31,height:isA?34:isP?32:31,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,disableDepthTestDistance:Number.POSITIVE_INFINITY,scaleByDistance:new Cesium.NearFarScalar(1000,1.12,300000,.44)},label:{text:s.id+' '+s.name,font:isA?'700 13px Malgun Gothic':isP?'700 12px Malgun Gothic':'600 12px Malgun Gothic',fillColor:isA?Cesium.Color.fromCssColorString('#e0f2fe'):isP?Cesium.Color.fromCssColorString('#d1fae5'):Cesium.Color.fromCssColorString('#ffedd5'),outlineColor:Cesium.Color.BLACK,outlineWidth:3,style:Cesium.LabelStyle.FILL_AND_OUTLINE,pixelOffset:new Cesium.Cartesian2(0,-25),verticalOrigin:Cesium.VerticalOrigin.BOTTOM,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,disableDepthTestDistance:Number.POSITIVE_INFINITY,distanceDisplayCondition:new Cesium.DistanceDisplayCondition(0,isA?115000:isP?90000:70000)}});en.__idx=i;ents[s.type].push(en);entMap.set(s.type+'-'+s.id,en)}
+function mountainMaxDistance(h){
+  if(h>=1300)return 560000;
+  if(h>=1100)return 470000;
+  if(h>=900)return 360000;
+  if(h>=700)return 260000;
+  if(h>=550)return 190000;
+  return 135000;
+}
+function addMountain(m,i){
+  var maxD=mountainMaxDistance(m.height),labelText=m.name+'('+Number(m.height).toLocaleString('ko-KR',{maximumFractionDigits:1})+'m)';
+  var en=viewer.entities.add({
+    id:'mt-'+i,
+    position:Cesium.Cartesian3.fromDegrees(m.lon,m.lat,0),
+    point:{pixelSize:m.height>=1100?7:6,color:Cesium.Color.fromCssColorString('#fde047'),outlineColor:Cesium.Color.fromCssColorString('#111827'),outlineWidth:2,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,disableDepthTestDistance:Number.POSITIVE_INFINITY,distanceDisplayCondition:new Cesium.DistanceDisplayCondition(0,maxD)},
+    label:{text:labelText,font:m.height>=1100?'700 13px Malgun Gothic':'700 12px Malgun Gothic',fillColor:Cesium.Color.WHITE,outlineColor:Cesium.Color.BLACK,outlineWidth:4,style:Cesium.LabelStyle.FILL_AND_OUTLINE,pixelOffset:new Cesium.Cartesian2(0,-18),verticalOrigin:Cesium.VerticalOrigin.BOTTOM,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,disableDepthTestDistance:Number.POSITIVE_INFINITY,distanceDisplayCondition:new Cesium.DistanceDisplayCondition(0,maxD),scaleByDistance:new Cesium.NearFarScalar(25000,1.05,maxD,.72)}
+  });
+  en.__mountainIndex=i;
+  mountainEnts.push(en);
+}
+function mountains(on){
+  mountainOn=!!on;
+  mountainEnts.forEach(function(en){en.show=mountainOn});
+  var b=e('mountainBtn');if(b){b.textContent='주요 산 '+(mountainOn?'ON':'OFF');b.classList.toggle('on',mountainOn)}
+}
+function mountainPopup(click,m){
+  var ht=Number(m.height).toLocaleString('ko-KR',{maximumFractionDigits:1}),rows=
+    '<tr><th>구분</th><td>주요 산 정상</td></tr>'+ 
+    '<tr><th>위도/경도</th><td>'+m.lat.toFixed(6)+', '+m.lon.toFixed(6)+'</td></tr>'+ 
+    '<tr><th>고도</th><td>'+ht+' m</td></tr>'+ 
+    '<tr><th>자료 기준</th><td>'+esc(m.src)+'</td></tr>';
+  e('popupContent').innerHTML='<b>'+esc(m.name)+'('+ht+'m)</b><span class="badge mountain">산악지점</span><table>'+rows+'</table>';
+  var p=e('popup');p.style.display='block';p.style.left=Math.max(8,Math.min(click.position.x+12,window.innerWidth-375))+'px';p.style.top=Math.max(8,Math.min(click.position.y+12,window.innerHeight-330))+'px';
+}
 function network(t,on){shown[t]=on;ents[t].forEach(x=>x.show=on);var id=t==='ASOS'?'asosBtn':t==='AWS'?'awsBtn':'portBtn',nm=t==='PORT'?'항만':t,b=e(id);b.textContent=nm+' '+(on?'ON':'OFF');b.classList.toggle('on',on)}
 function satellite(on){sat=on;baseImgs.forEach(function(l){try{l.show=on}catch(x){}});e('satBtn').textContent='위성 '+(on?'ON':'OFF');e('satBtn').classList.toggle('on',on)}
 function buildings(on){try{if(!bld)bld=map.getLayerElement('facility_build');if(!bld){e('status').textContent='3D 건물 레이어가 아직 준비되지 않았습니다.';return}bldOn=on;if(on)bld.show();else bld.hide();e('bldBtn').textContent='3D 건물 '+(on?'ON':'OFF');e('bldBtn').classList.toggle('on',on)}catch(x){err(x,'건물 레이어')}}
 function resolveB(n){try{bld=map.getLayerElement('facility_build');if(bld){bld.hide();return}}catch(x){}if(n<12)setTimeout(()=>resolveB(n+1),500)}
-function terrainMode(){var sc=viewer.scene;try{sc.globe.baseColor=Cesium.Color.fromCssColorString('#d6d1c7');sc.globe.enableLighting=true;sc.globe.showGroundAtmosphere=false;if(sc.fog)sc.fog.enabled=false;viewer.resolutionScale=Math.min(window.devicePixelRatio||1,2);sc.globe.maximumScreenSpaceError=1.2}catch(x){}for(var i=0;i<sc.imageryLayers.length;i++)baseImgs.push(sc.imageryLayers.get(i));satellite(true);setTimeout(function(){for(var i=0;i<sc.imageryLayers.length;i++){var l=sc.imageryLayers.get(i);if(l!==tempLayer&&baseImgs.indexOf(l)<0)baseImgs.push(l)}satellite(true)},1200)}
+
+function adminBoundary(on){
+  adminOn=!!on;
+  var btn=e('adminBtn');
+  if(btn){btn.textContent='시군구 경계 '+(adminOn?'ON':'OFF');btn.classList.toggle('on',adminOn)}
+  if(!adminOn){if(adminLayer)adminLayer.show=false;return}
+  if(adminLayer){adminLayer.show=true;try{viewer.scene.imageryLayers.raiseToTop(adminLayer)}catch(x){}return}
+  if(adminBusy||!viewer)return;
+  adminBusy=true;
+  try{
+    var domain=(location.hostname==='cumuls219.github.io')?VWORLD_WMS_DOMAIN:VWORLD_WMS_DOMAIN;
+    var provider=new Cesium.WebMapServiceImageryProvider({
+      url:'https://map.vworld.kr/js/wms.do',
+      layers:'lt_c_adsigg',
+      parameters:{
+        TRANSPARENT:'true',FORMAT:'image/png',STYLES:'lt_c_adsigg',
+        APIKEY:VWORLD_WMS_KEY,DOMAIN:domain,VERSION:'1.3.0'
+      },
+      rectangle:Cesium.Rectangle.fromDegrees(127.35,34.45,129.75,35.95),
+      minimumLevel:6,maximumLevel:16,enablePickFeatures:false
+    });
+    if(provider.errorEvent&&provider.errorEvent.addEventListener){
+      provider.errorEvent.addEventListener(function(){
+        if(!adminErrorShown){adminErrorShown=true;e('status').textContent='시군구 경계 WMS를 불러오지 못했습니다. V-World 인증/네트워크를 확인하세요.'}
+      });
+    }
+    adminLayer=viewer.scene.imageryLayers.addImageryProvider(provider);
+    adminLayer.alpha=.92;adminLayer.show=true;
+    try{viewer.scene.imageryLayers.raiseToTop(adminLayer)}catch(x){}
+  }catch(x){
+    adminOn=false;if(btn){btn.textContent='시군구 경계 실패';btn.classList.remove('on')}
+    e('status').textContent='시군구 경계 레이어 초기화 실패';
+  }finally{adminBusy=false}
+}
+function openGuide(){var m=e('guideModal');if(m){m.classList.add('open');e('guideClose').focus()}}
+function closeGuide(){var m=e('guideModal');if(m)m.classList.remove('open')}
+
+function terrainMode(){
+  var sc=viewer.scene;
+  try{
+    sc.globe.baseColor=Cesium.Color.fromCssColorString('#d6d1c7');
+    sc.globe.enableLighting=true;
+    sc.globe.showGroundAtmosphere=false;
+    if(sc.fog)sc.fog.enabled=false;
+    var dpr=window.devicePixelRatio||1,
+        lowSpec=(navigator.hardwareConcurrency&&navigator.hardwareConcurrency<=4)||(navigator.deviceMemory&&navigator.deviceMemory<=4);
+    viewer.resolutionScale=Math.min(dpr,lowSpec?1.25:1.6);
+    sc.globe.maximumScreenSpaceError=lowSpec?1.8:1.4;
+  }catch(x){}
+  for(var i=0;i<sc.imageryLayers.length;i++)if(baseImgs.indexOf(sc.imageryLayers.get(i))<0)baseImgs.push(sc.imageryLayers.get(i));
+  satellite(true);
+  setTimeout(function(){
+    for(var i=0;i<sc.imageryLayers.length;i++){
+      var l=sc.imageryLayers.get(i);
+      if(l!==tempLayer&&l!==adminLayer&&baseImgs.indexOf(l)<0)baseImgs.push(l);
+    }
+    satellite(true);
+  },1200);
+}
 function fillSelect(){var s=e('stationSelect');['ASOS','AWS','PORT'].forEach(function(t){var g=document.createElement('optgroup');g.label=t==='PORT'?'항만기상관측장비':t;S.filter(x=>x.type===t).forEach(function(x){var o=document.createElement('option');o.value=x.type+'-'+x.id;o.textContent=x.id+' · '+x.name;g.appendChild(o)});s.appendChild(g)})}
 function home(){viewer.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(clon,clat,homeH),orientation:{heading:0,pitch:Cesium.Math.toRadians(-50),roll:0},duration:1.3})}function fly(s){if(!shown[s.type])network(s.type,true);viewer.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(s.lon,s.lat,1200),orientation:{heading:Cesium.Math.toRadians(20),pitch:Cesium.Math.toRadians(-32),roll:0},duration:1.5})}
 function hull(P){if(P.length<=2)return P.slice();P=P.slice().sort((a,b)=>a.x===b.x?a.y-b.y:a.x-b.x);function c(o,a,b){return(a.x-o.x)*(b.y-o.y)-(a.y-o.y)*(b.x-o.x)}var l=[],u=[];P.forEach(p=>{while(l.length>=2&&c(l[l.length-2],l[l.length-1],p)<=0)l.pop();l.push(p)});for(var i=P.length-1;i>=0;i--){var p=P[i];while(u.length>=2&&c(u[u.length-2],u[u.length-1],p)<=0)u.pop();u.push(p)}l.pop();u.pop();return l.concat(u)}function inside(x,y,p){var z=false;for(var i=0,j=p.length-1;i<p.length;j=i++){var a=p[i],b=p[j];if(((a.y>y)!=(b.y>y))&&(x<(b.x-a.x)*(y-a.y)/(b.y-a.y+1e-30)+a.x))z=!z}return z}function km(a,b,c,d){var R=6371,r=Math.PI/180,da=(c-a)*r,do1=(d-b)*r,q=Math.sin(da/2)**2+Math.cos(a*r)*Math.cos(c*r)*Math.sin(do1/2)**2;return 2*R*Math.asin(Math.sqrt(q))}function idw(lat,lon,P,k){var sw=0,sv=0;for(var i=0;i<P.length;i++){var d=km(lat,lon,P[i].lat,P[i].lon);if(d<.03)return P[i][k];var w=1/(d*d);sw+=w;sv+=w*P[i][k]}return sw?sv/sw:NaN}
@@ -468,6 +963,83 @@ function rampHumidity(t){return interpRamp(t,[[0,[161,98,7]],[.2,[253,230,138]],
 function rampRain(t){return interpRamp(t,[[0,[255,245,70]],[.16,[185,255,70]],[.34,[35,210,105]],[.52,[255,205,0]],[.70,[255,120,0]],[.86,[235,45,45]],[1,[185,35,215]]])}
 function rampWindMax(t){return interpRamp(t,[[0,[254,252,232]],[.25,[253,230,138]],[.5,[251,146,60]],[.75,[239,68,68]],[1,[153,27,27]]])}
 function scalarColor(t,palette){if(palette==='humidity')return rampHumidity(t);if(palette==='rain')return rampRain(Math.sqrt(Math.max(0,t)));if(palette==='windmax')return rampWindMax(t);return rampTemp(t)}
+
+function invalidateScalarCache(){dataRevision++;scalarCache.clear()}
+function rememberScalarCache(key,obj){
+  if(scalarCache.size>=4){var first=scalarCache.keys().next();if(!first.done)scalarCache.delete(first.value)}
+  scalarCache.set(key,obj);
+}
+function mountScalar(field,obj){
+  var meta=scalarMeta(field);
+  try{
+    var p=new Cesium.SingleTileImageryProvider({
+      url:obj.url,
+      rectangle:Cesium.Rectangle.fromDegrees(obj.W,obj.S0,obj.E,obj.N)
+    });
+    tempLayer=viewer.scene.imageryLayers.addImageryProvider(p);
+    tempLayer.alpha=Number(e('alpha').value);
+    if(adminLayer&&adminOn){try{viewer.scene.imageryLayers.raiseToTop(adminLayer)}catch(x){}}
+    tempOn=true;activeScalar=field;
+    var btnId=field==='temp'?'tempBtn':field==='humidity'?'hmBtn':field==='daily'?'dailyBtn':'rainBtn',
+        btn=e(btnId),
+        cls=field==='daily'?'daily':meta.palette==='temp'?'temp':meta.palette==='humidity'?'humidity':meta.palette==='rain'?'rain':'daily';
+    btn.textContent=meta.label+'장 ON';btn.classList.add('on',cls);
+    e('grad').className=meta.palette;
+    e('tempLegend').style.display='block';
+    e('tmin').textContent=obj.mn.toFixed(meta.unit==='%'?0:1)+meta.unit;
+    e('tmax').textContent=obj.mx.toFixed(meta.unit==='%'?0:1)+meta.unit;
+    e('legendTitle').textContent='IDW p=2 · '+meta.label;
+    S.forEach(label);
+    return true;
+  }catch(x){err(x,meta.label+' Draping');return false}
+}
+/* Raster 전용 IDW(p=2).
+   Haversine의 q항을 행/열별로 미리 계산해 삼각함수 호출을 크게 줄인다.
+   부산·울산·경남 규모에서는 원 거리식과 시각적/수치적으로 사실상 동일한 가중치를 유지한다. */
+function rasterIdwImage(P,W,E,S0,N,mn,mx,meta,cw,ch){
+  var rad=Math.PI/180,R=6371,
+      nearQ=Math.pow(.03/(2*R),2),
+      sp=Math.max(.0001,mx-mn),
+      c=document.createElement('canvas');
+  c.width=cw;c.height=ch;
+  var ctx=c.getContext('2d',{alpha:true}),im=ctx.createImageData(cw,ch),d=im.data,
+      prep=P.map(function(p){
+        var lr=p.lat*rad,or=p.lon*rad;
+        return{latr:lr,lonr:or,coslat:Math.cos(lr),value:p.value};
+      }),
+      lonQ=prep.map(function(){return new Float64Array(cw)}),
+      lonRad=new Float64Array(cw);
+  for(var i=0;i<cw;i++)lonRad[i]=(W+(E-W)*i/(cw-1))*rad;
+  for(var k=0;k<prep.length;k++){
+    for(var i2=0;i2<cw;i2++){
+      var sd=Math.sin((lonRad[i2]-prep[k].lonr)/2);
+      lonQ[k][i2]=sd*sd;
+    }
+  }
+  var a=new Float64Array(prep.length),b=new Float64Array(prep.length);
+  for(var y=0;y<ch;y++){
+    var lat=N-(N-S0)*y/(ch-1),lr=lat*rad,cl=Math.cos(lr);
+    for(var k2=0;k2<prep.length;k2++){
+      var sl=Math.sin((lr-prep[k2].latr)/2);
+      a[k2]=sl*sl;b[k2]=cl*prep[k2].coslat;
+    }
+    for(var x=0;x<cw;x++){
+      var sw=0,sv=0,v=NaN;
+      for(var k3=0;k3<prep.length;k3++){
+        var q=a[k3]+b[k3]*lonQ[k3][x];
+        if(q<nearQ){v=prep[k3].value;sw=-1;break}
+        var w=1/Math.max(q,1e-30);
+        sw+=w;sv+=w*prep[k3].value;
+      }
+      if(sw!==-1)v=sw?sv/sw:NaN;
+      var z=(v-mn)/sp,rgb=scalarColor(z,meta.palette),ix=(y*cw+x)*4;
+      d[ix]=rgb[0];d[ix+1]=rgb[1];d[ix+2]=rgb[2];d[ix+3]=255;
+    }
+  }
+  ctx.putImageData(im,0,0);
+  return c;
+}
+
 function clearTemp(updateLabels){
   if(updateLabels===undefined)updateLabels=true;
   if(tempLayer){try{viewer.scene.imageryLayers.remove(tempLayer,true)}catch(x){}tempLayer=null}
@@ -478,6 +1050,10 @@ function clearTemp(updateLabels){
 }
 function buildScalar(field){
   clearTemp(false);
+  var cacheKey=dataRevision+'|'+field+(field==='daily'?'|'+dailyObs:''),
+      cached=scalarCache.get(cacheKey);
+  if(cached)return mountScalar(field,cached);
+
   var P=[];
   wx.forEach(function(w,id){
     var s=stationById.get(id),v=w?num(w[field]):NaN;
@@ -493,51 +1069,70 @@ function buildScalar(field){
       N=Math.max.apply(null,P.map(function(p){return p.lat})),
       mn=Math.min.apply(null,P.map(function(p){return p.value})),
       mx=Math.max.apply(null,P.map(function(p){return p.value})),
-      sp=Math.max(.0001,mx-mn),
-      cw=640,ch=640,c=document.createElement('canvas');
-
-  c.width=cw;c.height=ch;
-  var x=c.getContext('2d'),im=x.createImageData(cw,ch),d=im.data;
-  for(var y=0;y<ch;y++){
-    var lat=N-(N-S0)*y/(ch-1);
-    for(var i=0;i<cw;i++){
-      var lon=W+(E-W)*i/(cw-1),ix=(y*cw+i)*4,
-          v=idw(lat,lon,P,'value'),z=(v-mn)/sp,rgb=scalarColor(z,meta.palette);
-      d[ix]=rgb[0];d[ix+1]=rgb[1];d[ix+2]=rgb[2];d[ix+3]=255;
-    }
-  }
-  x.putImageData(im,0,0);
+      cw=640,ch=640,
+      c=rasterIdwImage(P,W,E,S0,N,mn,mx,meta,cw,ch),
+      x=c.getContext('2d');
 
   var hard=document.createElement('canvas');hard.width=cw;hard.height=ch;
   var hctx=hard.getContext('2d');hctx.fillStyle='rgba(255,255,255,1)';hctx.beginPath();
-  H.forEach(function(p,k){var px=(p.x-W)/(E-W)*(cw-1),py=(N-p.y)/(N-S0)*(ch-1);if(k===0)hctx.moveTo(px,py);else hctx.lineTo(px,py)});
+  H.forEach(function(p,k){
+    var px=(p.x-W)/(E-W)*(cw-1),py=(N-p.y)/(N-S0)*(ch-1);
+    if(k===0)hctx.moveTo(px,py);else hctx.lineTo(px,py);
+  });
   hctx.closePath();hctx.fill();
+
   var soft=document.createElement('canvas');soft.width=cw;soft.height=ch;
-  var sctx=soft.getContext('2d');sctx.filter='blur(8px)';sctx.drawImage(hard,0,0);sctx.filter='none';sctx.globalCompositeOperation='destination-in';sctx.drawImage(hard,0,0);sctx.globalCompositeOperation='source-over';
+  var sctx=soft.getContext('2d');sctx.filter='blur(8px)';sctx.drawImage(hard,0,0);
+  sctx.filter='none';sctx.globalCompositeOperation='destination-in';sctx.drawImage(hard,0,0);
+  sctx.globalCompositeOperation='source-over';
   x.globalCompositeOperation='destination-in';x.drawImage(soft,0,0);x.globalCompositeOperation='source-over';
 
-  try{
-    var p=new Cesium.SingleTileImageryProvider({url:c.toDataURL('image/png'),rectangle:Cesium.Rectangle.fromDegrees(W,S0,E,N)});
-    tempLayer=viewer.scene.imageryLayers.addImageryProvider(p);tempLayer.alpha=Number(e('alpha').value);tempOn=true;activeScalar=field;
-    var btnId=field==='temp'?'tempBtn':field==='humidity'?'hmBtn':field==='daily'?'dailyBtn':'rainBtn';
-    var btn=e(btnId),cls=field==='daily'?'daily':meta.palette==='temp'?'temp':meta.palette==='humidity'?'humidity':meta.palette==='rain'?'rain':'daily';
-    btn.textContent=meta.label+'장 ON';btn.classList.add('on',cls);
-    var grad=e('grad');grad.className=meta.palette;
-    e('tempLegend').style.display='block';
-    e('tmin').textContent=mn.toFixed(meta.unit==='%'?0:1)+meta.unit;
-    e('tmax').textContent=mx.toFixed(meta.unit==='%'?0:1)+meta.unit;
-    e('legendTitle').textContent='IDW p=2 · '+meta.label;
-    S.forEach(label);
-    return true;
-  }catch(x){err(x,meta.label+' Draping');return false}
+  var obj={url:c.toDataURL('image/png'),W:W,E:E,S0:S0,N:N,mn:mn,mx:mx};
+  rememberScalarCache(cacheKey,obj);
+  return mountScalar(field,obj);
 }
 function buildTemp(){return buildScalar('temp')}
 function buildHumidity(){return buildScalar('humidity')}
 function selectedRainField(){return e('rainAccum')?e('rainAccum').value:'rn60'}
 function buildRain(){return buildScalar(selectedRainField())}
 function buildDaily(){return buildScalar('daily')}
-function uv(wd,ws){var r=wd*Math.PI/180;return{u:-ws*Math.sin(r),v:-ws*Math.cos(r)}}function endp(lat,lon,u,v){var m=2300*Number(e('wscale').value),dn=v*m,de=u*m;return{lat:lat+dn/111320,lon:lon+de/(111320*Math.max(.2,Math.cos(lat*Math.PI/180)))}}function clearW(a){while(a.length){try{viewer.entities.remove(a.pop())}catch(x){}}}function arrow(lat,lon,u,v,col,a){if(Math.hypot(u,v)<.05)return;var z=endp(lat,lon,u,v),th=Number(e('wthick').value);a.push(viewer.entities.add({polyline:{positions:Cesium.Cartesian3.fromDegreesArray([lon,lat,z.lon,z.lat]),width:th,clampToGround:true,material:new Cesium.PolylineArrowMaterialProperty(col)}}))}
-function obsWind(){clearW(wobs);wx.forEach(function(w,id){var s=stationById.get(id);if(!s||!fin(w.wd)||!fin(w.ws))return;var q=uv(w.wd,w.ws);arrow(s.lat,s.lon,q.u,q.v,Cesium.Color.fromCssColorString('#111827').withAlpha(.94),wobs)})}function gridWind(){
+function uv(wd,ws){var r=wd*Math.PI/180;return{u:-ws*Math.sin(r),v:-ws*Math.cos(r)}}function endp(lat,lon,u,v,scale){
+  var m=2300*scale,dn=v*m,de=u*m;
+  return{lat:lat+dn/111320,lon:lon+de/(111320*Math.max(.2,Math.cos(lat*Math.PI/180)))};
+}
+function clearW(a){while(a.length){try{viewer.entities.remove(a.pop())}catch(x){}}}
+function arrow(lat,lon,u,v,col,a,th,scale){
+  if(Math.hypot(u,v)<.05)return;
+  var z=endp(lat,lon,u,v,scale);
+  a.push(viewer.entities.add({
+    polyline:{
+      positions:Cesium.Cartesian3.fromDegreesArray([lon,lat,z.lon,z.lat]),
+      width:th,clampToGround:true,
+      material:new Cesium.PolylineArrowMaterialProperty(col)
+    }
+  }));
+}
+function idwUV(lat,lon,P){
+  var sw=0,su=0,sv=0;
+  for(var i=0;i<P.length;i++){
+    var d=km(lat,lon,P[i].lat,P[i].lon);
+    if(d<.03)return{u:P[i].u,v:P[i].v};
+    var w=1/(d*d);sw+=w;su+=w*P[i].u;sv+=w*P[i].v;
+  }
+  return sw?{u:su/sw,v:sv/sw}:{u:NaN,v:NaN};
+}
+function obsWind(){
+  clearW(wobs);
+  var th=Number(e('wthick').value),scale=Number(e('wscale').value),
+      col=Cesium.Color.fromCssColorString('#111827').withAlpha(.94);
+  wx.forEach(function(w,id){
+    var s=stationById.get(id);
+    if(!s||!fin(w.wd)||!fin(w.ws))return;
+    var q=uv(w.wd,w.ws);
+    arrow(s.lat,s.lon,q.u,q.v,col,wobs,th,scale);
+  });
+}
+function gridWind(){
   clearW(wgrid);
   var P=[];
   wx.forEach(function(w,id){
@@ -552,31 +1147,37 @@ function obsWind(){clearW(wobs);wx.forEach(function(w,id){var s=stationById.get(
       W=Math.min.apply(null,P.map(function(p){return p.lon})),
       E=Math.max.apply(null,P.map(function(p){return p.lon})),
       S0=Math.min.apply(null,P.map(function(p){return p.lat})),
-      N=Math.max.apply(null,P.map(function(p){return p.lat}));
-
-  /* 기존 14×12 고정 대신 동서방향 밀도를 14~32로 조절.
-     남북방향은 실제 거리 종횡비에 맞춰 자동 계산한다. */
-  var nx=Math.round(Number(e('wdensity').value)),
+      N=Math.max.apply(null,P.map(function(p){return p.lat})),
+      nx=Math.round(Number(e('wdensity').value)),
       mid=(S0+N)/2*Math.PI/180,
       xkm=Math.max(1,(E-W)*111.32*Math.cos(mid)),
       ykm=Math.max(1,(N-S0)*111.32),
-      ny=Math.max(8,Math.min(30,Math.round((nx-1)*(ykm/xkm))+1));
+      ny=Math.max(8,Math.min(30,Math.round((nx-1)*(ykm/xkm))+1)),
+      th=Number(e('wthick').value),
+      scale=Number(e('wscale').value),
+      col=Cesium.Color.fromCssColorString('#172554').withAlpha(.92);
 
   for(var j=0;j<ny;j++){
     var lat=S0+(N-S0)*j/(ny-1);
     for(var i=0;i<nx;i++){
       var lon=W+(E-W)*i/(nx-1);
       if(!inside(lon,lat,H))continue;
-      arrow(
-        lat,lon,
-        idw(lat,lon,P,'u'),
-        idw(lat,lon,P,'v'),
-        Cesium.Color.fromCssColorString('#172554').withAlpha(.92),
-        wgrid
-      );
+      var q=idwUV(lat,lon,P);
+      arrow(lat,lon,q.u,q.v,col,wgrid,th,scale);
     }
   }
   return true;
+}
+function cancelWindRedraw(){
+  if(windRedrawTimer){clearTimeout(windRedrawTimer);windRedrawTimer=null}
+}
+function scheduleWindRedraw(grid,obs){
+  cancelWindRedraw();
+  windRedrawTimer=setTimeout(function(){
+    windRedrawTimer=null;
+    if(grid&&wgridOn)gridWind();
+    if(obs&&wobsOn)obsWind();
+  },90);
 }
 function csv(t){var R=[],r=[],c='',q=false;for(var i=0;i<t.length;i++){var h=t[i],n=t[i+1];if(h==='"'){if(q&&n==='"'){c+='"';i++}else q=!q}else if((h===','||h==='\t')&&!q){r.push(c);c=''}else if((h==='\n'||h==='\r')&&!q){if(h==='\r'&&n==='\n')i++;r.push(c);c='';if(r.some(v=>String(v).trim()!==''))R.push(r);r=[]}else c+=h}if(c||r.length){r.push(c);R.push(r)}if(!R.length)return[];var H=R[0].map(v=>String(v).trim());return R.slice(1).map(function(a){var o={};H.forEach((h,i)=>o[h]=a[i]===undefined?'':a[i]);return o})}
 
@@ -673,7 +1274,7 @@ function proxyRequestUrl(params){
   return u.toString();
 }
 async function fetchKmaData(){
-  var mode=e('apiMode').value,btn=e('apiFetchBtn'),tm='',obs='';
+  var op=++dataOpSeq,mode=e('apiMode').value,btn=e('apiFetchBtn'),tm='',obs='';
   if(mode==='daily'){
     tm=localDateToKma(e('apiDate').value);obs=e('dailyObs').value;
     if(!tm){e('apiState').textContent='날짜를 선택하세요.';e('apiState').className='bad';return}
@@ -686,10 +1287,18 @@ async function fetchKmaData(){
   e('apiState').textContent=mode==='daily'?'기상청 일통계 '+tm+' '+dailyMeta(obs).label+' 조회 중…':'기상청 매분자료 '+tm+' KST 조회 중…';
 
   try{
-    var params=mode==='daily'?{mode:'day',tm2:tm,obs:obs}:{mode:'min',tm2:tm};
-    var res=await fetch(proxyRequestUrl(params),{method:'GET',cache:'no-store'});
-    if(!res.ok)throw new Error('HTTP '+res.status+' '+res.statusText);
-    var body=await res.text();
+    var params=mode==='daily'?{mode:'day',tm2:tm,obs:obs}:{mode:'min',tm2:tm},
+        reqUrl=proxyRequestUrl(params),cached=apiCache.get(reqUrl),body='',now=Date.now();
+    if(cached&&now-cached.at<20000){
+      body=cached.body;
+    }else{
+      var res=await fetch(reqUrl,{method:'GET',cache:'no-store'});
+      if(!res.ok)throw new Error('HTTP '+res.status+' '+res.statusText);
+      body=await res.text();
+      if(apiCache.size>=8){var first=apiCache.keys().next();if(!first.done)apiCache.delete(first.value)}
+      apiCache.set(reqUrl,{at:now,body:body});
+    }
+    if(op!==dataOpSeq)return;
     if(/인증|auth.*(error|fail)|denied|invalid key/i.test(body)&&body.length<1200)throw new Error('API 응답 오류: '+body.slice(0,180));
 
     var all=mode==='daily'?parseKmaDailyText(body,obs):parseKmaAwsText(body);
@@ -724,16 +1333,19 @@ async function fetchKmaData(){
 
 function timeText(v){if(typeof XLSX!=='undefined'&&typeof v==='number'&&v>20000&&XLSX.SSF){var d=XLSX.SSF.parse_date_code(v);if(d)return d.y+'-'+String(d.m).padStart(2,'0')+'-'+String(d.d).padStart(2,'0')+' '+String(d.H).padStart(2,'0')+':'+String(d.M).padStart(2,'0')}return String(v==null?'':v)}
 function countField(M,field){var c=0;M.forEach(function(w){if(fin(w[field]))c++});return c}
-function updateRainAvailability(){
+function updateRainAvailability(rebuildActive){
+  if(rebuildActive===undefined)rebuildActive=true;
   if(dataMode!=='instant'){e('rainBtn').disabled=true;return}
   var f=selectedRainField(),c=countField(wx,f);
   e('rainBtn').disabled=c<3;
-  if(tempOn&&activeScalar&&['rn15','rn60','rn12','rnday'].indexOf(activeScalar)>=0)buildRain();
+  if(rebuildActive&&tempOn&&activeScalar&&['rn15','rn60','rn12','rnday'].indexOf(activeScalar)>=0)buildRain();
 }
-function applyRows(R,name,autoDraw){
+function applyRows(R,name,autoDraw,preserveVisuals){
   if(autoDraw===undefined)autoDraw=true;
+  preserveVisuals=!!preserveVisuals;
   dataMode='instant';
-  var M=new Map(),unk=new Set(),dup=new Set(),times=new Set(),bad=0;
+  var keepGrid=preserveVisuals&&wgridOn,keepObs=preserveVisuals&&wobsOn,
+      M=new Map(),unk=new Set(),dup=new Set(),times=new Set(),bad=0;
 
   R.forEach(function(r){
     var id=Math.trunc(num(fv(r,'id')));
@@ -762,16 +1374,24 @@ function applyRows(R,name,autoDraw){
     M.set(id,old);
   });
 
-  wx=M;clearTemp();clearW(wgrid);clearW(wobs);wgridOn=wobsOn=false;
-  e('windGridBtn').textContent='바람장 OFF';e('windObsBtn').textContent='관측바람 OFF';
-  e('windGridBtn').classList.remove('on');e('windObsBtn').classList.remove('on');
+  cancelWindRedraw();
+  wx=M;
+  if(!preserveVisuals){
+    invalidateScalarCache();
+    clearTemp();clearW(wgrid);clearW(wobs);wgridOn=wobsOn=false;
+    e('windGridBtn').textContent='바람장 OFF';e('windObsBtn').textContent='관측바람 OFF';
+    e('windGridBtn').classList.remove('on');e('windObsBtn').classList.remove('on');
+  }else{
+    if(keepGrid)clearW(wgrid);
+    if(keepObs)clearW(wobs);
+  }
 
   var tc=countField(M,'temp'),hc=countField(M,'humidity'),
       r15=countField(M,'rn15'),r60=countField(M,'rn60'),r12=countField(M,'rn12'),rd=countField(M,'rnday'),wc=0;
   M.forEach(function(w){if(fin(w.wd)&&fin(w.ws))wc++});
 
   e('tempBtn').disabled=tc<3;e('hmBtn').disabled=hc<3;e('dailyBtn').disabled=true;
-  updateRainAvailability();
+  updateRainAvailability(!preserveVisuals);
   e('windGridBtn').disabled=wc<3;e('windObsBtn').disabled=wc<1;
 
   var ts=times.size===0?'관측시각 미기재':times.size===1?Array.from(times)[0]:'여러 시각 '+times.size+'개';
@@ -795,6 +1415,17 @@ function applyRows(R,name,autoDraw){
   if(autoDraw){
     if(tc>=3)buildTemp();
     if(wc>=3){wgridOn=true;gridWind();e('windGridBtn').textContent='바람장 ON';e('windGridBtn').classList.add('on')}
+  }else if(preserveVisuals){
+    if(keepGrid&&wc>=3){
+      wgridOn=true;gridWind();e('windGridBtn').textContent='바람장 ON';e('windGridBtn').classList.add('on');
+    }else if(keepGrid){
+      wgridOn=false;e('windGridBtn').textContent='바람장 OFF';e('windGridBtn').classList.remove('on');
+    }
+    if(keepObs&&wc>=1){
+      wobsOn=true;obsWind();e('windObsBtn').textContent='관측바람 ON';e('windObsBtn').classList.add('on');
+    }else if(keepObs){
+      wobsOn=false;e('windObsBtn').textContent='관측바람 OFF';e('windObsBtn').classList.remove('on');
+    }
   }
 }
 function applyDailyRows(R,name,obs,tm,autoDraw){
@@ -808,7 +1439,7 @@ function applyDailyRows(R,name,obs,tm,autoDraw){
     if(!validDailyVal(obs,v))return;
     M.set(id,{temp:NaN,humidity:NaN,rn15:NaN,rn60:NaN,rn12:NaN,rnday:NaN,daily:v,wd:NaN,ws:NaN,time:tm});
   });
-  wx=M;clearTemp();clearW(wgrid);clearW(wobs);wgridOn=wobsOn=false;
+  cancelWindRedraw();wx=M;invalidateScalarCache();clearTemp();clearW(wgrid);clearW(wobs);wgridOn=wobsOn=false;
   e('windGridBtn').textContent='바람장 OFF';e('windObsBtn').textContent='관측바람 OFF';
   e('windGridBtn').classList.remove('on');e('windObsBtn').classList.remove('on');
   e('tempBtn').disabled=true;e('hmBtn').disabled=true;e('rainBtn').disabled=true;
@@ -822,7 +1453,7 @@ function applyDailyRows(R,name,obs,tm,autoDraw){
   S.forEach(label);
   if(autoDraw&&c>=3)buildDaily();
 }
-async function load(f){try{
+async function load(f){var op=++dataOpSeq;try{
   e('apiMode').value='instant';setQueryMode('instant');
   var ext=f.name.toLowerCase().split('.').pop(),R=[];
   if(ext==='csv'||ext==='txt')R=csv(await f.text());
@@ -834,6 +1465,7 @@ async function load(f){try{
     });
   }
   if(!R.length)throw new Error('읽을 수 있는 데이터 행이 없습니다.');
+  if(op!==dataOpSeq)return;
 
   rawRows=R;
   sourceFileName=f.name;
@@ -869,8 +1501,10 @@ function popup(click,s){
 }
 function toggleScalar(field){if(tempOn&&activeScalar===field)clearTemp();else buildScalar(field)}
 function install(){
-  if(ready)return;ready=true;viewer=ws3d.viewer;terrainMode();resolveB(0);fillSelect();S.forEach(addStation);
+  if(ready)return;ready=true;viewer=ws3d.viewer;terrainMode();resolveB(0);fillSelect();S.forEach(addStation);MOUNTAINS.forEach(addMountain);
   e('collapse').onclick=function(){var c=e('panel').classList.toggle('collapsed');this.textContent=c?'⌄':'⌃'};
+  e('guideBtn').onclick=openGuide;e('guideClose').onclick=closeGuide;e('guideModal').onclick=function(ev){if(ev.target===this)closeGuide()};
+  document.addEventListener('keydown',function(ev){if(ev.key==='Escape')closeGuide()});
   e('file').onchange=function(){if(this.files&&this.files[0])load(this.files[0])};
   e('apiFetchBtn').onclick=fetchKmaData;
   e('apiMode').onchange=function(){setQueryMode(this.value)};
@@ -886,6 +1520,8 @@ function install(){
   e('portBtn').onclick=function(){network('PORT',!shown.PORT)};
   e('satBtn').onclick=function(){satellite(!sat)};
   e('bldBtn').onclick=function(){buildings(!bldOn)};
+  e('adminBtn').onclick=function(){adminBoundary(!adminOn)};
+  e('mountainBtn').onclick=function(){mountains(!mountainOn)};
   e('homeBtn').onclick=home;
   e('stationSelect').onchange=function(){var p=this.value.split('-'),s=S.find(function(x){return x.type===p[0]&&x.id===Number(p[1])});if(s)fly(s)};
 
@@ -898,126 +1534,97 @@ function install(){
   e('windGridBtn').onclick=function(){wgridOn=!wgridOn;if(wgridOn){if(gridWind()){this.textContent='바람장 ON';this.classList.add('on')}else wgridOn=false}else{clearW(wgrid);this.textContent='바람장 OFF';this.classList.remove('on')}};
   e('windObsBtn').onclick=function(){wobsOn=!wobsOn;if(wobsOn){obsWind();this.textContent='관측바람 ON';this.classList.add('on')}else{clearW(wobs);this.textContent='관측바람 OFF';this.classList.remove('on')}};
   e('alpha').oninput=function(){e('aval').textContent=Math.round(Number(this.value)*100)+'%';if(tempLayer)tempLayer.alpha=Number(this.value)};
-  e('wdensity').oninput=function(){e('wdensityVal').textContent=this.value;if(wgridOn)gridWind()};
-  e('wscale').oninput=function(){e('wval').textContent=Number(this.value).toFixed(1)+'×';if(wgridOn)gridWind();if(wobsOn)obsWind()};
-  e('wthick').oninput=function(){e('wthickVal').textContent=Number(this.value).toFixed(1);if(wgridOn)gridWind();if(wobsOn)obsWind()};
+  e('wdensity').oninput=function(){e('wdensityVal').textContent=this.value;scheduleWindRedraw(true,false)};
+  e('wscale').oninput=function(){e('wval').textContent=Number(this.value).toFixed(1)+'×';scheduleWindRedraw(true,true)};
+  e('wthick').oninput=function(){e('wthickVal').textContent=Number(this.value).toFixed(1);scheduleWindRedraw(true,true)};
   e('popupClose').onclick=function(){e('popup').style.display='none'};
 
   var h=new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
-  h.setInputAction(function(c){e('popup').style.display='none';var p=viewer.scene.pick(c.position);if(!Cesium.defined(p)||!p.id)return;var i=Number(p.id.__idx);if(Number.isFinite(i)&&S[i])popup(c,S[i])},Cesium.ScreenSpaceEventType.LEFT_CLICK);
-  e('status').textContent='분석모드 · 79지점 · 위성 ON · 지형 ON · 관측자료를 불러오세요';
-  setTimeout(home,500)
+  h.setInputAction(function(c){e('popup').style.display='none';var p=viewer.scene.pick(c.position);if(!Cesium.defined(p)||!p.id)return;var mi=Number(p.id.__mountainIndex);if(Number.isFinite(mi)&&MOUNTAINS[mi]){mountainPopup(c,MOUNTAINS[mi]);return}var i=Number(p.id.__idx);if(Number.isFinite(i)&&S[i])popup(c,S[i])},Cesium.ScreenSpaceEventType.LEFT_CLICK);
+  e('status').textContent='분석모드 · 79지점 · 주요 산 23개 · 위성 ON · 지형 ON · 시군구 경계 준비 중…';
+  setTimeout(home,500);setTimeout(function(){adminBoundary(true)},1500)
 }
 try{if(typeof vw==='undefined')throw new Error('V-World API 스크립트가 로드되지 않았습니다.');vw.ws3dInitCallBack=function(){try{install()}catch(x){err(x,'분석 UI 초기화')}};var o={mapId:'map',initPosition:new vw.CameraPosition(new vw.CoordZ(clon,clat,homeH),new vw.Direction(0,-90,0)),logo:true,navigation:true};map=new vw.Map();map.setOption(o);map.start();setTimeout(function(){try{if(!ready&&typeof ws3d!=='undefined'&&ws3d.viewer)install()}catch(x){err(x,'지연 초기화')}},1500)}catch(x){err(x,'V-World map.start()')}
 })();</script>
+
+
+
 <script>
 (function(){
-  'use strict';
+  "use strict";
 
-  function wrapChildrenExceptHeader(box, header){
-    if(!box || !header || box.querySelector(':scope > .fold-content')) return;
-    box.classList.add('foldable');
-    header.classList.add('fold-head');
-    header.setAttribute('role','button');
-    header.setAttribute('tabindex','0');
-    header.setAttribute('aria-expanded','true');
+  function byId(id){return document.getElementById(id)}
 
-    var content=document.createElement('div');
-    content.className='fold-content';
-
-    var nodes=[];
-    Array.prototype.slice.call(box.childNodes).forEach(function(n){
-      if(n!==header) nodes.push(n);
-    });
-    nodes.forEach(function(n){content.appendChild(n);});
-    box.appendChild(content);
-
-    function toggle(){
-      var closed=box.classList.toggle('section-collapsed');
-      header.setAttribute('aria-expanded', closed?'false':'true');
+  function initWorkspaceTabs(){
+    var tabs=Array.prototype.slice.call(document.querySelectorAll(".workspaceTab"));
+    var pages=Array.prototype.slice.call(document.querySelectorAll(".workspacePage"));
+    function openPage(name){
+      tabs.forEach(function(t){t.classList.toggle("active",t.dataset.page===name)});
+      pages.forEach(function(p){p.classList.toggle("active",p.dataset.page===name)});
     }
-    header.addEventListener('click',toggle);
-    header.addEventListener('keydown',function(ev){
-      if(ev.key==='Enter'||ev.key===' '){
-        ev.preventDefault();
-        toggle();
-      }
+    tabs.forEach(function(t){
+      t.addEventListener("click",function(){openPage(t.dataset.page)});
     });
+    window.__openWeatherWorkspace=openPage;
   }
 
-  function initAccordion(){
-    var body=document.getElementById('body');
-    if(!body) return;
+  var compactLabels={
+    tempBtn:"기온",
+    hmBtn:"습도",
+    rainBtn:"강수",
+    dailyBtn:"일극값",
+    windGridBtn:"바람장",
+    windObsBtn:"관측바람",
+    satBtn:"위성",
+    bldBtn:"3D 건물",
+    adminBtn:"시군구 경계",
+    mountainBtn:"주요 산",
+    asosBtn:"ASOS",
+    awsBtn:"AWS",
+    portBtn:"항만"
+  };
 
-    /* 1. 기상청 API 조회 */
-    var api=document.getElementById('apiBox');
-    if(api){
-      var apiHead=api.querySelector(':scope > .apiTitle');
-      wrapChildrenExceptHeader(api,apiHead);
-    }
+  function syncCompactButton(btn){
+    if(!btn)return;
+    var label=compactLabels[btn.id];
+    if(!label)return;
+    if(btn.textContent!==label)btn.textContent=label;
+    btn.setAttribute("aria-pressed",btn.classList.contains("on")?"true":"false");
+  }
 
-    /* 2. 각 sec: 비상용 파일 / 분석장 / 배경·관측망 / 지점 이동 */
-    var sections=Array.prototype.slice.call(body.querySelectorAll(':scope > .sec'));
-    sections.forEach(function(sec){
-      var head=sec.querySelector(':scope > .ttl');
-      wrapChildrenExceptHeader(sec,head);
-    });
-
-    /* 기본 접힘 상태:
-       - API: 펼침
-       - 비상용 파일: 접힘
-       - 분석장: 펼침
-       - 배경·관측망: 접힘
-       - 지점 이동: 접힘
-    */
-    sections.forEach(function(sec){
-      var title=sec.querySelector(':scope > .ttl');
-      var t=title ? title.textContent.trim() : '';
-      if(/비상용 파일|배경 · 관측망|배경·관측망|지점 이동/.test(t)){
-        sec.classList.add('section-collapsed');
-        if(title) title.setAttribute('aria-expanded','false');
-      }
-    });
-
-    /* 3. 기존 분석 설명(note)도 별도 접이식으로 */
-    var note=document.getElementById('note');
-    if(note && !document.getElementById('methodFold')){
-      var method=document.createElement('div');
-      method.id='methodFold';
-      method.className='foldable section-collapsed';
-
-      var mh=document.createElement('div');
-      mh.className='methodTitle fold-head';
-      mh.textContent='분석 기준 · 방법';
-      mh.setAttribute('role','button');
-      mh.setAttribute('tabindex','0');
-      mh.setAttribute('aria-expanded','false');
-
-      var mc=document.createElement('div');
-      mc.className='fold-content';
-
-      note.parentNode.insertBefore(method,note);
-      method.appendChild(mh);
-      method.appendChild(mc);
-      mc.appendChild(note);
-
-      function toggleMethod(){
-        var closed=method.classList.toggle('section-collapsed');
-        mh.setAttribute('aria-expanded',closed?'false':'true');
-      }
-      mh.addEventListener('click',toggleMethod);
-      mh.addEventListener('keydown',function(ev){
-        if(ev.key==='Enter'||ev.key===' '){
-          ev.preventDefault(); toggleMethod();
-        }
+  function initCompactLabels(){
+    Object.keys(compactLabels).forEach(function(id){
+      var btn=byId(id);
+      if(!btn)return;
+      syncCompactButton(btn);
+      new MutationObserver(function(){syncCompactButton(btn)}).observe(btn,{
+        childList:true,subtree:true,attributes:true,attributeFilter:["class"]
       });
+    });
+  }
+
+  function refineHeader(){
+    var c=byId("collapse");
+    if(c){
+      var obs=new MutationObserver(function(){
+        c.textContent=byId("panel").classList.contains("collapsed")?"+":"−";
+      });
+      obs.observe(byId("panel"),{attributes:true,attributeFilter:["class"]});
+      c.textContent=byId("panel").classList.contains("collapsed")?"+":"−";
     }
   }
 
-  if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded',initAccordion);
+  function guideLabel(){
+    var b=byId("guideBtn");
+    if(b)b.textContent="도움말";
+  }
+
+  if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded",function(){
+      initWorkspaceTabs();initCompactLabels();refineHeader();guideLabel();
+    });
   }else{
-    initAccordion();
+    initWorkspaceTabs();initCompactLabels();refineHeader();guideLabel();
   }
 })();
 </script>
