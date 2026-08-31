@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v17.2 station-priority final: station billboards/labels visually prioritized over wind vectors -->
+<!-- v17.6 operational final: bottom-right display legend + reference stations OFF by default -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
@@ -74,7 +74,7 @@ button,.fileLabel,select{border:1px solid var(--l);border-radius:9px;background:
 #panel select,
 #panel input[type="text"],
 #panel input[type="password"],
-#panel input[type="datetime-local"],
+#panel input[type="date"],
 .fileLabel{
   min-height:34px;
 }
@@ -244,13 +244,13 @@ button,.fileLabel,select{border:1px solid var(--l);border-radius:9px;background:
 #apiGrid{display:block}
 #dailyQuery{grid-template-columns:1fr;gap:7px}
 #dailyQuery .wide{grid-column:auto}
-#apiMode,#dailyObs,#rainAccum,#apiDate,#apiTime,#stationSelect,#labelModeSelect{
+#apiMode,#dailyObs,#rainAccum,#apiDate,#apiInstantDate,#apiHour,#apiMinute,#stationSelect,#labelModeSelect{
   width:100%;height:34px;min-height:34px;padding:0 9px;
   border:1px solid #344257;border-radius:6px;background:#0c1526;
   color:#e5e7eb;font-family:inherit;font-size:11px;font-weight:500;
   outline:none;
 }
-#apiMode:focus,#dailyObs:focus,#rainAccum:focus,#apiDate:focus,#apiTime:focus,#stationSelect:focus,#labelModeSelect:focus{
+#apiMode:focus,#dailyObs:focus,#rainAccum:focus,#apiDate:focus,#apiInstantDate:focus,#apiHour:focus,#apiMinute:focus,#stationSelect:focus,#labelModeSelect:focus{
   border-color:#648fbd;box-shadow:0 0 0 2px rgba(79,143,207,.12)
 }
 button,.fileLabel,select{font-family:inherit}
@@ -440,7 +440,7 @@ button,.fileLabel,select{font-family:inherit}
 .settingLabel{
   font-size:11.5px;
 }
-#apiMode,#dailyObs,#rainAccum,#apiDate,#apiTime,#stationSelect,#labelModeSelect{
+#apiMode,#dailyObs,#rainAccum,#apiDate,#apiInstantDate,#apiHour,#apiMinute,#stationSelect,#labelModeSelect{
   height:40px;
   min-height:40px;
   font-size:13.5px;
@@ -502,6 +502,7 @@ button,.fileLabel,select{font-family:inherit}
 
 /* v16 operational UI cleanup */
 .compactSetting{margin-top:9px}
+.mapNavGrid{margin-top:7px}
 #labelModeSelect{min-width:120px}
 
 
@@ -538,6 +539,76 @@ button,.fileLabel,select{font-family:inherit}
   font-variant-numeric:tabular-nums;
 }
 .heightNumberWrap span{font-size:11px;color:#9aa9bc}
+
+
+/* v17.3 특정시각 24시간제 입력 */
+.instantTimeGrid{
+  display:grid;
+  grid-template-columns:minmax(145px,1.6fr) minmax(72px,.7fr) minmax(72px,.7fr);
+  gap:7px;
+  align-items:end;
+}
+.instantTimeGrid .fieldLabel{min-width:0}
+#apiInstantDate,#apiHour,#apiMinute{
+  width:100%;
+  min-width:0;
+  height:40px;
+}
+#apiHour,#apiMinute{
+  text-align:center;
+  font-variant-numeric:tabular-nums;
+}
+.timeHint{
+  margin-top:5px;
+  font-size:10px;
+  color:#94a3b8;
+  line-height:1.35;
+}
+@media(max-width:680px){
+  .instantTimeGrid{
+    grid-template-columns:minmax(130px,1.5fr) 72px 72px;
+  }
+}
+
+
+/* v17.6 우측 하단 표시 범례 */
+#displayLegend{
+  position:absolute;z-index:1190;right:12px;bottom:12px;
+  min-width:126px;padding:8px 10px 9px;
+  border:1px solid rgba(148,163,184,.38);border-radius:7px;
+  background:rgba(8,17,30,.88);box-shadow:0 4px 14px rgba(0,0,0,.22);
+  color:#e5edf7;font:600 10px "Malgun Gothic","Noto Sans KR",Arial,sans-serif;
+  backdrop-filter:blur(3px);pointer-events:none;
+}
+.displayLegendTitle{
+  margin-bottom:6px;padding-bottom:5px;border-bottom:1px solid rgba(148,163,184,.25);
+  color:#f8fafc;font-size:10.5px;font-weight:800
+}
+.displayLegendItem{
+  display:grid;grid-template-columns:20px 1fr;gap:5px;align-items:center;
+  min-height:20px;transition:opacity .15s ease
+}
+.displayLegendItem.off{opacity:.30}
+.legendSymbol{
+  position:relative;display:block;justify-self:center;width:11px;height:11px;
+  box-sizing:border-box;border:1.5px solid #fff;
+  filter:drop-shadow(0 1px 1px rgba(0,0,0,.7))
+}
+.legendAsos{border-radius:50%;background:#38bdf8}
+.legendAws{background:#fb923c;transform:rotate(45deg);width:10px;height:10px}
+.legendRef{
+  width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;
+  border-bottom:11px solid #10b981;border-top:0;
+  filter:drop-shadow(0 0 1px #fff) drop-shadow(0 1px 1px rgba(0,0,0,.7))
+}
+.legendMountain{width:8px;height:8px;border-radius:50%;background:#facc15}
+.legendWindArrow{
+  justify-self:center;color:#050b16;-webkit-text-stroke:.45px #f8fafc;
+  font-size:19px;font-family:Arial,sans-serif;font-weight:900;line-height:16px
+}
+@media(max-width:680px){
+  #displayLegend{right:8px;bottom:8px;min-width:112px;padding:7px 8px;font-size:9.5px}
+}
 
 </style></head>
 <body><div id="map"></div>
@@ -579,11 +650,104 @@ button,.fileLabel,select{font-family:inherit}
         </div>
 
         <div id="instantQuery">
-          <div id="apiGrid">
-            <label class="fieldLabel">자료 시각
-              <input id="apiTime" class="wide" type="datetime-local" step="60" aria-label="자료시각">
+          <div class="instantTimeGrid">
+            <label class="fieldLabel instantDateField">날짜
+              <input id="apiInstantDate" type="date" class="wide" aria-label="특정시각 날짜">
+            </label>
+            <label class="fieldLabel">시
+              <select id="apiHour" class="wide" aria-label="자료시각 시, 24시간제">
+                <option value="00">00시</option>
+                <option value="01">01시</option>
+                <option value="02">02시</option>
+                <option value="03">03시</option>
+                <option value="04">04시</option>
+                <option value="05">05시</option>
+                <option value="06">06시</option>
+                <option value="07">07시</option>
+                <option value="08">08시</option>
+                <option value="09">09시</option>
+                <option value="10">10시</option>
+                <option value="11">11시</option>
+                <option value="12">12시</option>
+                <option value="13">13시</option>
+                <option value="14">14시</option>
+                <option value="15">15시</option>
+                <option value="16">16시</option>
+                <option value="17">17시</option>
+                <option value="18">18시</option>
+                <option value="19">19시</option>
+                <option value="20">20시</option>
+                <option value="21">21시</option>
+                <option value="22">22시</option>
+                <option value="23">23시</option>
+              </select>
+            </label>
+            <label class="fieldLabel">분
+              <select id="apiMinute" class="wide" aria-label="자료시각 분">
+                <option value="00">00분</option>
+                <option value="01">01분</option>
+                <option value="02">02분</option>
+                <option value="03">03분</option>
+                <option value="04">04분</option>
+                <option value="05">05분</option>
+                <option value="06">06분</option>
+                <option value="07">07분</option>
+                <option value="08">08분</option>
+                <option value="09">09분</option>
+                <option value="10">10분</option>
+                <option value="11">11분</option>
+                <option value="12">12분</option>
+                <option value="13">13분</option>
+                <option value="14">14분</option>
+                <option value="15">15분</option>
+                <option value="16">16분</option>
+                <option value="17">17분</option>
+                <option value="18">18분</option>
+                <option value="19">19분</option>
+                <option value="20">20분</option>
+                <option value="21">21분</option>
+                <option value="22">22분</option>
+                <option value="23">23분</option>
+                <option value="24">24분</option>
+                <option value="25">25분</option>
+                <option value="26">26분</option>
+                <option value="27">27분</option>
+                <option value="28">28분</option>
+                <option value="29">29분</option>
+                <option value="30">30분</option>
+                <option value="31">31분</option>
+                <option value="32">32분</option>
+                <option value="33">33분</option>
+                <option value="34">34분</option>
+                <option value="35">35분</option>
+                <option value="36">36분</option>
+                <option value="37">37분</option>
+                <option value="38">38분</option>
+                <option value="39">39분</option>
+                <option value="40">40분</option>
+                <option value="41">41분</option>
+                <option value="42">42분</option>
+                <option value="43">43분</option>
+                <option value="44">44분</option>
+                <option value="45">45분</option>
+                <option value="46">46분</option>
+                <option value="47">47분</option>
+                <option value="48">48분</option>
+                <option value="49">49분</option>
+                <option value="50">50분</option>
+                <option value="51">51분</option>
+                <option value="52">52분</option>
+                <option value="53">53분</option>
+                <option value="54">54분</option>
+                <option value="55">55분</option>
+                <option value="56">56분</option>
+                <option value="57">57분</option>
+                <option value="58">58분</option>
+                <option value="59">59분</option>
+              </select>
             </label>
           </div>
+          <div class="timeHint">24시간제 · 예: 오전 1시 = 01시</div>
         </div>
 
         <div id="dailyQuery">
@@ -735,7 +899,7 @@ button,.fileLabel,select{font-family:inherit}
         <div class="g3 networkGrid">
           <button id="asosBtn" class="on asos">ASOS ON</button>
           <button id="awsBtn" class="on aws">AWS ON</button>
-          <button id="portBtn" class="on port">참고 ON</button>
+          <button id="portBtn" class="port">참고 OFF</button>
         </div>
         <div class="inlineSetting compactSetting">
           <span class="settingLabel">라벨 표시</span>
@@ -751,16 +915,39 @@ button,.fileLabel,select{font-family:inherit}
         <div class="sectionTitleRow">
           <div>
             <div class="sectionTitle">지점 이동</div>
-            <div class="sectionCaption">관측소 선택 또는 전체영역 복귀</div>
+            <div class="sectionCaption">관측소 이동 · 광역 복귀 · 현재 화면 북쪽 정렬</div>
           </div>
         </div>
         <select id="stationSelect"><option value="">관측소 선택</option></select>
-        <button id="homeBtn" type="button" class="secondaryAction">광역 분석영역 보기</button>
+        <div class="g2 mapNavGrid">
+          <button id="homeBtn" type="button" class="secondaryAction">광역 분석영역</button>
+          <button id="northBtn" type="button" class="secondaryAction" title="현재 위치·고도·기울기를 유지하고 정북(0°)으로 복귀">북쪽(N)</button>
+        </div>
       </div>
     </section>
   </div>
 </div>
 <div id="status">V-World 3D 분석지형 초기화 중…</div>
+
+<div id="displayLegend" aria-label="지도 표시 범례">
+  <div class="displayLegendTitle">표시 범례</div>
+  <div id="legendAsos" class="displayLegendItem">
+    <span class="legendSymbol legendAsos"></span><span>ASOS</span>
+  </div>
+  <div id="legendAws" class="displayLegendItem">
+    <span class="legendSymbol legendAws"></span><span>AWS</span>
+  </div>
+  <div id="legendRef" class="displayLegendItem off">
+    <span class="legendSymbol legendRef"></span><span>참고지점</span>
+  </div>
+  <div id="legendMountain" class="displayLegendItem">
+    <span class="legendSymbol legendMountain"></span><span>주요 산</span>
+  </div>
+  <div id="legendWind" class="displayLegendItem off">
+    <span class="legendWindArrow">→</span><span>바람벡터</span>
+  </div>
+</div>
+
 <div id="popup"><button id="popupClose">닫기</button><div id="popupContent"></div></div>
 
 <div id="guideModal" role="dialog" aria-modal="true" aria-labelledby="guideTitle">
@@ -770,11 +957,11 @@ button,.fileLabel,select{font-family:inherit}
       <h3>1. 빠른 사용 순서</h3>
       <div class="guideBox"><span class="guideKey">특정 시각</span> 날짜·시각 선택 → 관측자료 조회 → 기온/습도/강수 또는 바람 분석장을 선택합니다.<br><span class="guideKey">일극값</span> 날짜와 요소(일강수량·일최고기온·일최저기온·일최대풍속) 선택 → 조회 → 일극값장을 켭니다.</div>
       <h3>2. 지도 · 관측망</h3>
-      <ul><li><b>위성</b>: 기본 ON. 배경 위성영상을 켜거나 끕니다.</li><li><b>3D 건물</b>: V-World 건물 레이어를 켜거나 끕니다.</li><li><b>시군구 경계</b>: V-World WMS <code>LT_C_ADSIGG</code> 행정구역 경계를 표출합니다. 분석장과 독립적으로 ON/OFF 됩니다.</li><li><b>주요 산</b>: 기상청 산악예보 지점정보의 정상 좌표·고도를 기준으로 <code>산명(고도m)</code>를 표출합니다. 고도가 높은 산은 넓은 시야에서, 낮은 산은 확대 시 나타나도록 자동으로 과밀을 줄입니다. 산 표시를 클릭하면 좌표·고도·자료 기준을 확인할 수 있습니다.</li><li><b>ASOS / AWS / 참고</b>: 관측망별 마커·라벨을 독립적으로 제어합니다. 지점표시는 바람벡터보다 앞에 보이도록 우선 처리됩니다.</li><li><b>라벨 표시</b>: 자동(권장)은 줌과 충돌을 고려해 필요한 라벨만 표시하고, 간소는 ASOS·고산 위주, 전체는 넓은 범위에서 모든 관측망 라벨을 후보로 표시합니다.</li></ul>
+      <ul><li><b>위성</b>: 기본 ON. 배경 위성영상을 켜거나 끕니다.</li><li><b>3D 건물</b>: V-World 건물 레이어를 켜거나 끕니다.</li><li><b>시군구 경계</b>: V-World WMS <code>LT_C_ADSIGG</code> 행정구역 경계를 표출합니다. 분석장과 독립적으로 ON/OFF 됩니다.</li><li><b>주요 산</b>: 기상청 산악예보 지점정보의 정상 좌표·고도를 기준으로 <code>산명(고도m)</code>를 표출합니다. 고도가 높은 산은 넓은 시야에서, 낮은 산은 확대 시 나타나도록 자동으로 과밀을 줄입니다. 산 표시를 클릭하면 좌표·고도·자료 기준을 확인할 수 있습니다.</li><li><b>ASOS / AWS / 참고</b>: 관측망별 마커·라벨을 독립적으로 제어합니다. 참고지점은 기본 OFF이며 화면에서 숨겨져도 기온·습도·강수·바람 공간계산에는 그대로 포함됩니다. 지점표시는 바람벡터보다 앞에 보이도록 우선 처리됩니다.</li><li><b>표시 범례</b>: 지도 우측 하단에서 ASOS·AWS·참고지점·주요 산·바람벡터 표식을 확인할 수 있으며 OFF 항목은 흐리게 표시됩니다.</li><li><b>라벨 표시</b>: 자동(권장)은 줌과 충돌을 고려해 필요한 라벨만 표시하고, 간소는 ASOS·고산 위주, 전체는 넓은 범위에서 모든 관측망 라벨을 후보로 표시합니다.</li></ul>
       <h3>3. 스칼라 분석장</h3>
       <ul><li>기온, 상대습도, 강수, 일극값을 관측지점 값으로부터 <b>IDW(p=2)</b> 보간합니다.</li><li>시트4의 <b>모든 관측지점</b>을 지도 표출과 공간계산에 동일하게 사용하고, 전체 관측망의 <b>볼록껍질 내부</b>를 광역 분석영역으로 사용합니다.</li><li>강수는 15분·60분·12시간·일누적 중 선택할 수 있습니다.</li><li>기본값은 <b>지형 밀착형</b>입니다. 필요할 때 지형 노출형으로 전환하고 기준고도를 0~1,400m에서 슬라이더 또는 숫자로 직접 입력할 수 있습니다. 이 고도는 시각화용이며 관측값을 보정하지 않습니다.</li><li>분석장 투명도를 조절하여 지형·위성영상과 함께 볼 수 있습니다.</li></ul>
       <h3>4. 바람 분석장</h3>
-      <ul><li>1분 또는 10분 풍향·풍속을 선택합니다. 둘 다 있으면 10분 평균을 우선 사용합니다.</li><li>풍향을 직접 보간하지 않고 관측 풍향·풍속을 U/V 성분으로 변환한 뒤 각각 IDW 보간합니다.</li><li>밀도·길이·벡터 두께·투명도·상단 오프셋을 조절할 수 있습니다. 지형 노출형에서는 depth-fail 재질을 함께 사용해 바람벡터를 분석장보다 우선적으로 선명하게 표시합니다.</li><li>지형 노출형에서는 보간 바람벡터를 분석면 높이에 배치하고 실제 산지에 의해 가려지도록 합니다. 관측바람은 관측지점 위치를 유지합니다.</li></ul>
+      <ul><li>1분 또는 10분 풍향·풍속을 선택합니다. 둘 다 있으면 10분 평균을 우선 사용합니다.</li><li>풍향을 직접 보간하지 않고 관측 풍향·풍속을 U/V 성분으로 변환한 뒤 각각 IDW 보간합니다.</li><li>밀도·길이·벡터 두께·투명도를 조절할 수 있습니다. 지형 노출형에서는 depth-fail 재질을 함께 사용해 바람벡터를 분석장보다 우선적으로 선명하게 표시합니다.</li><li>지형 노출형에서는 보간 바람벡터를 분석면 높이에 배치하고 실제 산지에 의해 가려지도록 합니다. 관측바람은 관측지점 위치를 유지합니다.</li></ul>
       <h3>5. 색상과 해석</h3>
       <ul><li>기온: 청색 → 황색 → 적색 계열</li><li>습도: 갈색/황색 → 청록/청색 계열</li><li>강수: 노랑 → 연두/초록 → 주황 → 적색 → 자주 계열</li><li>일최대풍속: 연황 → 주황 → 적색 계열</li></ul>
       <h3>6. 자료와 주의사항</h3>
@@ -1138,7 +1325,7 @@ function refreshStationDerived(){
   analysisGeometry=null;
 }
 refreshStationDerived();
-var map,viewer,baseImgs=[],sat=false,bld=null,bldOn=false,adminLayer=null,adminOn=true,adminBusy=false,adminErrorShown=false,mountainOn=true,mountainEnts=[],shown={ASOS:true,AWS:true,REF:true},ents={ASOS:[],AWS:[],REF:[]},entMap=new Map(),wx=new Map(),tempLayer=null,tempPlane=null,tempPlaneMaterial=null,tempOn=false,activeScalar=null,activeScalarObj=null,analysisSurfaceMode='draped',analysisPlaneHeight=600,windVerticalOffset=180,dataMode='instant',dailyObs='rn_day',wgridOn=false,wobsOn=false,wgrid=[],wobs=[],ready=false;
+var map,viewer,baseImgs=[],sat=false,bld=null,bldOn=false,adminLayer=null,adminOn=true,adminBusy=false,adminErrorShown=false,mountainOn=true,mountainEnts=[],shown={ASOS:true,AWS:true,REF:false},ents={ASOS:[],AWS:[],REF:[]},entMap=new Map(),wx=new Map(),tempLayer=null,tempPlane=null,tempPlaneMaterial=null,tempOn=false,activeScalar=null,activeScalarObj=null,analysisSurfaceMode='draped',analysisPlaneHeight=600,windVerticalOffset=180,dataMode='instant',dailyObs='rn_day',wgridOn=false,wobsOn=false,wgrid=[],wobs=[],ready=false;
 var VWORLD_WMS_KEY='CD9939DD-4087-326C-A1F8-F077628FF9FB',VWORLD_WMS_DOMAIN='https://cumuls219.github.io/asos-3d-terrain/';
 /* 성능 최적화 상태: 분석장 캐시 / API 단기 캐시 / 바람 재렌더 지연 */
 var scalarCache=new Map(),dataRevision=0,apiCache=new Map(),windRedrawTimer=null,dataOpSeq=0;
@@ -1180,6 +1367,7 @@ function addStation(s,i){
       stationEyeOffset=new Cesium.Cartesian3(0,0,-40);
   var en=viewer.entities.add({
     id:'st-'+s.type+'-'+s.id,
+    show:shown[s.type]!==false,
     position:Cesium.Cartesian3.fromDegrees(s.lon,s.lat,0),
     billboard:{
       image:MI[s.type],
@@ -1400,6 +1588,7 @@ function mountains(on){
   mountainOn=!!on;
   mountainEnts.forEach(function(en){en.show=mountainOn});scheduleLabelDeclutter();requestSceneRender();
   var b=e('mountainBtn');if(b){b.textContent='주요 산 '+(mountainOn?'ON':'OFF');b.classList.toggle('on',mountainOn)}
+  updateDisplayLegend();
 }
 function mountainPopup(click,m){
   var ht=Number(m.height).toLocaleString('ko-KR',{maximumFractionDigits:1}),rows=
@@ -1410,7 +1599,24 @@ function mountainPopup(click,m){
   e('popupContent').innerHTML='<b>'+esc(m.name)+'('+ht+'m)</b><span class="badge mountain">산악지점</span><table>'+rows+'</table>';
   var p=e('popup');p.style.display='block';p.style.left=Math.max(8,Math.min(click.position.x+12,window.innerWidth-375))+'px';p.style.top=Math.max(8,Math.min(click.position.y+12,window.innerHeight-330))+'px';
 }
-function network(t,on){shown[t]=on;ents[t].forEach(function(x){x.show=on});scheduleLabelDeclutter();requestSceneRender();var id=t==='ASOS'?'asosBtn':t==='AWS'?'awsBtn':'portBtn',nm=t==='REF'?'참고':t,b=e(id);b.textContent=nm+' '+(on?'ON':'OFF');b.classList.toggle('on',on)}
+function updateDisplayLegend(){
+  var a=e('legendAsos'),w=e('legendAws'),r=e('legendRef'),m=e('legendMountain'),v=e('legendWind');
+  if(a)a.classList.toggle('off',!shown.ASOS);
+  if(w)w.classList.toggle('off',!shown.AWS);
+  if(r)r.classList.toggle('off',!shown.REF);
+  if(m)m.classList.toggle('off',!mountainOn);
+  if(v)v.classList.toggle('off',!(wgridOn||wobsOn));
+}
+function network(t,on){
+  shown[t]=on;
+  ents[t].forEach(function(x){x.show=on});
+  scheduleLabelDeclutter();requestSceneRender();
+  var id=t==='ASOS'?'asosBtn':t==='AWS'?'awsBtn':'portBtn',
+      nm=t==='REF'?'참고':t,b=e(id);
+  b.textContent=nm+' '+(on?'ON':'OFF');
+  b.classList.toggle('on',on);
+  updateDisplayLegend();
+}
 function satellite(on){sat=on;baseImgs.forEach(function(l){try{l.show=on}catch(x){}});e('satBtn').textContent='위성 '+(on?'ON':'OFF');e('satBtn').classList.toggle('on',on)}
 function buildings(on){try{if(!bld)bld=map.getLayerElement('facility_build');if(!bld){e('status').textContent='3D 건물 레이어가 아직 준비되지 않았습니다.';return}bldOn=on;if(on)bld.show();else bld.hide();e('bldBtn').textContent='3D 건물 '+(on?'ON':'OFF');e('bldBtn').classList.toggle('on',on)}catch(x){err(x,'건물 레이어')}}
 function resolveB(n){try{bld=map.getLayerElement('facility_build');if(bld){bld.hide();return}}catch(x){}if(n<12)setTimeout(()=>resolveB(n+1),500)}
@@ -1475,7 +1681,46 @@ function terrainMode(){
   },1200);
 }
 function fillSelect(){var s=e('stationSelect');s.innerHTML='<option value="">관측소 선택</option>';['ASOS','AWS','REF'].forEach(function(t){var rows=S.filter(function(x){return x.type===t});if(!rows.length)return;var g=document.createElement('optgroup');g.label=t==='REF'?'참고지점':t;rows.forEach(function(x){var o=document.createElement('option');o.value=x.type+'-'+x.id;o.textContent=x.id+' · '+x.name;g.appendChild(o)});s.appendChild(g)})}
-function home(){viewer.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(analysisExtent.clon,analysisExtent.clat,analysisExtent.homeH),orientation:{heading:0,pitch:Cesium.Math.toRadians(-50),roll:0},duration:1.3})}function fly(s){if(!shown[s.type])network(s.type,true);viewer.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(s.lon,s.lat,1200),orientation:{heading:Cesium.Math.toRadians(20),pitch:Cesium.Math.toRadians(-32),roll:0},duration:1.5})}
+function home(){
+  viewer.camera.flyTo({
+    destination:Cesium.Cartesian3.fromDegrees(analysisExtent.clon,analysisExtent.clat,analysisExtent.homeH),
+    orientation:{heading:0,pitch:Cesium.Math.toRadians(-50),roll:0},
+    duration:1.3,
+    complete:function(){scheduleLabelDeclutter();requestSceneRender()}
+  });
+}
+function northUp(){
+  if(!viewer||!viewer.camera)return;
+  var c=viewer.camera,
+      pos=Cesium.Cartesian3.clone(c.positionWC),
+      pitch=c.pitch;
+  if(!pos)return;
+  try{
+    /* 현재 위치·고도·기울기를 그대로 두고 방향만 정북(0°)으로 복귀 */
+    c.setView({
+      destination:pos,
+      orientation:{heading:0,pitch:pitch,roll:0}
+    });
+  }catch(x){
+    /* 구형 Cesium/V-World 환경 fallback */
+    var p=c.positionCartographic;
+    if(p)c.flyTo({
+      destination:Cesium.Cartesian3.fromRadians(p.longitude,p.latitude,p.height),
+      orientation:{heading:0,pitch:pitch,roll:0},
+      duration:.25
+    });
+  }
+  scheduleLabelDeclutter();
+  requestSceneRender();
+}
+function fly(s){
+  if(!shown[s.type])network(s.type,true);
+  viewer.camera.flyTo({
+    destination:Cesium.Cartesian3.fromDegrees(s.lon,s.lat,1200),
+    orientation:{heading:Cesium.Math.toRadians(20),pitch:Cesium.Math.toRadians(-32),roll:0},
+    duration:1.5
+  });
+}
 function hull(P){if(P.length<=2)return P.slice();P=P.slice().sort((a,b)=>a.x===b.x?a.y-b.y:a.x-b.x);function c(o,a,b){return(a.x-o.x)*(b.y-o.y)-(a.y-o.y)*(b.x-o.x)}var l=[],u=[];P.forEach(p=>{while(l.length>=2&&c(l[l.length-2],l[l.length-1],p)<=0)l.pop();l.push(p)});for(var i=P.length-1;i>=0;i--){var p=P[i];while(u.length>=2&&c(u[u.length-2],u[u.length-1],p)<=0)u.pop();u.push(p)}l.pop();u.pop();return l.concat(u)}function inside(x,y,p){var z=false;for(var i=0,j=p.length-1;i<p.length;j=i++){var a=p[i],b=p[j];if(((a.y>y)!=(b.y>y))&&(x<(b.x-a.x)*(y-a.y)/(b.y-a.y+1e-30)+a.x))z=!z}return z}function km(a,b,c,d){var R=6371,r=Math.PI/180,da=(c-a)*r,do1=(d-b)*r,q=Math.sin(da/2)**2+Math.cos(a*r)*Math.cos(c*r)*Math.sin(do1/2)**2;return 2*R*Math.asin(Math.sqrt(q))}
 function interpRamp(t,q){t=Math.max(0,Math.min(1,t));for(var i=1;i<q.length;i++)if(t<=q[i][0]){var a=q[i-1],b=q[i],f=(t-a[0])/(b[0]-a[0]);return a[1].map((v,j)=>Math.round(v+f*(b[1][j]-v)))}return q[q.length-1][1]}
 function rampTemp(t){return interpRamp(t,[[0,[49,54,149]],[.1,[69,117,180]],[.2,[116,173,209]],[.3,[171,217,233]],[.4,[224,243,248]],[.5,[255,255,191]],[.6,[254,224,144]],[.7,[253,174,97]],[.8,[244,109,67]],[.9,[215,48,39]],[1,[165,0,38]]])}
@@ -1704,11 +1949,15 @@ function scheduleWindRedraw(grid,obs){
 function csv(t){var R=[],r=[],c='',q=false;for(var i=0;i<t.length;i++){var h=t[i],n=t[i+1];if(h==='"'){if(q&&n==='"'){c+='"';i++}else q=!q}else if((h===','||h==='\t')&&!q){r.push(c);c=''}else if((h==='\n'||h==='\r')&&!q){if(h==='\r'&&n==='\n')i++;r.push(c);c='';if(r.some(v=>String(v).trim()!==''))R.push(r);r=[]}else c+=h}if(c||r.length){r.push(c);R.push(r)}if(!R.length)return[];var H=R[0].map(v=>String(v).trim());return R.slice(1).map(function(a){var o={};H.forEach((h,i)=>o[h]=a[i]===undefined?'':a[i]);return o})}
 
 function pad2(v){return String(v).padStart(2,'0')}
-function localDateTimeToKma(value){
-  if(!value)return '';
-  var m=String(value).match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
-  if(!m)return '';
-  return m[1]+m[2]+m[3]+m[4]+m[5];
+function instantTimeToKma(){
+  var d=String(e('apiInstantDate').value||''),
+      h=String(e('apiHour').value||''),
+      m=String(e('apiMinute').value||''),
+      dm=d.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if(!dm||!/^\d{2}$/.test(h)||!/^\d{2}$/.test(m))return '';
+  var hh=Number(h),mm=Number(m);
+  if(hh<0||hh>23||mm<0||mm>59)return '';
+  return dm[1]+dm[2]+dm[3]+pad2(hh)+pad2(mm);
 }
 function localDateToKma(value){
   var m=String(value||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);
@@ -1716,8 +1965,11 @@ function localDateToKma(value){
 }
 function setDefaultApiTime(){
   var d=new Date();d.setMinutes(d.getMinutes()-5,0,0);
-  e('apiTime').value=d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate())+'T'+pad2(d.getHours())+':'+pad2(d.getMinutes());
-  e('apiDate').value=d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate());
+  var ds=d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate());
+  e('apiInstantDate').value=ds;
+  e('apiHour').value=pad2(d.getHours());
+  e('apiMinute').value=pad2(d.getMinutes());
+  e('apiDate').value=ds;
 }
 function setQueryMode(mode){
   var daily=mode==='daily';e('apiBox').classList.toggle('daily-mode',daily);
@@ -1801,7 +2053,7 @@ async function fetchKmaData(){
     tm=localDateToKma(e('apiDate').value);obs=e('dailyObs').value;
     if(!tm){e('apiState').textContent='날짜를 선택하세요.';e('apiState').className='bad';return}
   }else{
-    tm=localDateTimeToKma(e('apiTime').value);
+    tm=instantTimeToKma();
     if(!tm){e('apiState').textContent='자료시각을 선택하세요.';e('apiState').className='bad';return}
   }
 
@@ -1949,6 +2201,7 @@ function applyRows(R,name,autoDraw,preserveVisuals){
       wobsOn=false;e('windObsBtn').textContent='관측바람 OFF';e('windObsBtn').classList.remove('on');
     }
   }
+  updateDisplayLegend();
 }
 function applyDailyRows(R,name,obs,tm,autoDraw){
   if(autoDraw===undefined)autoDraw=true;
@@ -1971,7 +2224,7 @@ function applyDailyRows(R,name,obs,tm,autoDraw){
   var meta=dailyMeta(obs),msg='<b>'+esc(name)+'</b><br>매칭 '+M.size+' / '+S.length+' · '+esc(meta.label)+' 유효 '+c+'지점<br>날짜: '+tm.slice(0,4)+'-'+tm.slice(4,6)+'-'+tm.slice(6,8);
   if(unk.size)msg+='<br>미등록 지점번호 '+Array.from(unk).slice(0,10).join(', ')+(unk.size>10?' …':'');
   if(bad)msg+='<br>지점번호 해석 불가 행 '+bad+'개';
-  e('dataInfo').innerHTML=msg;e('status').textContent='일극값 자료 적용 · '+meta.label+' '+c+'지점';
+  e('dataInfo').innerHTML=msg;e('status').textContent='일극값 자료 적용 · '+meta.label+' '+c+'지점';updateDisplayLegend();
   S.forEach(label);
   if(autoDraw&&c>=3)buildDaily();
 }
@@ -1995,6 +2248,81 @@ async function load(f){var op=++dataOpSeq;try{
   configureWindSelector();
   applyRows(rawRows,sourceFileName,true);
 }catch(x){err(x,'관측자료 읽기')}}
+
+function popup(click,s){
+  var w=wx.get(s.id),
+      bc=s.type==='ASOS'?'asos':s.type==='REF'?'port':'aws',
+      net=s.type==='REF'?'참고지점':s.type,
+      addr=s.address?'<tr><th>주소</th><td>'+esc(s.address)+'</td></tr>':'',
+      rows='<tr><th>관측망</th><td>'+net+'</td></tr>'+
+           addr+
+           '<tr><th>위도/경도</th><td>'+s.lat.toFixed(6)+', '+s.lon.toFixed(6)+'</td></tr>'+
+           '<tr><th>높이</th><td>'+s.height.toFixed(2)+' m</td></tr>';
+
+  if(w){
+    if(dataMode==='daily'){
+      var dm=dailyMeta(dailyObs);
+      rows='<tr><th>날짜</th><td>'+esc(w.time||'-')+'</td></tr>'+
+           '<tr><th>'+esc(dm.label)+'</th><td>'+(fin(w.daily)?w.daily.toFixed(1)+' '+dm.unit:'-')+'</td></tr>'+
+           rows;
+    }else{
+      var wm=windMode==='m10'?'10분 평균':
+             windMode==='m1'?'1분 평균':
+             windMode==='generic'?'평균주기 불명':'-';
+      rows='<tr><th>관측시각</th><td>'+esc(w.time||'-')+'</td></tr>'+
+           '<tr><th>기온</th><td>'+(fin(w.temp)?w.temp.toFixed(1)+' ℃':'-')+'</td></tr>'+
+           '<tr><th>습도</th><td>'+(fin(w.humidity)?w.humidity.toFixed(0)+' %':'-')+'</td></tr>'+
+           '<tr><th>15분 강수</th><td>'+(fin(w.rn15)?w.rn15.toFixed(1)+' mm':'-')+'</td></tr>'+
+           '<tr><th>60분 강수</th><td>'+(fin(w.rn60)?w.rn60.toFixed(1)+' mm':'-')+'</td></tr>'+
+           '<tr><th>12시간 강수</th><td>'+(fin(w.rn12)?w.rn12.toFixed(1)+' mm':'-')+'</td></tr>'+
+           '<tr><th>일누적 강수</th><td>'+(fin(w.rnday)?w.rnday.toFixed(1)+' mm':'-')+'</td></tr>'+
+           '<tr><th>바람 기준</th><td>'+wm+'</td></tr>'+
+           '<tr><th>풍향</th><td>'+(fin(w.wd)?w.wd.toFixed(0)+'°':'-')+'</td></tr>'+
+           '<tr><th>풍속</th><td>'+(fin(w.ws)?w.ws.toFixed(1)+' m/s':'-')+'</td></tr>'+
+           rows;
+    }
+  }
+
+  e('popupContent').innerHTML=
+    '<b>'+s.id+' · '+esc(s.name)+'</b>'+
+    '<span class="badge '+bc+'">'+net+'</span>'+
+    '<table>'+rows+'</table>';
+
+  var p=e('popup'),
+      px=click&&click.position?click.position.x:24,
+      py=click&&click.position?click.position.y:24;
+  p.style.display='block';
+  p.style.left=Math.max(8,Math.min(px+12,window.innerWidth-375))+'px';
+  p.style.top=Math.max(8,Math.min(py+12,window.innerHeight-420))+'px';
+}
+
+function nearestStationAtScreen(position,maxPx){
+  if(!viewer||!position)return null;
+  var best=null,bestD=maxPx||26,now=Cesium.JulianDate.now();
+
+  S.forEach(function(s){
+    if(!shown[s.type])return;
+    var en=entMap.get(s.type+'-'+s.id);
+    if(!en||en.show===false)return;
+
+    var world;
+    try{world=en.position.getValue(now)}catch(x){return}
+    if(!world)return;
+
+    var win;
+    try{win=viewer.scene.cartesianToCanvasCoordinates(world)}catch(x){return}
+    if(!win)return;
+
+    var dx=win.x-position.x,dy=win.y-position.y,
+        d=Math.sqrt(dx*dx+dy*dy);
+    if(d<=bestD){
+      bestD=d;
+      best=s;
+    }
+  });
+
+  return best;
+}
 
 function toggleScalar(field){if(tempOn&&activeScalar===field)clearTemp();else buildScalar(field)}
 function install(){
@@ -2033,6 +2361,7 @@ function install(){
   e('adminBtn').onclick=function(){adminBoundary(!adminOn)};
   e('mountainBtn').onclick=function(){mountains(!mountainOn)};
   e('homeBtn').onclick=home;
+  e('northBtn').onclick=northUp;
   e('stationSelect').onchange=function(){var p=this.value.split('-'),s=S.find(function(x){return x.type===p[0]&&x.id===Number(p[1])});if(s)fly(s)};
 
   e('tempBtn').onclick=function(){toggleScalar('temp')};
@@ -2041,8 +2370,8 @@ function install(){
   e('dailyBtn').onclick=function(){toggleScalar('daily')};
   e('rainAccum').onchange=function(){updateRainAvailability()};
 
-  e('windGridBtn').onclick=function(){wgridOn=!wgridOn;if(wgridOn){if(gridWind()){this.textContent='바람장 ON';this.classList.add('on')}else wgridOn=false}else{clearW(wgrid);this.textContent='바람장 OFF';this.classList.remove('on')}};
-  e('windObsBtn').onclick=function(){wobsOn=!wobsOn;if(wobsOn){obsWind();this.textContent='관측바람 ON';this.classList.add('on')}else{clearW(wobs);this.textContent='관측바람 OFF';this.classList.remove('on')}};
+  e('windGridBtn').onclick=function(){wgridOn=!wgridOn;if(wgridOn){if(gridWind()){this.textContent='바람장 ON';this.classList.add('on')}else wgridOn=false}else{clearW(wgrid);this.textContent='바람장 OFF';this.classList.remove('on')}updateDisplayLegend()};
+  e('windObsBtn').onclick=function(){wobsOn=!wobsOn;if(wobsOn){obsWind();this.textContent='관측바람 ON';this.classList.add('on')}else{clearW(wobs);this.textContent='관측바람 OFF';this.classList.remove('on')}updateDisplayLegend()};
   e('alpha').oninput=function(){
     e('aval').textContent=Math.round(Number(this.value)*100)+'%';
     setAnalysisSurfaceAlpha(Number(this.value));
@@ -2118,6 +2447,11 @@ function install(){
       }
     }
 
+    /* 바람벡터/분석면 때문에 pick이 빗나가도
+       화면상 가까운 지점 마커를 한 번 더 검사 */
+    var nearStation=nearestStationAtScreen(c.position,26);
+    if(nearStation){popup(c,nearStation);return}
+
     /* 다음으로 주요 산 */
     for(var mi0=0;mi0<picks.length;mi0++){
       var mObj=picks[mi0]&&picks[mi0].id;
@@ -2136,7 +2470,7 @@ function install(){
     e('status').textContent='⚠ 시트4 미로드 · 내장 '+S.length+'지점만 사용 중';
     e('status').style.background='rgba(127,29,29,.95)';
   }
-  setTimeout(home,500);setTimeout(function(){adminBoundary(true)},1500)
+  updateDisplayLegend();setTimeout(home,500);setTimeout(function(){adminBoundary(true)},1500)
 }
 function startVworldMap(){try{refreshStationDerived();if(typeof vw==='undefined')throw new Error('V-World API 스크립트가 로드되지 않았습니다.');vw.ws3dInitCallBack=function(){try{install()}catch(x){err(x,'분석 UI 초기화')}};var o={mapId:'map',initPosition:new vw.CameraPosition(new vw.CoordZ(analysisExtent.clon,analysisExtent.clat,analysisExtent.homeH),new vw.Direction(0,-90,0)),logo:true,navigation:true};map=new vw.Map();map.setOption(o);map.start();setTimeout(function(){try{if(!ready&&typeof ws3d!=='undefined'&&ws3d.viewer)install()}catch(x){err(x,'지연 초기화')}},1500)}catch(x){err(x,'V-World map.start()')}}
 loadStationConfig().then(function(ok){
