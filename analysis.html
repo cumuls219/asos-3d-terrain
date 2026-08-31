@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v7 accessible GIS UI: larger controls + dynamic label decluttering -->
+<!-- v8 smooth navigation: labels declutter only after camera moveEnd + requestRenderMode -->
 <!-- mountains-v1: KMA mountain forecast summit metadata, distance-decluttered -->
 <!-- perf-optimized-v2 + sigungu-boundary + user-guide -->
 <!-- rain-palette-v2: yellow-lime-green-orange-red-magenta -->
@@ -1032,10 +1032,13 @@ function addMountain(m,i){
 
 /* ===== 지도 라벨 충돌 회피 =====
    - 마커/산 정상점은 그대로 유지
-   - 라벨만 우선순위에 따라 숨김 또는 위치 보정
-   - 카메라 이동 시 requestAnimationFrame 1회로 제한 */
+   - 이동 중에는 충돌 계산을 하지 않음
+   - 카메라 이동 종료 후 1회만 우선순위 기반으로 라벨 정리 */
 var labelDeclutterPending=false;
 
+function requestSceneRender(){
+  try{if(viewer&&viewer.scene)viewer.scene.requestRender()}catch(x){}
+}
 function labelScreenPoint(pos){
   try{
     if(Cesium.SceneTransforms.wgs84ToWindowCoordinates)
@@ -1141,18 +1144,25 @@ function declutterLabels(){
     }
   });
 }
+var labelDeclutterTimer=null;
 function scheduleLabelDeclutter(){
-  if(labelDeclutterPending||!viewer)return;
-  labelDeclutterPending=true;
-  requestAnimationFrame(function(){
-    labelDeclutterPending=false;
-    declutterLabels();
-  });
+  if(!viewer)return;
+  if(labelDeclutterTimer)clearTimeout(labelDeclutterTimer);
+  labelDeclutterTimer=setTimeout(function(){
+    labelDeclutterTimer=null;
+    if(labelDeclutterPending)return;
+    labelDeclutterPending=true;
+    requestAnimationFrame(function(){
+      labelDeclutterPending=false;
+      declutterLabels();
+      try{viewer.scene.requestRender()}catch(x){}
+    });
+  },80);
 }
 
 function mountains(on){
   mountainOn=!!on;
-  mountainEnts.forEach(function(en){en.show=mountainOn});scheduleLabelDeclutter();
+  mountainEnts.forEach(function(en){en.show=mountainOn});scheduleLabelDeclutter();requestSceneRender();
   var b=e('mountainBtn');if(b){b.textContent='주요 산 '+(mountainOn?'ON':'OFF');b.classList.toggle('on',mountainOn)}
 }
 function mountainPopup(click,m){
@@ -1164,7 +1174,7 @@ function mountainPopup(click,m){
   e('popupContent').innerHTML='<b>'+esc(m.name)+'('+ht+'m)</b><span class="badge mountain">산악지점</span><table>'+rows+'</table>';
   var p=e('popup');p.style.display='block';p.style.left=Math.max(8,Math.min(click.position.x+12,window.innerWidth-375))+'px';p.style.top=Math.max(8,Math.min(click.position.y+12,window.innerHeight-330))+'px';
 }
-function network(t,on){shown[t]=on;ents[t].forEach(x=>x.show=on);scheduleLabelDeclutter();var id=t==='ASOS'?'asosBtn':t==='AWS'?'awsBtn':'portBtn',nm=t==='PORT'?'항만':t,b=e(id);b.textContent=nm+' '+(on?'ON':'OFF');b.classList.toggle('on',on)}
+function network(t,on){shown[t]=on;ents[t].forEach(x=>x.show=on);scheduleLabelDeclutter();requestSceneRender();var id=t==='ASOS'?'asosBtn':t==='AWS'?'awsBtn':'portBtn',nm=t==='PORT'?'항만':t,b=e(id);b.textContent=nm+' '+(on?'ON':'OFF');b.classList.toggle('on',on)}
 function satellite(on){sat=on;baseImgs.forEach(function(l){try{l.show=on}catch(x){}});e('satBtn').textContent='위성 '+(on?'ON':'OFF');e('satBtn').classList.toggle('on',on)}
 function buildings(on){try{if(!bld)bld=map.getLayerElement('facility_build');if(!bld){e('status').textContent='3D 건물 레이어가 아직 준비되지 않았습니다.';return}bldOn=on;if(on)bld.show();else bld.hide();e('bldBtn').textContent='3D 건물 '+(on?'ON':'OFF');e('bldBtn').classList.toggle('on',on)}catch(x){err(x,'건물 레이어')}}
 function resolveB(n){try{bld=map.getLayerElement('facility_build');if(bld){bld.hide();return}}catch(x){}if(n<12)setTimeout(()=>resolveB(n+1),500)}
@@ -1774,10 +1784,14 @@ function popup(click,s){
 }
 function toggleScalar(field){if(tempOn&&activeScalar===field)clearTemp();else buildScalar(field)}
 function install(){
-  if(ready)return;ready=true;viewer=ws3d.viewer;terrainMode();resolveB(0);fillSelect();S.forEach(addStation);MOUNTAINS.forEach(addMountain);
+  if(ready)return;ready=true;viewer=ws3d.viewer;
   try{
-    viewer.camera.percentageChanged=.025;
-    viewer.camera.changed.addEventListener(scheduleLabelDeclutter);
+    viewer.scene.requestRenderMode=true;
+    viewer.scene.maximumRenderTimeChange=Infinity;
+  }catch(x){}
+  terrainMode();resolveB(0);fillSelect();S.forEach(addStation);MOUNTAINS.forEach(addMountain);
+  try{
+    viewer.camera.moveEnd.addEventListener(scheduleLabelDeclutter);
   }catch(x){}
   setTimeout(scheduleLabelDeclutter,250);
   e('collapse').onclick=function(){var c=e('panel').classList.toggle('collapsed');this.textContent=c?'⌄':'⌃'};
