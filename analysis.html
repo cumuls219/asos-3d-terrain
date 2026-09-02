@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v18.1 operational optimized: raster contours + shared 512 geometry + lightweight camera motion -->
+<!-- v18.3 stable: smoothed optional contours + dual raster cache + performance optimization -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
@@ -492,6 +492,7 @@ button,.fileLabel,select{font-family:inherit}
 
 /* v16 operational UI cleanup */
 .compactSetting{margin-top:9px}
+.compactAction{min-height:36px!important;padding:0 12px!important}
 .mapNavGrid{margin-top:7px}
 #labelModeSelect{min-width:120px}
 
@@ -767,6 +768,10 @@ button,.fileLabel,select{font-family:inherit}
         <details id="terrainDisplayDetails" class="secondaryDetails">
           <summary>지형 표현 설정</summary>
           <div class="detailsBody">
+            <div class="inlineSetting">
+              <span class="settingLabel">등치선</span>
+              <button id="contourBtn" type="button" class="secondaryAction compactAction">OFF</button>
+            </div>
             <div class="inlineSetting">
               <span class="settingLabel">분석면</span>
               <select id="surfaceMode" aria-label="분석면 표시 방식">
@@ -1253,7 +1258,7 @@ function refreshStationDerived(){
   analysisGeometry=null;
 }
 refreshStationDerived();
-var map,viewer,baseImgs=[],sat=false,bld=null,bldOn=false,adminLayer=null,adminOn=true,adminBusy=false,adminErrorShown=false,mountainOn=true,mountainEnts=[],shown={ASOS:true,AWS:true,REF:false},ents={ASOS:[],AWS:[],REF:[]},entMap=new Map(),wx=new Map(),tempLayer=null,tempPlane=null,tempPlaneMaterial=null,tempOn=false,activeScalar=null,activeScalarObj=null,analysisSurfaceMode='draped',analysisPlaneHeight=600,windVerticalOffset=180,dataMode='instant',dailyObs='rn_day',wgridOn=false,wobsOn=false,wgrid=[],wobs=[],ready=false,cameraMoving=false;
+var map,viewer,baseImgs=[],sat=false,bld=null,bldOn=false,adminLayer=null,adminOn=true,adminBusy=false,adminErrorShown=false,mountainOn=true,mountainEnts=[],shown={ASOS:true,AWS:true,REF:false},ents={ASOS:[],AWS:[],REF:[]},entMap=new Map(),wx=new Map(),tempLayer=null,tempPlane=null,tempPlaneMaterial=null,tempOn=false,activeScalar=null,activeScalarObj=null,analysisSurfaceMode='draped',analysisPlaneHeight=600,windVerticalOffset=180,dataMode='instant',dailyObs='rn_day',wgridOn=false,wobsOn=false,wgrid=[],wobs=[],ready=false,cameraMoving=false,contourOn=false;
 var VWORLD_WMS_KEY='CD9939DD-4087-326C-A1F8-F077628FF9FB',VWORLD_WMS_DOMAIN='https://cumuls219.github.io/asos-3d-terrain/';
 /* 성능 최적화 상태: 분석장 캐시 / API 단기 캐시 / 바람 재렌더 지연 */
 var scalarCache=new Map(),dataRevision=0,apiCache=new Map(),windRedrawTimer=null,dataOpSeq=0;
@@ -1689,12 +1694,42 @@ function contourLevels(meta,mn,mx){
   }
   return out;
 }
+function smoothContourGrid(grid,cw,ch,passes){
+  var src=grid,weights=[1,2,1],n=Math.max(1,passes||1);
+  for(var pass=0;pass<n;pass++){
+    var dst=new Float32Array(cw*ch);dst.fill(NaN);
+    for(var y=0;y<ch;y++){
+      for(var x=0;x<cw;x++){
+        var idx=y*cw+x,center=src[idx];
+        /* 분석영역 밖 NaN은 그대로 유지해 등치선이 hull 밖으로 번지지 않게 한다. */
+        if(!Number.isFinite(center))continue;
+        var sw=0,sv=0;
+        for(var oy=-1;oy<=1;oy++){
+          var yy=y+oy;if(yy<0||yy>=ch)continue;
+          for(var ox=-1;ox<=1;ox++){
+            var xx=x+ox;if(xx<0||xx>=cw)continue;
+            var v=src[yy*cw+xx];if(!Number.isFinite(v))continue;
+            var w=weights[oy+1]*weights[ox+1];
+            sw+=w;sv+=w*v;
+          }
+        }
+        dst[idx]=sw?sv/sw:center;
+      }
+    }
+    src=dst;
+  }
+  return src;
+}
+
 function drawContours(canvas,grid,cw,ch,mn,mx,meta){
   if(!grid||!grid.length||mx<=mn)return;
   var levels=contourLevels(meta,mn,mx);
   if(!levels.length)return;
 
-  var ctx=canvas.getContext('2d'),stride=4;
+  /* 등치선 표시용 격자만 2회 스무딩.
+     원 IDW grid와 색상 raster 값은 변경하지 않는다. */
+  var smoothGrid=smoothContourGrid(grid,cw,ch,2),
+      ctx=canvas.getContext('2d'),stride=2;
 
   function edgePoint(edge,x,y,s,v0,v1,v2,v3,level){
     var a,b,x1,y1,x2,y2;
@@ -1707,7 +1742,6 @@ function drawContours(canvas,grid,cw,ch,mn,mx,meta){
     return[x1+(x2-x1)*f,y1+(y2-y1)*f];
   }
 
-  /* TL=1, TR=2, BR=4, BL=8. Each pair is two intersected edges. */
   var table={
     1:[[3,0]],2:[[0,1]],3:[[3,1]],4:[[1,2]],
     5:[[3,0],[1,2]],6:[[0,2]],7:[[3,2]],8:[[2,3]],
@@ -1724,10 +1758,10 @@ function drawContours(canvas,grid,cw,ch,mn,mx,meta){
       var y2=Math.min(ch-1,y+stride);
       for(var x=0;x<cw-stride;x+=stride){
         var x2=Math.min(cw-1,x+stride),
-            v0=grid[y*cw+x],
-            v1=grid[y*cw+x2],
-            v2=grid[y2*cw+x2],
-            v3=grid[y2*cw+x];
+            v0=smoothGrid[y*cw+x],
+            v1=smoothGrid[y*cw+x2],
+            v2=smoothGrid[y2*cw+x2],
+            v3=smoothGrid[y2*cw+x];
 
         if(!Number.isFinite(v0)||!Number.isFinite(v1)||!Number.isFinite(v2)||!Number.isFinite(v3))continue;
 
@@ -1745,9 +1779,8 @@ function drawContours(canvas,grid,cw,ch,mn,mx,meta){
 
     if(!segments.length)return;
 
-    /* 흰색 외곽 + 짙은 내부선: 위성/모든 팔레트에서 읽히도록 처리 */
-    [ {stroke:'rgba(255,255,255,.58)',width:2.4},
-      {stroke:'rgba(15,23,42,.82)',width:1.0} ].forEach(function(st){
+    [{stroke:'rgba(255,255,255,.55)',width:2.2},
+     {stroke:'rgba(15,23,42,.84)',width:1.0}].forEach(function(st){
       ctx.beginPath();
       for(var i=0;i<segments.length;i++){
         ctx.moveTo(segments[i][0][0],segments[i][0][1]);
@@ -1776,10 +1809,11 @@ function mountScalar(field,obj){
   var meta=scalarMeta(field);
   try{
     activeScalarObj=obj;
-    var alpha=Number(e('alpha').value);
+    var alpha=Number(e('alpha').value),
+        imageUrl=contourOn&&obj.contourUrl?obj.contourUrl:(obj.baseUrl||obj.url);
     if(analysisSurfaceMode==='elevated'){
       tempPlaneMaterial=new Cesium.ImageMaterialProperty({
-        image:obj.url,
+        image:imageUrl,
         transparent:true,
         color:Cesium.Color.WHITE.withAlpha(alpha)
       });
@@ -1793,7 +1827,7 @@ function mountScalar(field,obj){
       });
     }else{
       var p=new Cesium.SingleTileImageryProvider({
-        url:obj.url,
+        url:imageUrl,
         rectangle:Cesium.Rectangle.fromDegrees(obj.W,obj.S0,obj.E,obj.N)
       });
       tempLayer=viewer.scene.imageryLayers.addImageryProvider(p);
@@ -1810,7 +1844,7 @@ function mountScalar(field,obj){
     e('tempLegend').style.display='block';
     e('tmin').textContent=obj.mn.toFixed(meta.unit==='%'?0:1)+meta.unit;
     e('tmax').textContent=obj.mx.toFixed(meta.unit==='%'?0:1)+meta.unit;
-    e('legendTitle').textContent='IDW p=2 · '+meta.label+' · 등치선'+(analysisSurfaceMode==='elevated'?' · 지형 노출형':' · 지형 밀착형');
+    e('legendTitle').textContent='IDW p=2 · '+meta.label+(contourOn?' · 등치선':'')+(analysisSurfaceMode==='elevated'?' · 지형 노출형':' · 지형 밀착형');
     S.forEach(label);scheduleLabelDeclutter();
     requestSceneRender();
     return true;
@@ -1850,9 +1884,13 @@ function getAnalysisGeometry(cw,ch){
 function rasterIdwImage(values,geom,mn,mx,meta){
   var cw=geom.cw,ch=geom.ch,rad=Math.PI/180,R=6371,nearQ=Math.pow(.03/(2*R),2),
       maxKm=220,maxQ=Math.pow(Math.sin(maxKm/(2*R)),2),sp=Math.max(.0001,mx-mn),K=16,
-      c=document.createElement('canvas');c.width=cw;c.height=ch,
-      grid=new Float32Array(cw*ch);grid.fill(NaN);
-  var ctx=c.getContext('2d',{alpha:true}),im=ctx.createImageData(cw,ch),d=im.data,a=new Float64Array(S.length),b=new Float64Array(S.length);
+      c=document.createElement('canvas'),
+      grid=new Float32Array(cw*ch);
+  c.width=cw;
+  c.height=ch;
+  grid.fill(NaN);
+  var ctx=c.getContext('2d',{alpha:true}),im=ctx.createImageData(cw,ch),d=im.data,
+      a=new Float64Array(S.length),b=new Float64Array(S.length);
   for(var y=0;y<ch;y++){
     var lat=geom.N-(geom.N-geom.S0)*y/(ch-1),lr=lat*rad,cl=Math.cos(lr);
     for(var si=0;si<S.length;si++){var sl=Math.sin((lr-geom.prep[si].latr)/2);a[si]=sl*sl;b[si]=cl*geom.prep[si].coslat}
@@ -1896,12 +1934,43 @@ function buildScalar(field){
       mn=Math.min.apply(null,allVals),mx=Math.max.apply(null,allVals),
       raster=rasterIdwImage(values,geom,mn,mx,meta),c=raster.canvas,grid=raster.grid,
       x=c.getContext('2d'),cw=geom.cw,ch=geom.ch;
-  drawContours(c,grid,cw,ch,mn,mx,meta);
-  var hard=document.createElement('canvas');hard.width=cw;hard.height=ch;var hctx=hard.getContext('2d');hctx.fillStyle='rgba(255,255,255,1)';hctx.beginPath();
-  geom.H.forEach(function(p,k){var px=(p.x-geom.W)/(geom.E-geom.W)*(cw-1),py=(geom.N-p.y)/(geom.N-geom.S0)*(ch-1);if(k===0)hctx.moveTo(px,py);else hctx.lineTo(px,py)});hctx.closePath();hctx.fill();
-  var soft=document.createElement('canvas');soft.width=cw;soft.height=ch;var sctx=soft.getContext('2d');sctx.filter='blur(8px)';sctx.drawImage(hard,0,0);sctx.filter='none';sctx.globalCompositeOperation='destination-in';sctx.drawImage(hard,0,0);sctx.globalCompositeOperation='source-over';
-  x.globalCompositeOperation='destination-in';x.drawImage(soft,0,0);x.globalCompositeOperation='source-over';
-  var obj={url:c.toDataURL('image/png'),W:geom.W,E:geom.E,S0:geom.S0,N:geom.N,mn:mn,mx:mx};rememberScalarCache(cacheKey,obj);return mountScalar(field,obj);
+
+  /* 공통 hull 마스크를 먼저 만든다. */
+  var hard=document.createElement('canvas');hard.width=cw;hard.height=ch;
+  var hctx=hard.getContext('2d');hctx.fillStyle='rgba(255,255,255,1)';hctx.beginPath();
+  geom.H.forEach(function(p,k){
+    var px=(p.x-geom.W)/(geom.E-geom.W)*(cw-1),
+        py=(geom.N-p.y)/(geom.N-geom.S0)*(ch-1);
+    if(k===0)hctx.moveTo(px,py);else hctx.lineTo(px,py)
+  });
+  hctx.closePath();hctx.fill();
+
+  var soft=document.createElement('canvas');soft.width=cw;soft.height=ch;
+  var sctx=soft.getContext('2d');
+  sctx.filter='blur(8px)';sctx.drawImage(hard,0,0);sctx.filter='none';
+  sctx.globalCompositeOperation='destination-in';sctx.drawImage(hard,0,0);
+  sctx.globalCompositeOperation='source-over';
+
+  /* 기본 색상 raster */
+  x.globalCompositeOperation='destination-in';x.drawImage(soft,0,0);
+  x.globalCompositeOperation='source-over';
+  var baseUrl=c.toDataURL('image/png');
+
+  /* 등치선 raster는 기본 raster를 복사한 뒤 표시선만 추가.
+     IDW 재계산 없이 ON/OFF 전환할 수 있도록 둘 다 캐시한다. */
+  var cc=document.createElement('canvas');cc.width=cw;cc.height=ch;
+  var ccx=cc.getContext('2d');ccx.drawImage(c,0,0);
+  drawContours(cc,grid,cw,ch,mn,mx,meta);
+  ccx.globalCompositeOperation='destination-in';ccx.drawImage(soft,0,0);
+  ccx.globalCompositeOperation='source-over';
+  var contourUrl=cc.toDataURL('image/png');
+
+  var obj={
+    baseUrl:baseUrl,contourUrl:contourUrl,
+    W:geom.W,E:geom.E,S0:geom.S0,N:geom.N,mn:mn,mx:mx
+  };
+  rememberScalarCache(cacheKey,obj);
+  return mountScalar(field,obj);
 }
 function buildTemp(){return buildScalar('temp')}
 function selectedRainField(){return e('rainAccum')?e('rainAccum').value:'rn60'}
@@ -2404,6 +2473,15 @@ function nearestStationAtScreen(position,maxPx){
   return best;
 }
 
+function toggleContours(){
+  contourOn=!contourOn;
+  var b=e('contourBtn');
+  if(b){
+    b.textContent=contourOn?'ON':'OFF';
+    b.classList.toggle('on',contourOn);
+  }
+  if(tempOn&&activeScalar&&activeScalarObj)remountActiveScalar();
+}
 function toggleScalar(field){if(tempOn&&activeScalar===field)clearTemp();else buildScalar(field)}
 function install(){
   if(ready)return;ready=true;refreshStationDerived();viewer=ws3d.viewer;
@@ -2449,6 +2527,7 @@ function install(){
   e('hmBtn').onclick=function(){toggleScalar('humidity')};
   e('rainBtn').onclick=function(){var f=selectedRainField();if(tempOn&&activeScalar===f)clearTemp();else buildRain()};
   e('dailyBtn').onclick=function(){toggleScalar('daily')};
+  e('contourBtn').onclick=toggleContours;
   e('rainAccum').onchange=function(){updateRainAvailability()};
 
   e('windGridBtn').onclick=function(){wgridOn=!wgridOn;if(wgridOn){if(gridWind()){this.textContent='바람장 ON';this.classList.add('on')}else wgridOn=false}else{clearW(wgrid);this.textContent='바람장 OFF';this.classList.remove('on')}};
