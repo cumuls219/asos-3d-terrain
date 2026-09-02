@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v17.7 operational final: display legend removed, reference stations OFF by default -->
+<!-- v18.1 operational optimized: raster contours + shared 512 geometry + lightweight camera motion -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
@@ -812,7 +812,7 @@ button,.fileLabel,select{font-family:inherit}
               </div>
               <div id="windDetectInfo">자료를 불러오면 사용 가능한 평균주기를 자동 확인합니다.</div>
             </div>
-            <div class="slider cleanSlider"><span>밀도</span><input id="wdensity" type="range" min="14" max="32" step="1" value="24"><span id="wdensityVal" class="sv">24</span></div>
+            <div class="slider cleanSlider"><span>밀도</span><input id="wdensity" type="range" min="14" max="32" step="1" value="20"><span id="wdensityVal" class="sv">20</span></div>
             <div class="slider cleanSlider"><span>길이</span><input id="wscale" type="range" min="0.5" max="2.0" step="0.1" value="1.0"><span id="wval" class="sv">1.0×</span></div>
             <div class="slider cleanSlider"><span>두께</span><input id="wthick" type="range" min="1.5" max="8.0" step="0.5" value="4.0"><span id="wthickVal" class="sv">4.0</span></div>
             <div class="slider cleanSlider"><span>벡터 투명도</span><input id="walpha" type="range" min="0.50" max="1.00" step="0.05" value="1.00"><span id="walphaVal" class="sv">100%</span></div>
@@ -1253,7 +1253,7 @@ function refreshStationDerived(){
   analysisGeometry=null;
 }
 refreshStationDerived();
-var map,viewer,baseImgs=[],sat=false,bld=null,bldOn=false,adminLayer=null,adminOn=true,adminBusy=false,adminErrorShown=false,mountainOn=true,mountainEnts=[],shown={ASOS:true,AWS:true,REF:false},ents={ASOS:[],AWS:[],REF:[]},entMap=new Map(),wx=new Map(),tempLayer=null,tempPlane=null,tempPlaneMaterial=null,tempOn=false,activeScalar=null,activeScalarObj=null,analysisSurfaceMode='draped',analysisPlaneHeight=600,windVerticalOffset=180,dataMode='instant',dailyObs='rn_day',wgridOn=false,wobsOn=false,wgrid=[],wobs=[],ready=false;
+var map,viewer,baseImgs=[],sat=false,bld=null,bldOn=false,adminLayer=null,adminOn=true,adminBusy=false,adminErrorShown=false,mountainOn=true,mountainEnts=[],shown={ASOS:true,AWS:true,REF:false},ents={ASOS:[],AWS:[],REF:[]},entMap=new Map(),wx=new Map(),tempLayer=null,tempPlane=null,tempPlaneMaterial=null,tempOn=false,activeScalar=null,activeScalarObj=null,analysisSurfaceMode='draped',analysisPlaneHeight=600,windVerticalOffset=180,dataMode='instant',dailyObs='rn_day',wgridOn=false,wobsOn=false,wgrid=[],wobs=[],ready=false,cameraMoving=false;
 var VWORLD_WMS_KEY='CD9939DD-4087-326C-A1F8-F077628FF9FB',VWORLD_WMS_DOMAIN='https://cumuls219.github.io/asos-3d-terrain/';
 /* 성능 최적화 상태: 분석장 캐시 / API 단기 캐시 / 바람 재렌더 지연 */
 var scalarCache=new Map(),dataRevision=0,apiCache=new Map(),windRedrawTimer=null,dataOpSeq=0;
@@ -1497,6 +1497,24 @@ function declutterLabels(){
   });
 }
 var labelDeclutterTimer=null;
+
+function setCameraMotionLightweight(moving){
+  cameraMoving=!!moving;
+
+  /* 카메라 이동 중에는 글자와 바람벡터만 잠시 숨기고
+     지점 마커·분석 raster·지형은 유지한다. */
+  [ents.ASOS,ents.AWS,ents.REF].forEach(function(group){
+    group.forEach(function(en){if(en&&en.label)en.label.show=!moving});
+  });
+  mountainEnts.forEach(function(en){if(en&&en.label)en.label.show=!moving});
+
+  wgrid.forEach(function(en){if(en)en.show=moving?false:wgridOn});
+  wobs.forEach(function(en){if(en)en.show=moving?false:wobsOn});
+
+  if(!moving)scheduleLabelDeclutter();
+  requestSceneRender();
+}
+
 function scheduleLabelDeclutter(){
   if(!viewer)return;
   if(labelDeclutterTimer)clearTimeout(labelDeclutterTimer);
@@ -1588,8 +1606,10 @@ function terrainMode(){
     if(sc.fog)sc.fog.enabled=false;
     var dpr=window.devicePixelRatio||1,
         lowSpec=(navigator.hardwareConcurrency&&navigator.hardwareConcurrency<=4)||(navigator.deviceMemory&&navigator.deviceMemory<=4);
-    viewer.resolutionScale=Math.min(dpr,lowSpec?1.25:1.6);
-    sc.globe.maximumScreenSpaceError=lowSpec?1.8:1.4;
+    /* 광역 3D 조작 안정성을 우선: 고DPI 렌더링 상한을 제한 */
+    viewer.resolutionScale=Math.min(dpr,lowSpec?1.0:1.25);
+    sc.globe.maximumScreenSpaceError=lowSpec?2.4:1.8;
+    sc.maximumRenderTimeChange=Infinity;
   }catch(x){}
   for(var i=0;i<sc.imageryLayers.length;i++)if(baseImgs.indexOf(sc.imageryLayers.get(i))<0)baseImgs.push(sc.imageryLayers.get(i));
   satellite(true);
@@ -1650,6 +1670,95 @@ function rampRain(t){return interpRamp(t,[[0,[255,245,70]],[.16,[185,255,70]],[.
 function rampWindMax(t){return interpRamp(t,[[0,[254,252,232]],[.25,[253,230,138]],[.5,[251,146,60]],[.75,[239,68,68]],[1,[153,27,27]]])}
 function scalarColor(t,palette){if(palette==='humidity')return rampHumidity(t);if(palette==='rain')return rampRain(Math.sqrt(Math.max(0,t)));if(palette==='windmax')return rampWindMax(t);return rampTemp(t)}
 
+function niceContourStep(meta,mn,mx){
+  var span=Math.max(.0001,mx-mn);
+  if(meta.unit==='℃')return span<=8?1:span<=18?2:5;
+  if(meta.unit==='%')return span<=35?5:10;
+  if(meta.unit==='m/s')return span<=12?2:5;
+
+  /* 강수 등: 전체 범위가 6~10단계 정도가 되도록 nice number */
+  var raw=span/8,pow=Math.pow(10,Math.floor(Math.log10(Math.max(raw,1e-6)))),
+      q=raw/pow,n=q<=1?1:q<=2?2:q<=5?5:10;
+  return n*pow;
+}
+function contourLevels(meta,mn,mx){
+  var step=niceContourStep(meta,mn,mx),out=[],
+      first=Math.ceil(mn/step)*step;
+  for(var v=first;v<mx-1e-9&&out.length<14;v+=step){
+    if(v>mn+step*.05)out.push(v);
+  }
+  return out;
+}
+function drawContours(canvas,grid,cw,ch,mn,mx,meta){
+  if(!grid||!grid.length||mx<=mn)return;
+  var levels=contourLevels(meta,mn,mx);
+  if(!levels.length)return;
+
+  var ctx=canvas.getContext('2d'),stride=4;
+
+  function edgePoint(edge,x,y,s,v0,v1,v2,v3,level){
+    var a,b,x1,y1,x2,y2;
+    if(edge===0){a=v0;b=v1;x1=x;y1=y;x2=x+s;y2=y}
+    else if(edge===1){a=v1;b=v2;x1=x+s;y1=y;x2=x+s;y2=y+s}
+    else if(edge===2){a=v3;b=v2;x1=x;y1=y+s;x2=x+s;y2=y+s}
+    else{a=v0;b=v3;x1=x;y1=y;x2=x;y2=y+s}
+    var f=Math.abs(b-a)<1e-12?.5:(level-a)/(b-a);
+    f=Math.max(0,Math.min(1,f));
+    return[x1+(x2-x1)*f,y1+(y2-y1)*f];
+  }
+
+  /* TL=1, TR=2, BR=4, BL=8. Each pair is two intersected edges. */
+  var table={
+    1:[[3,0]],2:[[0,1]],3:[[3,1]],4:[[1,2]],
+    5:[[3,0],[1,2]],6:[[0,2]],7:[[3,2]],8:[[2,3]],
+    9:[[0,2]],10:[[0,1],[2,3]],11:[[1,2]],12:[[3,1]],
+    13:[[0,1]],14:[[3,0]]
+  };
+
+  ctx.save();
+  ctx.lineJoin='round';ctx.lineCap='round';
+
+  levels.forEach(function(level){
+    var segments=[];
+    for(var y=0;y<ch-stride;y+=stride){
+      var y2=Math.min(ch-1,y+stride);
+      for(var x=0;x<cw-stride;x+=stride){
+        var x2=Math.min(cw-1,x+stride),
+            v0=grid[y*cw+x],
+            v1=grid[y*cw+x2],
+            v2=grid[y2*cw+x2],
+            v3=grid[y2*cw+x];
+
+        if(!Number.isFinite(v0)||!Number.isFinite(v1)||!Number.isFinite(v2)||!Number.isFinite(v3))continue;
+
+        var code=(v0>=level?1:0)|(v1>=level?2:0)|(v2>=level?4:0)|(v3>=level?8:0),
+            pairs=table[code];
+        if(!pairs)continue;
+
+        for(var p=0;p<pairs.length;p++){
+          var a=edgePoint(pairs[p][0],x,y,stride,v0,v1,v2,v3,level),
+              b=edgePoint(pairs[p][1],x,y,stride,v0,v1,v2,v3,level);
+          segments.push([a,b]);
+        }
+      }
+    }
+
+    if(!segments.length)return;
+
+    /* 흰색 외곽 + 짙은 내부선: 위성/모든 팔레트에서 읽히도록 처리 */
+    [ {stroke:'rgba(255,255,255,.58)',width:2.4},
+      {stroke:'rgba(15,23,42,.82)',width:1.0} ].forEach(function(st){
+      ctx.beginPath();
+      for(var i=0;i<segments.length;i++){
+        ctx.moveTo(segments[i][0][0],segments[i][0][1]);
+        ctx.lineTo(segments[i][1][0],segments[i][1][1]);
+      }
+      ctx.strokeStyle=st.stroke;ctx.lineWidth=st.width;ctx.stroke();
+    });
+  });
+  ctx.restore();
+}
+
 function invalidateScalarCache(){dataRevision++;scalarCache.clear()}
 function rememberScalarCache(key,obj){
   if(scalarCache.size>=4){var first=scalarCache.keys().next();if(!first.done)scalarCache.delete(first.value)}
@@ -1701,7 +1810,7 @@ function mountScalar(field,obj){
     e('tempLegend').style.display='block';
     e('tmin').textContent=obj.mn.toFixed(meta.unit==='%'?0:1)+meta.unit;
     e('tmax').textContent=obj.mx.toFixed(meta.unit==='%'?0:1)+meta.unit;
-    e('legendTitle').textContent='IDW p=2 · '+meta.label+(analysisSurfaceMode==='elevated'?' · 지형 노출형':' · 지형 밀착형');
+    e('legendTitle').textContent='IDW p=2 · '+meta.label+' · 등치선'+(analysisSurfaceMode==='elevated'?' · 지형 노출형':' · 지형 밀착형');
     S.forEach(label);scheduleLabelDeclutter();
     requestSceneRender();
     return true;
@@ -1741,7 +1850,8 @@ function getAnalysisGeometry(cw,ch){
 function rasterIdwImage(values,geom,mn,mx,meta){
   var cw=geom.cw,ch=geom.ch,rad=Math.PI/180,R=6371,nearQ=Math.pow(.03/(2*R),2),
       maxKm=220,maxQ=Math.pow(Math.sin(maxKm/(2*R)),2),sp=Math.max(.0001,mx-mn),K=16,
-      c=document.createElement('canvas');c.width=cw;c.height=ch;
+      c=document.createElement('canvas');c.width=cw;c.height=ch,
+      grid=new Float32Array(cw*ch);grid.fill(NaN);
   var ctx=c.getContext('2d',{alpha:true}),im=ctx.createImageData(cw,ch),d=im.data,a=new Float64Array(S.length),b=new Float64Array(S.length);
   for(var y=0;y<ch;y++){
     var lat=geom.N-(geom.N-geom.S0)*y/(ch-1),lr=lat*rad,cl=Math.cos(lr);
@@ -1755,12 +1865,13 @@ function rasterIdwImage(values,geom,mn,mx,meta){
         var wt=1/Math.max(q,1e-30);sw+=wt;sv+=wt*val;used++;
       }
       if(sw!==-1)v=used>=3&&sw?sv/sw:NaN;
-      var ix=(y*cw+x)*4;
+      var gi=y*cw+x,ix=gi*4;
       if(!Number.isFinite(v)){d[ix+3]=0;continue}
+      grid[gi]=v;
       var z=(v-mn)/sp,rgb=scalarColor(z,meta.palette);d[ix]=rgb[0];d[ix+1]=rgb[1];d[ix+2]=rgb[2];d[ix+3]=255;
     }
   }
-  ctx.putImageData(im,0,0);return c;
+  ctx.putImageData(im,0,0);return{canvas:c,grid:grid};
 }
 
 function clearTemp(updateLabels){
@@ -1781,8 +1892,11 @@ function buildScalar(field){
   var allVals=[];
   wx.forEach(function(w,id){var s=stationById.get(id),v=w?num(w[field]):NaN;if(!s||!fin(v))return;values[s.__stationIndex]=v;allVals.push(v)});
   if(allVals.length<3)return false;
-  var meta=scalarMeta(field),geom=getAnalysisGeometry(640,640),
-      mn=Math.min.apply(null,allVals),mx=Math.max.apply(null,allVals),c=rasterIdwImage(values,geom,mn,mx,meta),x=c.getContext('2d'),cw=geom.cw,ch=geom.ch;
+  var meta=scalarMeta(field),geom=getAnalysisGeometry(512,512),
+      mn=Math.min.apply(null,allVals),mx=Math.max.apply(null,allVals),
+      raster=rasterIdwImage(values,geom,mn,mx,meta),c=raster.canvas,grid=raster.grid,
+      x=c.getContext('2d'),cw=geom.cw,ch=geom.ch;
+  drawContours(c,grid,cw,ch,mn,mx,meta);
   var hard=document.createElement('canvas');hard.width=cw;hard.height=ch;var hctx=hard.getContext('2d');hctx.fillStyle='rgba(255,255,255,1)';hctx.beginPath();
   geom.H.forEach(function(p,k){var px=(p.x-geom.W)/(geom.E-geom.W)*(cw-1),py=(geom.N-p.y)/(geom.N-geom.S0)*(ch-1);if(k===0)hctx.moveTo(px,py);else hctx.lineTo(px,py)});hctx.closePath();hctx.fill();
   var soft=document.createElement('canvas');soft.width=cw;soft.height=ch;var sctx=soft.getContext('2d');sctx.filter='blur(8px)';sctx.drawImage(hard,0,0);sctx.filter='none';sctx.globalCompositeOperation='destination-in';sctx.drawImage(hard,0,0);sctx.globalCompositeOperation='source-over';
@@ -1837,24 +1951,69 @@ function idwUV(lat,lon,P){
   return sw?{u:su/sw,v:sv/sw}:{u:NaN,v:NaN};
 }
 function obsWind(){
-  clearW(wobs);
-  var th=Number(e('wthick').value),scale=Number(e('wscale').value),alpha=Math.max(.35,Math.min(1,Number(e('walpha').value)||1)),
-      col=Cesium.Color.fromCssColorString('#000000').withAlpha(alpha);
-  wx.forEach(function(w,id){
-    var s=stationById.get(id);
-    if(!s||!fin(w.wd)||!fin(w.ws))return;
-    var q=uv(w.wd,w.ws);
-    arrow(s.lat,s.lon,q.u,q.v,col,wobs,th,scale,false);
-  });
+  if(!viewer)return;
+  try{viewer.entities.suspendEvents()}catch(x){}
+  try{
+    clearW(wobs);
+    var th=Number(e('wthick').value),scale=Number(e('wscale').value),alpha=Math.max(.35,Math.min(1,Number(e('walpha').value)||1)),
+        col=Cesium.Color.fromCssColorString('#000000').withAlpha(alpha);
+    wx.forEach(function(w,id){
+      var s=stationById.get(id);
+      if(!s||!fin(w.wd)||!fin(w.ws))return;
+      var q=uv(w.wd,w.ws);
+      arrow(s.lat,s.lon,q.u,q.v,col,wobs,th,scale,false);
+    });
+  }finally{try{viewer.entities.resumeEvents()}catch(x){}}
+  requestSceneRender();
 }
 function gridWind(){
-  clearW(wgrid);var P=[];
-  wx.forEach(function(w,id){var s=stationById.get(id);if(!s||!fin(w.wd)||!fin(w.ws))return;var q=uv(w.wd,w.ws);P.push({lat:s.lat,lon:s.lon,u:q.u,v:q.v})});
-  if(P.length<3)return false;
-  var G=getAnalysisGeometry(640,640),H=G.H,W=G.W,E=G.E,S0=G.S0,N=G.N,nx=Math.round(Number(e('wdensity').value)),mid=(S0+N)/2*Math.PI/180,
-      xkm=Math.max(1,(E-W)*111.32*Math.cos(mid)),ykm=Math.max(1,(N-S0)*111.32),ny=Math.max(8,Math.min(34,Math.round((nx-1)*(ykm/xkm))+1)),
-      th=Number(e('wthick').value),scale=Number(e('wscale').value),alpha=Math.max(.35,Math.min(1,Number(e('walpha').value)||1)),col=Cesium.Color.fromCssColorString('#020817').withAlpha(alpha);
-  for(var j=0;j<ny;j++){var lat=S0+(N-S0)*j/(ny-1);for(var i=0;i<nx;i++){var lon=W+(E-W)*i/(nx-1);if(!inside(lon,lat,H))continue;var q=idwUV(lat,lon,P);arrow(lat,lon,q.u,q.v,col,wgrid,th,scale,true)}}requestSceneRender();return true;
+  if(!viewer)return false;
+  var suspended=false,ok=false;
+  try{
+    try{viewer.entities.suspendEvents();suspended=true}catch(x){}
+    clearW(wgrid);
+
+    var P=[];
+    wx.forEach(function(w,id){
+      var s=stationById.get(id);
+      if(!s||!fin(w.wd)||!fin(w.ws))return;
+      var q=uv(w.wd,w.ws);
+      P.push({lat:s.lat,lon:s.lon,u:q.u,v:q.v});
+    });
+    if(P.length<3)return false;
+
+    /* 스칼라장과 같은 512 공간기하를 공유하여 geometry 재생성을 방지 */
+    var G=getAnalysisGeometry(512,512),
+        H=G.H,W=G.W,E=G.E,S0=G.S0,N=G.N,
+        nx=Math.round(Number(e('wdensity').value)),
+        mid=(S0+N)/2*Math.PI/180,
+        xkm=Math.max(1,(E-W)*111.32*Math.cos(mid)),
+        ykm=Math.max(1,(N-S0)*111.32),
+        ny=Math.max(8,Math.min(34,Math.round((nx-1)*(ykm/xkm))+1)),
+        th=Number(e('wthick').value),
+        scale=Number(e('wscale').value),
+        alpha=Math.max(.35,Math.min(1,Number(e('walpha').value)||1)),
+        col=Cesium.Color.fromCssColorString('#020817').withAlpha(alpha);
+
+    for(var j=0;j<ny;j++){
+      var lat=S0+(N-S0)*j/(ny-1);
+      for(var i=0;i<nx;i++){
+        var lon=W+(E-W)*i/(nx-1);
+        if(!inside(lon,lat,H))continue;
+        var q=idwUV(lat,lon,P);
+        if(fin(q.u)&&fin(q.v))arrow(lat,lon,q.u,q.v,col,wgrid,th,scale,true);
+      }
+    }
+    ok=true;
+    return true;
+  }catch(x){
+    console.warn('gridWind',x);
+    return false;
+  }finally{
+    if(suspended){try{viewer.entities.resumeEvents()}catch(x){}}
+    requestSceneRender();
+    if(!ok&&wgrid.length)clearW(wgrid);
+  }
 }
 function cancelWindRedraw(){
   if(windRedrawTimer){clearTimeout(windRedrawTimer);windRedrawTimer=null}
@@ -1865,7 +2024,7 @@ function scheduleWindRedraw(grid,obs){
     windRedrawTimer=null;
     if(grid&&wgridOn)gridWind();
     if(obs&&wobsOn)obsWind();
-  },90);
+  },160);
 }
 function csv(t){var R=[],r=[],c='',q=false;for(var i=0;i<t.length;i++){var h=t[i],n=t[i+1];if(h==='"'){if(q&&n==='"'){c+='"';i++}else q=!q}else if((h===','||h==='\t')&&!q){r.push(c);c=''}else if((h==='\n'||h==='\r')&&!q){if(h==='\r'&&n==='\n')i++;r.push(c);c='';if(r.some(v=>String(v).trim()!==''))R.push(r);r=[]}else c+=h}if(c||r.length){r.push(c);R.push(r)}if(!R.length)return[];var H=R[0].map(v=>String(v).trim());return R.slice(1).map(function(a){var o={};H.forEach((h,i)=>o[h]=a[i]===undefined?'':a[i]);return o})}
 
@@ -2254,7 +2413,8 @@ function install(){
   }catch(x){}
   terrainMode();resolveB(0);fillSelect();S.forEach(addStation);MOUNTAINS.forEach(addMountain);
   try{
-    viewer.camera.moveEnd.addEventListener(scheduleLabelDeclutter);
+    viewer.camera.moveStart.addEventListener(function(){setCameraMotionLightweight(true)});
+    viewer.camera.moveEnd.addEventListener(function(){setCameraMotionLightweight(false)});
   }catch(x){}
   setTimeout(scheduleLabelDeclutter,250);
   e('collapse').onclick=function(){var c=e('panel').classList.toggle('collapsed');this.textContent=c?'⌄':'⌃'};
