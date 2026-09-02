@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v18.3 stable: smoothed optional contours + dual raster cache + performance optimization -->
+<!-- v18.6 stable: temperature contour interval auto 1/2/3C + smoothed optional contours -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
@@ -1677,7 +1677,8 @@ function scalarColor(t,palette){if(palette==='humidity')return rampHumidity(t);i
 
 function niceContourStep(meta,mn,mx){
   var span=Math.max(.0001,mx-mn);
-  if(meta.unit==='℃')return span<=8?1:span<=18?2:5;
+  /* 기온 계열 등치선은 요청값대로 항상 3℃ 간격 */
+  if(meta.unit==='℃')return span<=8?1:span<=18?2:3;
   if(meta.unit==='%')return span<=35?5:10;
   if(meta.unit==='m/s')return span<=12?2:5;
 
