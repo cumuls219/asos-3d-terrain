@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v18.7 stable: temperature contour auto 1/2/3C + rain palette starts at white/near-transparent -->
+<!-- v19 operational: NOW query + terrain exaggeration + KMA-normal-based seasonal temperature range + interpolation-only IDW + contour step 1-5C -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
@@ -238,13 +238,13 @@ button,.fileLabel,select{border:1px solid var(--l);border-radius:9px;background:
 #apiGrid{display:block}
 #dailyQuery{grid-template-columns:1fr;gap:7px}
 #dailyQuery .wide{grid-column:auto}
-#apiMode,#dailyObs,#rainAccum,#apiDate,#apiInstantDate,#apiHour,#apiMinute,#stationSelect,#labelModeSelect{
+#apiMode,#dailyObs,#rainAccum,#apiDate,#apiInstantDate,#apiHour,#apiMinute,#stationSelect,#labelModeSelect,#contourStep{
   width:100%;height:34px;min-height:34px;padding:0 9px;
   border:1px solid #344257;border-radius:6px;background:#0c1526;
   color:#e5e7eb;font-family:inherit;font-size:11px;font-weight:500;
   outline:none;
 }
-#apiMode:focus,#dailyObs:focus,#rainAccum:focus,#apiDate:focus,#apiInstantDate:focus,#apiHour:focus,#apiMinute:focus,#stationSelect:focus,#labelModeSelect:focus{
+#apiMode:focus,#dailyObs:focus,#rainAccum:focus,#apiDate:focus,#apiInstantDate:focus,#apiHour:focus,#apiMinute:focus,#stationSelect:focus,#labelModeSelect:focus,#contourStep:focus{
   border-color:#648fbd;box-shadow:0 0 0 2px rgba(79,143,207,.12)
 }
 button,.fileLabel,select{font-family:inherit}
@@ -432,7 +432,7 @@ button,.fileLabel,select{font-family:inherit}
 .settingLabel{
   font-size:11.5px;
 }
-#apiMode,#dailyObs,#rainAccum,#apiDate,#apiInstantDate,#apiHour,#apiMinute,#stationSelect,#labelModeSelect{
+#apiMode,#dailyObs,#rainAccum,#apiDate,#apiInstantDate,#apiHour,#apiMinute,#stationSelect,#labelModeSelect,#contourStep{
   height:40px;
   min-height:40px;
   font-size:13.5px;
@@ -558,6 +558,23 @@ button,.fileLabel,select{font-family:inherit}
     grid-template-columns:minmax(130px,1.5fr) 72px 72px;
   }
 }
+
+
+/* v19 operational controls */
+.queryActionGrid{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 82px;
+  gap:7px;
+  margin-top:8px;
+}
+.queryActionGrid #apiFetchBtn{margin-top:0}
+.nowAction{
+  min-height:44px!important;
+  font-weight:900!important;
+  letter-spacing:.3px;
+}
+#contourStep{width:100%;height:40px}
+.terrainExaggerationRow{margin-top:9px}
 
 </style></head>
 <body><div id="map"></div>
@@ -713,8 +730,11 @@ button,.fileLabel,select{font-family:inherit}
           </label>
         </div>
 
-        <button id="apiFetchBtn" type="button" class="primaryAction">선택 시각 관측자료 조회</button>
-        <div id="apiState" class="compactState">날짜·시각을 선택한 뒤 조회하세요.</div>
+        <div class="queryActionGrid">
+          <button id="apiFetchBtn" type="button" class="primaryAction">선택 시각 관측자료 조회</button>
+          <button id="nowBtn" type="button" class="secondaryAction nowAction" title="현재시각 기준 5분 전 자료로 즉시 조회">NOW</button>
+        </div>
+        <div id="apiState" class="compactState">날짜·시각을 선택한 뒤 조회하거나 NOW를 누르세요.</div>
       </div>
 
       <div id="dataInfo">자료 미입력 · API 조회 또는 파일 입력 후 분석장을 생성합니다.</div>
@@ -773,6 +793,17 @@ button,.fileLabel,select{font-family:inherit}
               <button id="contourBtn" type="button" class="secondaryAction compactAction">OFF</button>
             </div>
             <div class="inlineSetting">
+              <span class="settingLabel">기온 등치 간격</span>
+              <select id="contourStep" aria-label="기온 등치선 간격">
+                <option value="auto" selected>자동</option>
+                <option value="1">1℃</option>
+                <option value="2">2℃</option>
+                <option value="3">3℃</option>
+                <option value="4">4℃</option>
+                <option value="5">5℃</option>
+              </select>
+            </div>
+            <div class="inlineSetting">
               <span class="settingLabel">분석면</span>
               <select id="surfaceMode" aria-label="분석면 표시 방식">
                 <option value="draped" selected>지형 밀착형</option>
@@ -787,7 +818,13 @@ button,.fileLabel,select{font-family:inherit}
                 <span>m</span>
               </div>
             </div>
-            <div class="sectionCaption">지형 노출형의 기준고도는 0~1,400m 시각화용이며, 관측값 자체는 고도보정하지 않습니다.</div>
+            <div class="slider cleanSlider terrainExaggerationRow">
+              <span>지형 강조</span>
+              <input id="terrainExaggeration" type="range" min="1" max="3" step="0.1" value="1">
+              <span id="terrainExaggerationVal" class="sv">1.0×</span>
+            </div>
+            <div id="terrainExaggerationNote" class="sectionCaption">1.0× = 실제 지형. 지형 강조는 시각화에만 적용됩니다.</div>
+            <div class="sectionCaption">지형 노출형의 기준고도는 0~1,400m 시각화용이며, 관측값·IDW·관측소 고도값 자체는 보정하지 않습니다.</div>
           </div>
         </details>
       </div>
@@ -891,7 +928,12 @@ button,.fileLabel,select{font-family:inherit}
       <h3>1. 빠른 사용 순서</h3>
       <div class="guideBox"><span class="guideKey">특정 시각</span> 날짜·시각 선택 → 관측자료 조회 → 기온/습도/강수 또는 바람 분석장을 선택합니다.<br><span class="guideKey">일극값</span> 날짜와 요소(일강수량·일최고기온·일최저기온·일최대풍속) 선택 → 조회 → 일극값장을 켭니다.</div>
       <h3>2. 지도 · 관측망</h3>
-      <ul><li><b>위성</b>: 기본 ON. 배경 위성영상을 켜거나 끕니다.</li><li><b>3D 건물</b>: V-World 건물 레이어를 켜거나 끕니다.</li><li><b>시군구 경계</b>: V-World WMS <code>LT_C_ADSIGG</code> 행정구역 경계를 표출합니다. 분석장과 독립적으로 ON/OFF 됩니다.</li><li><b>주요 산</b>: 기상청 산악예보 지점정보의 정상 좌표·고도를 기준으로 <code>산명(고도m)</code>를 표출합니다. 고도가 높은 산은 넓은 시야에서, 낮은 산은 확대 시 나타나도록 자동으로 과밀을 줄입니다. 산 표시를 클릭하면 좌표·고도·자료 기준을 확인할 수 있습니다.</li><li><b>ASOS / AWS / 참고</b>: 관측망별 마커·라벨을 독립적으로 제어합니다. 참고지점은 기본 OFF이며 화면에서 숨겨져도 기온·습도·강수·바람 공간계산에는 그대로 포함됩니다. 지점표시는 바람벡터보다 앞에 보이도록 우선 처리됩니다.</li><li><b>라벨 표시</b>: 자동(권장)은 줌과 충돌을 고려해 필요한 라벨만 표시하고, 간소는 ASOS·고산 위주, 전체는 넓은 범위에서 모든 관측망 라벨을 후보로 표시합니다.</li></ul>
+      <ul><li><b>위성</b>: 기본 ON. 배경 위성영상을 켜거나 끕니다.</li><li><b>3D 건물</b>: V-World 건물 레이어를 켜거나 끕니다.</li><li><b>시군구 경계</b>: V-World WMS <code>LT_C_ADSIGG</code> 행정구역 경계를 표출합니다. 분석장과 독립적으로 ON/OFF 됩니다.</li><li><b>주요 산</b>: 기상청 산악예보 지점정보의 정상 좌표·고도를 기준으로 <code>산명(고도m)</code>를 표출합니다. 고도가 높은 산은 넓은 시야에서, 낮은 산은 확대 시 나타나도록 자동으로 과밀을 줄입니다. 산 표시를 클릭하면 좌표·고도·자료 기준을 확인할 수 있습니다.</li><li><b>ASOS / AWS / 참고</b>: 관측망별 마커·라벨을 독립적으로 제어합니다. 참고지점은 기본 OFF이며 화면에서 숨겨져도 기온·습도·강수·바람 공간계산에는 그대로 포함됩니다. 지점표시는 바람벡터보다 앞에 보이도록 우선 처리됩니다.</li><li><b>라벨 표시</b>: 자동(권장)은 줌과 충돌을 고려해 필요한 라벨만 표시하고, 간소는 ASOS·고산 위주, 전체는 넓은 범위에서 모든 관측망 라벨을 후보로 표시합니다.</li>
+<li><b>NOW</b>: 현재시각 기준 약 5분 전의 매분 관측자료로 즉시 전환·조회합니다.</li>
+<li><b>기온 범례</b>: 기상청 1991~2020 평년값과 계절 분포도 범위를 근거로 한 계절 고정 표시범위를 사용합니다. 이는 기상청이 공개한 정확한 AWS 팔레트 숫자표가 아니라 운영용 기준이며, 실제 관측이 범위를 넘으면 5℃ 단위로 자동 확장됩니다.</li>
+<li><b>내삽 범위</b>: 관측망 최외곽 convex hull 내부만 IDW로 내삽하고 외부는 투명 처리합니다. 관측망 밖 외삽은 하지 않습니다.</li>
+<li><b>지형 강조</b>: 지원되는 V-World/Cesium 환경에서 1.0~3.0× 수직과장이 가능하며 시각효과에만 적용됩니다.</li>
+</ul>
       <h3>3. 스칼라 분석장</h3>
       <ul><li>기온, 상대습도, 강수, 일극값을 관측지점 값으로부터 <b>IDW(p=2)</b> 보간합니다.</li><li>시트4의 <b>모든 관측지점</b>을 지도 표출과 공간계산에 동일하게 사용하고, 전체 관측망의 <b>볼록껍질 내부</b>를 광역 분석영역으로 사용합니다.</li><li>강수는 15분·60분·12시간·일누적 중 선택할 수 있습니다.</li><li>기본값은 <b>지형 밀착형</b>입니다. 필요할 때 지형 노출형으로 전환하고 기준고도를 0~1,400m에서 슬라이더 또는 숫자로 직접 입력할 수 있습니다. 이 고도는 시각화용이며 관측값을 보정하지 않습니다.</li><li>분석장 투명도를 조절하여 지형·위성영상과 함께 볼 수 있습니다.</li></ul>
       <h3>4. 바람 분석장</h3>
@@ -1672,8 +1714,6 @@ function interpRamp(t,q){t=Math.max(0,Math.min(1,t));for(var i=1;i<q.length;i++)
 function rampTemp(t){return interpRamp(t,[[0,[49,54,149]],[.1,[69,117,180]],[.2,[116,173,209]],[.3,[171,217,233]],[.4,[224,243,248]],[.5,[255,255,191]],[.6,[254,224,144]],[.7,[253,174,97]],[.8,[244,109,67]],[.9,[215,48,39]],[1,[165,0,38]]])}
 function rampHumidity(t){return interpRamp(t,[[0,[161,98,7]],[.2,[253,230,138]],[.4,[217,249,157]],[.6,[94,234,212]],[.8,[14,165,233]],[1,[29,78,216]]])}
 function rampRain(t){
-  /* 강수 계열은 0 mm가 흰색에서 시작하도록 수정.
-     소량 강수는 매우 옅게, 강수량이 커질수록 점차 진해진다. */
   return interpRamp(t,[
     [0.00,[255,255,255]],
     [0.08,[248,252,255]],
@@ -1689,20 +1729,24 @@ function rampRain(t){
 function rampWindMax(t){return interpRamp(t,[[0,[254,252,232]],[.25,[253,230,138]],[.5,[251,146,60]],[.75,[239,68,68]],[1,[153,27,27]]])}
 function scalarColor(t,palette){if(palette==='humidity')return rampHumidity(t);if(palette==='rain')return rampRain(Math.sqrt(Math.max(0,t)));if(palette==='windmax')return rampWindMax(t);return rampTemp(t)}
 
+function selectedContourStep(){
+  var el=e('contourStep');
+  if(!el||el.value==='auto')return null;
+  var n=Math.round(Number(el.value));
+  return Number.isFinite(n)?Math.max(1,Math.min(5,n)):null;
+}
 function niceContourStep(meta,mn,mx){
-  var span=Math.max(.0001,mx-mn);
-  /* 기온 계열 등치선은 요청값대로 항상 3℃ 간격 */
-  if(meta.unit==='℃')return span<=8?1:span<=18?2:3;
+  var span=Math.max(.0001,mx-mn),manual=selectedContourStep();
+  if(meta.unit==='℃')return manual||(span<=8?1:span<=18?2:3);
   if(meta.unit==='%')return span<=35?5:10;
   if(meta.unit==='m/s')return span<=12?2:5;
 
-  /* 강수 등: 전체 범위가 6~10단계 정도가 되도록 nice number */
   var raw=span/8,pow=Math.pow(10,Math.floor(Math.log10(Math.max(raw,1e-6)))),
       q=raw/pow,n=q<=1?1:q<=2?2:q<=5?5:10;
   return n*pow;
 }
-function contourLevels(meta,mn,mx){
-  var step=niceContourStep(meta,mn,mx),out=[],
+function contourLevels(meta,mn,mx,forcedStep){
+  var step=forcedStep||niceContourStep(meta,mn,mx),out=[],
       first=Math.ceil(mn/step)*step;
   for(var v=first;v<mx-1e-9&&out.length<14;v+=step){
     if(v>mn+step*.05)out.push(v);
@@ -1736,9 +1780,9 @@ function smoothContourGrid(grid,cw,ch,passes){
   return src;
 }
 
-function drawContours(canvas,grid,cw,ch,mn,mx,meta){
+function drawContours(canvas,grid,cw,ch,mn,mx,meta,forcedStep){
   if(!grid||!grid.length||mx<=mn)return;
-  var levels=contourLevels(meta,mn,mx);
+  var levels=contourLevels(meta,mn,mx,forcedStep);
   if(!levels.length)return;
 
   /* 등치선 표시용 격자만 2회 스무딩.
@@ -1807,6 +1851,33 @@ function drawContours(canvas,grid,cw,ch,mn,mx,meta){
   ctx.restore();
 }
 
+function queryMonth(){
+  var d=dataMode==='daily'?String(e('apiDate').value||''):String(e('apiInstantDate').value||''),
+      m=d.match(/^\d{4}-(\d{2})-/);
+  if(m)return Math.max(1,Math.min(12,Number(m[1])));
+  return new Date().getMonth()+1;
+}
+function kmaSeasonRange(month,dataMin,dataMax){
+  /* 기상청 1991~2020 평년값 및 공식 계절 분포도 범위를 참고한
+     "운영용 계절 고정 표시범위". 기상청이 공개한 정확한 AWS 월범위 숫자표는
+     공개 도움말/API 명세에 없어 공식 팔레트로 표기하지 않는다. */
+  var cfg;
+  if(month===12||month<=2)cfg={name:'겨울',min:-15,max:20};
+  else if(month<=5)cfg={name:'봄',min:-5,max:35};
+  else if(month<=8)cfg={name:'여름',min:10,max:40};
+  else cfg={name:'가을',min:-5,max:35};
+
+  var mn=cfg.min,mx=cfg.max;
+  /* 실제 관측이 기본 범위를 넘으면 5℃ 단위로만 확장하여 색 포화를 방지 */
+  while(Number.isFinite(dataMin)&&dataMin<mn)mn-=5;
+  while(Number.isFinite(dataMax)&&dataMax>mx)mx+=5;
+  return{name:cfg.name,min:mn,max:mx};
+}
+function scalarDisplayRange(meta,dataMin,dataMax){
+  if(meta.unit!=='℃')return{name:'자료범위',min:dataMin,max:dataMax};
+  var r=kmaSeasonRange(queryMonth(),dataMin,dataMax);
+  return{name:r.name+' · KMA 평년기반',min:r.min,max:r.max};
+}
 function invalidateScalarCache(){dataRevision++;scalarCache.clear()}
 function rememberScalarCache(key,obj){
   if(scalarCache.size>=4){var first=scalarCache.keys().next();if(!first.done)scalarCache.delete(first.value)}
@@ -1820,12 +1891,37 @@ function setAnalysisSurfaceAlpha(a){
   }
   requestSceneRender();
 }
+function contourStepLabel(meta,mn,mx){
+  if(meta.unit!=='℃')return '자동';
+  var m=selectedContourStep();
+  return m?m+'℃':'자동';
+}
+function ensureContourUrl(field,obj,meta){
+  if(!obj||!obj.baseCanvas||!obj.grid)return obj&&obj.contourUrl?obj.contourUrl:(obj&&obj.baseUrl?obj.baseUrl:obj.url);
+  if(!obj.contourUrls)obj.contourUrls={};
+  var step=niceContourStep(meta,obj.dataMin,obj.dataMax),
+      key=meta.unit==='℃'?'temp-'+step:'auto-'+meta.palette;
+  if(obj.contourUrls[key])return obj.contourUrls[key];
+
+  var cc=document.createElement('canvas');
+  cc.width=obj.baseCanvas.width;cc.height=obj.baseCanvas.height;
+  var ccx=cc.getContext('2d');
+  ccx.drawImage(obj.baseCanvas,0,0);
+  drawContours(cc,obj.grid,cc.width,cc.height,obj.dataMin,obj.dataMax,meta,step);
+  if(obj.maskCanvas){
+    ccx.globalCompositeOperation='destination-in';
+    ccx.drawImage(obj.maskCanvas,0,0);
+    ccx.globalCompositeOperation='source-over';
+  }
+  obj.contourUrls[key]=cc.toDataURL('image/png');
+  return obj.contourUrls[key];
+}
 function mountScalar(field,obj){
   var meta=scalarMeta(field);
   try{
     activeScalarObj=obj;
     var alpha=Number(e('alpha').value),
-        imageUrl=contourOn&&obj.contourUrl?obj.contourUrl:(obj.baseUrl||obj.url);
+        imageUrl=contourOn?ensureContourUrl(field,obj,meta):(obj.baseUrl||obj.url);
     if(analysisSurfaceMode==='elevated'){
       tempPlaneMaterial=new Cesium.ImageMaterialProperty({
         image:imageUrl,
@@ -1857,9 +1953,10 @@ function mountScalar(field,obj){
     btn.textContent=meta.label+'장 ON';btn.classList.add('on',cls);
     e('grad').className=meta.palette;
     e('tempLegend').style.display='block';
-    e('tmin').textContent=obj.mn.toFixed(meta.unit==='%'?0:1)+meta.unit;
-    e('tmax').textContent=obj.mx.toFixed(meta.unit==='%'?0:1)+meta.unit;
-    e('legendTitle').textContent='IDW p=2 · '+meta.label+(contourOn?' · 등치선':'')+(analysisSurfaceMode==='elevated'?' · 지형 노출형':' · 지형 밀착형');
+    e('tmin').textContent=obj.displayMin.toFixed(meta.unit==='%'?0:1)+meta.unit;
+    e('tmax').textContent=obj.displayMax.toFixed(meta.unit==='%'?0:1)+meta.unit;
+    var rangeText=meta.unit==='℃'?(' · '+obj.rangeName+' '+obj.displayMin.toFixed(0)+'~'+obj.displayMax.toFixed(0)+'℃ · 관측 '+obj.dataMin.toFixed(1)+'~'+obj.dataMax.toFixed(1)+'℃'):'';
+    e('legendTitle').textContent='IDW p=2 · '+meta.label+rangeText+(contourOn?(' · 등치선 '+contourStepLabel(meta,obj.dataMin,obj.dataMax)):'')+(analysisSurfaceMode==='elevated'?' · 지형 노출형':' · 지형 밀착형');
     S.forEach(label);scheduleLabelDeclutter();
     requestSceneRender();
     return true;
@@ -1946,11 +2043,12 @@ function buildScalar(field){
   wx.forEach(function(w,id){var s=stationById.get(id),v=w?num(w[field]):NaN;if(!s||!fin(v))return;values[s.__stationIndex]=v;allVals.push(v)});
   if(allVals.length<3)return false;
   var meta=scalarMeta(field),geom=getAnalysisGeometry(512,512),
-      mn=Math.min.apply(null,allVals),mx=Math.max.apply(null,allVals),
-      raster=rasterIdwImage(values,geom,mn,mx,meta),c=raster.canvas,grid=raster.grid,
+      dataMin=Math.min.apply(null,allVals),dataMax=Math.max.apply(null,allVals),
+      dr=scalarDisplayRange(meta,dataMin,dataMax),
+      raster=rasterIdwImage(values,geom,dr.min,dr.max,meta),c=raster.canvas,grid=raster.grid,
       x=c.getContext('2d'),cw=geom.cw,ch=geom.ch;
 
-  /* 공통 hull 마스크를 먼저 만든다. */
+  /* 관측망 convex hull 내부만 IDW 내삽. hull 외부는 hard mask로 투명 처리하여 외삽하지 않는다. */
   var hard=document.createElement('canvas');hard.width=cw;hard.height=ch;
   var hctx=hard.getContext('2d');hctx.fillStyle='rgba(255,255,255,1)';hctx.beginPath();
   geom.H.forEach(function(p,k){
@@ -1975,15 +2073,24 @@ function buildScalar(field){
      IDW 재계산 없이 ON/OFF 전환할 수 있도록 둘 다 캐시한다. */
   var cc=document.createElement('canvas');cc.width=cw;cc.height=ch;
   var ccx=cc.getContext('2d');ccx.drawImage(c,0,0);
-  drawContours(cc,grid,cw,ch,mn,mx,meta);
+  drawContours(cc,grid,cw,ch,dataMin,dataMax,meta,niceContourStep(meta,dataMin,dataMax));
   ccx.globalCompositeOperation='destination-in';ccx.drawImage(soft,0,0);
   ccx.globalCompositeOperation='source-over';
-  var contourUrl=cc.toDataURL('image/png');
+  var contourUrl=cc.toDataURL('image/png'),
+      contourKey=meta.unit==='℃'?'temp-'+niceContourStep(meta,dataMin,dataMax):'auto-'+meta.palette;
 
   var obj={
-    baseUrl:baseUrl,contourUrl:contourUrl,
-    W:geom.W,E:geom.E,S0:geom.S0,N:geom.N,mn:mn,mx:mx
+    baseUrl:baseUrl,
+    contourUrl:contourUrl,
+    contourUrls:{},
+    baseCanvas:c,
+    grid:grid,
+    maskCanvas:soft,
+    dataMin:dataMin,dataMax:dataMax,
+    displayMin:dr.min,displayMax:dr.max,rangeName:dr.name,
+    W:geom.W,E:geom.E,S0:geom.S0,N:geom.N
   };
+  obj.contourUrls[contourKey]=contourUrl;
   rememberScalarCache(cacheKey,obj);
   return mountScalar(field,obj);
 }
@@ -2134,6 +2241,14 @@ function setDefaultApiTime(){
   e('apiHour').value=pad2(d.getHours());
   e('apiMinute').value=pad2(d.getMinutes());
   e('apiDate').value=ds;
+}
+function setNowAndFetch(){
+  e('apiMode').value='instant';
+  setQueryMode('instant');
+  setDefaultApiTime();
+  e('apiState').className='';
+  e('apiState').textContent='NOW · 현재시각 기준 5분 전 자료 조회 중…';
+  fetchKmaData();
 }
 function setQueryMode(mode){
   var daily=mode==='daily';e('apiBox').classList.toggle('daily-mode',daily);
@@ -2497,6 +2612,9 @@ function toggleContours(){
   }
   if(tempOn&&activeScalar&&activeScalarObj)remountActiveScalar();
 }
+function applyContourStepChange(){
+  if(tempOn&&activeScalar&&activeScalarObj&&contourOn)remountActiveScalar();
+}
 function toggleScalar(field){if(tempOn&&activeScalar===field)clearTemp();else buildScalar(field)}
 function install(){
   if(ready)return;ready=true;refreshStationDerived();viewer=ws3d.viewer;
@@ -2515,6 +2633,7 @@ function install(){
   document.addEventListener('keydown',function(ev){if(ev.key==='Escape')closeGuide()});
   e('file').onchange=function(){if(this.files&&this.files[0])load(this.files[0])};
   e('apiFetchBtn').onclick=fetchKmaData;
+  e('nowBtn').onclick=setNowAndFetch;
   e('apiMode').onchange=function(){setQueryMode(this.value)};
   setDefaultApiTime();setQueryMode('instant');
 
@@ -2543,6 +2662,7 @@ function install(){
   e('rainBtn').onclick=function(){var f=selectedRainField();if(tempOn&&activeScalar===f)clearTemp();else buildRain()};
   e('dailyBtn').onclick=function(){toggleScalar('daily')};
   e('contourBtn').onclick=toggleContours;
+  e('contourStep').onchange=applyContourStepChange;
   e('rainAccum').onchange=function(){updateRainAvailability()};
 
   e('windGridBtn').onclick=function(){wgridOn=!wgridOn;if(wgridOn){if(gridWind()){this.textContent='바람장 ON';this.classList.add('on')}else wgridOn=false}else{clearW(wgrid);this.textContent='바람장 OFF';this.classList.remove('on')}};
@@ -2551,6 +2671,35 @@ function install(){
     e('aval').textContent=Math.round(Number(this.value)*100)+'%';
     setAnalysisSurfaceAlpha(Number(this.value));
   };
+  function terrainExaggerationSupported(){
+    return !!(viewer&&viewer.scene&&('verticalExaggeration' in viewer.scene));
+  }
+  function setTerrainExaggeration(value){
+    var n=Math.max(1,Math.min(3,Number(value)||1)),
+        s=terrainExaggerationSupported(),
+        ctl=e('terrainExaggeration'),
+        val=e('terrainExaggerationVal'),
+        note=e('terrainExaggerationNote');
+    if(ctl)ctl.value=n.toFixed(1);
+    if(val)val.textContent=n.toFixed(1)+'×';
+    if(!s){
+      if(ctl)ctl.disabled=true;
+      if(note)note.textContent='현재 V-World/Cesium 환경에서는 지형 수직과장을 지원하지 않습니다.';
+      return false;
+    }
+    try{
+      viewer.scene.verticalExaggeration=n;
+      if('verticalExaggerationRelativeHeight' in viewer.scene)viewer.scene.verticalExaggerationRelativeHeight=0;
+      if(note)note.textContent=n===1?'1.0× = 실제 지형. 지형 강조는 시각화에만 적용됩니다.':'지형을 '+n.toFixed(1)+'×로 시각 강조 중 · 관측값/IDW 계산에는 영향 없음';
+      requestSceneRender();
+      return true;
+    }catch(x){
+      if(ctl)ctl.disabled=true;
+      if(note)note.textContent='지형 수직과장 적용 실패 · 현재 지형 1.0× 유지';
+      return false;
+    }
+  }
+
   function setAnalysisPlaneHeight(value,applyNow){
     var n=Number(value);
     if(!Number.isFinite(n))n=analysisPlaneHeight;
@@ -2594,6 +2743,12 @@ function install(){
       this.blur();
     }
   };
+
+  e('terrainExaggeration').oninput=function(){
+    e('terrainExaggerationVal').textContent=Number(this.value).toFixed(1)+'×';
+  };
+  e('terrainExaggeration').onchange=function(){setTerrainExaggeration(this.value)};
+  setTerrainExaggeration(1);
 
   e('wdensity').oninput=function(){e('wdensityVal').textContent=this.value;scheduleWindRedraw(true,false)};
   e('wscale').oninput=function(){e('wval').textContent=Number(this.value).toFixed(1)+'×';scheduleWindRedraw(true,true)};
