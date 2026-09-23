@@ -1,11 +1,10 @@
 <!DOCTYPE html>
-<!-- v19 operational: NOW query + terrain exaggeration + KMA-normal-based seasonal temperature range + interpolation-only IDW + contour step 1-5C -->
+<!-- v20.3 stable: parser-loaded V-World API + lazy SheetJS + embedded-network startup + fixed annual absolute-temperature spectrum + interpolation-only IDW -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>광역 3D 기상분석지도</title>
 <script src="https://map.vworld.kr/js/webglMapInit.js.do?version=3.0&apiKey=CD9939DD-4087-326C-A1F8-F077628FF9FB"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<title>광역 3D 기상분석지도</title>
 <style>
 :root{--p:rgba(7,17,31,.87);--l:rgba(255,255,255,.16);--m:#cbd5e1}*{box-sizing:border-box}
 html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#0b1320;font-family:"Malgun Gothic","Noto Sans KR",Arial,sans-serif}
@@ -133,9 +132,9 @@ button,.fileLabel,select{border:1px solid var(--l);border-radius:9px;background:
 }
 #rainBasis .rbTitle{font-size:10px;color:#cbd5e1;align-self:center}
 #grad.humidity{background:linear-gradient(90deg,#a16207,#fde68a,#d9f99d,#5eead4,#0ea5e9,#1d4ed8)}
-#grad.rain{background:linear-gradient(90deg,#fff546,#b9ff46,#23d269,#ffcd00,#ff7800,#eb2d2d,#b923d7)}
+#grad.rain{background:linear-gradient(90deg,#ffffff,#f8fcff,#d6efff,#70cdff,#32be78,#f5dc46,#ff9128,#e64137,#b032cd)}
 #grad.windmax{background:linear-gradient(90deg,#fefce8,#fde68a,#fb923c,#ef4444,#991b1b)}
-#grad.temp{background:linear-gradient(90deg,#313695,#4575b4,#74add1,#abd9e9,#e0f3f8,#ffffbf,#fee090,#fdae61,#f46d43,#d73027,#a50026)}
+#grad.temp{background:linear-gradient(90deg,#ffffff 0%,#d9f0ff 11.76%,#4b8bcd 23.53%,#0050b4 35.29%,#00a6b9 47.06%,#00a550 58.82%,#67be3c 70.59%,#ffe600 76.47%,#ff9b00 82.35%,#e62d23 88.24%,#7d0000 94.12%,#000000 100%)}
 .modeTag{display:inline-block;padding:1px 5px;border-radius:999px;background:rgba(255,255,255,.08);font-size:9px;color:#cbd5e1}
 
 /* ===== 시군구 경계 + 사용자 설명서 ===== */
@@ -574,7 +573,41 @@ button,.fileLabel,select{font-family:inherit}
   letter-spacing:.3px;
 }
 #contourStep{width:100%;height:40px}
-.terrainExaggerationRow{margin-top:9px}
+
+
+/* v19.2 explicit analysis legend */
+#tempLegend{
+  padding:9px 10px 8px!important;
+  border:1px solid rgba(148,163,184,.20)!important;
+  background:#0c1628!important;
+}
+.legendHead{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  margin-bottom:7px;min-width:0
+}
+.legendBadge{
+  display:inline-flex;align-items:center;min-height:22px;padding:0 7px;
+  border-radius:5px;background:#17243a;border:1px solid #34455f;
+  color:#f1f5f9;font-size:9.5px;font-weight:800;white-space:nowrap
+}
+.legendObserved{
+  min-width:0;text-align:right;color:#9fb0c6;font-size:9px;line-height:1.25
+}
+#tempLegend #grad{height:14px!important;border-radius:4px!important;border:1px solid rgba(226,232,240,.55)!important}
+.legendTicks{
+  position:relative;height:17px;margin-top:4px;
+  color:#cbd5e1;font-size:8.5px;font-variant-numeric:tabular-nums
+}
+.legendTicks span{
+  position:absolute;top:0;white-space:nowrap;transform:translateX(-50%)
+}
+.legendTicks span.edgeLeft{transform:none}
+.legendTicks span.edgeRight{transform:translateX(-100%)}
+#tempLegend #scale{
+  display:block!important;margin-top:5px!important;text-align:center!important;
+  font-size:9px!important;color:#7f91a8!important;line-height:1.35
+}
+.legacyLegendEdge{display:none}
 
 </style></head>
 <body><div id="map"></div>
@@ -775,8 +808,17 @@ button,.fileLabel,select{font-family:inherit}
         </div>
 
         <div id="tempLegend">
+          <div class="legendHead">
+            <span id="legendBadge" class="legendBadge">분석 범례</span>
+            <span id="legendObserved" class="legendObserved"></span>
+          </div>
           <div id="grad" class="temp"></div>
-          <div id="scale"><span id="tmin">-</span><span id="legendTitle">IDW p=2</span><span id="tmax">-</span></div>
+          <div id="legendTicks" class="legendTicks" aria-label="분석 색상 범례 눈금"></div>
+          <div id="scale">
+            <span id="tmin" class="legacyLegendEdge">-</span>
+            <span id="legendTitle">IDW p=2</span>
+            <span id="tmax" class="legacyLegendEdge">-</span>
+          </div>
         </div>
 
         <div class="slider cleanSlider">
@@ -818,13 +860,7 @@ button,.fileLabel,select{font-family:inherit}
                 <span>m</span>
               </div>
             </div>
-            <div class="slider cleanSlider terrainExaggerationRow">
-              <span>지형 강조</span>
-              <input id="terrainExaggeration" type="range" min="1" max="3" step="0.1" value="1">
-              <span id="terrainExaggerationVal" class="sv">1.0×</span>
-            </div>
-            <div id="terrainExaggerationNote" class="sectionCaption">1.0× = 실제 지형. 지형 강조는 시각화에만 적용됩니다.</div>
-            <div class="sectionCaption">지형 노출형의 기준고도는 0~1,400m 시각화용이며, 관측값·IDW·관측소 고도값 자체는 보정하지 않습니다.</div>
+<div class="sectionCaption">지형 노출형의 기준고도는 0~1,400m 시각화용입니다. 관측값·IDW·관측소 고도값 자체는 보정하지 않습니다.</div>
           </div>
         </details>
       </div>
@@ -930,9 +966,8 @@ button,.fileLabel,select{font-family:inherit}
       <h3>2. 지도 · 관측망</h3>
       <ul><li><b>위성</b>: 기본 ON. 배경 위성영상을 켜거나 끕니다.</li><li><b>3D 건물</b>: V-World 건물 레이어를 켜거나 끕니다.</li><li><b>시군구 경계</b>: V-World WMS <code>LT_C_ADSIGG</code> 행정구역 경계를 표출합니다. 분석장과 독립적으로 ON/OFF 됩니다.</li><li><b>주요 산</b>: 기상청 산악예보 지점정보의 정상 좌표·고도를 기준으로 <code>산명(고도m)</code>를 표출합니다. 고도가 높은 산은 넓은 시야에서, 낮은 산은 확대 시 나타나도록 자동으로 과밀을 줄입니다. 산 표시를 클릭하면 좌표·고도·자료 기준을 확인할 수 있습니다.</li><li><b>ASOS / AWS / 참고</b>: 관측망별 마커·라벨을 독립적으로 제어합니다. 참고지점은 기본 OFF이며 화면에서 숨겨져도 기온·습도·강수·바람 공간계산에는 그대로 포함됩니다. 지점표시는 바람벡터보다 앞에 보이도록 우선 처리됩니다.</li><li><b>라벨 표시</b>: 자동(권장)은 줌과 충돌을 고려해 필요한 라벨만 표시하고, 간소는 ASOS·고산 위주, 전체는 넓은 범위에서 모든 관측망 라벨을 후보로 표시합니다.</li>
 <li><b>NOW</b>: 현재시각 기준 약 5분 전의 매분 관측자료로 즉시 전환·조회합니다.</li>
-<li><b>기온 범례</b>: 기상청 1991~2020 평년값과 계절 분포도 범위를 근거로 한 계절 고정 표시범위를 사용합니다. 이는 기상청이 공개한 정확한 AWS 팔레트 숫자표가 아니라 운영용 기준이며, 실제 관측이 범위를 넘으면 5℃ 단위로 자동 확장됩니다.</li>
+<li><b>기온 범례</b>: 모든 날짜에 동일한 -40~45℃ 연중 절대범위를 사용합니다. 저온의 흰색·청색에서 녹색·노랑·빨강을 거쳐 고온의 검정으로 이어지는 기상청 기온 분포도 색상 흐름을 참고하되, 공개 도움말에 정확한 RGB/수치표가 없어 본 도구의 고정 운영범위임을 명시합니다.</li>
 <li><b>내삽 범위</b>: 관측망 최외곽 convex hull 내부만 IDW로 내삽하고 외부는 투명 처리합니다. 관측망 밖 외삽은 하지 않습니다.</li>
-<li><b>지형 강조</b>: 지원되는 V-World/Cesium 환경에서 1.0~3.0× 수직과장이 가능하며 시각효과에만 적용됩니다.</li>
 </ul>
       <h3>3. 스칼라 분석장</h3>
       <ul><li>기온, 상대습도, 강수, 일극값을 관측지점 값으로부터 <b>IDW(p=2)</b> 보간합니다.</li><li>시트4의 <b>모든 관측지점</b>을 지도 표출과 공간계산에 동일하게 사용하고, 전체 관측망의 <b>볼록껍질 내부</b>를 광역 분석영역으로 사용합니다.</li><li>강수는 15분·60분·12시간·일누적 중 선택할 수 있습니다.</li><li>기본값은 <b>지형 밀착형</b>입니다. 필요할 때 지형 노출형으로 전환하고 기준고도를 0~1,400m에서 슬라이더 또는 숫자로 직접 입력할 수 있습니다. 이 고도는 시각화용이며 관측값을 보정하지 않습니다.</li><li>분석장 투명도를 조절하여 지형·위성영상과 함께 볼 수 있습니다.</li></ul>
@@ -944,7 +979,7 @@ button,.fileLabel,select{font-family:inherit}
       <div class="guideBox"><b>관측값과 분석장은 구분해야 합니다.</b> 지점 팝업·라벨 값은 관측자료이고, 배경에 연속적으로 보이는 색상장은 IDW 보간 결과입니다. 분석장은 관측되지 않은 위치의 실제값을 의미하지 않습니다.</div>
       <div class="guideBox"><span class="warn">경계 레이어가 나타나지 않을 경우</span> V-World WMS 인증 범위 또는 네트워크 상태를 확인하세요. 경계 실패가 기상자료 조회·분석 계산을 중단시키지는 않습니다.</div>
       <h3>7. 현재 구성</h3>
-      <div class="guideBox">시트4 광역 관측망(핵심 + 인접 참고지점 자동 로드) · V-World 3D · KMA APIHub 자료 · 시군구 경계 <code>LT_C_ADSIGG</code> · 주요 산 23개(기상청 산악예보 지점정보) · 성능 최적화 캐시/벡터 debounce 적용</div>
+      <div class="guideBox">시트4 광역 관측망(HTML 내장 즉시 시작 + 동일폴더 XLSX 백그라운드 최신화) · V-World 3D · KMA APIHub 자료 · 시군구 경계 <code>LT_C_ADSIGG</code> · 주요 산 23개(기상청 산악예보 지점정보) · V-World 안정 로드 · XLSX 비동기 최신화 · 성능 최적화 캐시/벡터 debounce 적용</div>
     </div>
   </div>
 </div>
@@ -953,7 +988,42 @@ button,.fileLabel,select{font-family:inherit}
 <script>(function(){'use strict';
 var DEFAULT_STATIONS=[{"type":"ASOS","id":152,"name":"울산","address":"울산광역시 중구 약사동 308","lat":35.58237,"lon":129.33469,"height":81.14,"network":"ASOS","reference":false},{"type":"ASOS","id":155,"name":"창원","address":"경상남도 창원시 마산합포구 가포동 473-1","lat":35.17019,"lon":128.57282,"height":34.97,"network":"ASOS","reference":false},{"type":"ASOS","id":159,"name":"부산","address":"부산광역시 중구 대청동1가 9-305","lat":35.10468,"lon":129.03203,"height":69.56,"network":"ASOS","reference":false},{"type":"ASOS","id":162,"name":"통영","address":"경상남도 통영시 정량동 844","lat":34.84541,"lon":128.43561,"height":31.24,"network":"ASOS","reference":false},{"type":"ASOS","id":192,"name":"진주","address":"경상남도 진주시 평거동 695-244","lat":35.16378,"lon":128.04004,"height":29.35,"network":"ASOS","reference":false},{"type":"ASOS","id":253,"name":"김해시","address":"경상남도 김해시 부원동 112-3","lat":35.22981,"lon":128.89075,"height":54.59,"network":"ASOS","reference":false},{"type":"ASOS","id":255,"name":"북창원","address":"경상남도 창원시 성산구 내동 산27-10","lat":35.22655,"lon":128.6726,"height":50.95,"network":"ASOS","reference":false},{"type":"ASOS","id":257,"name":"양산시","address":"경상남도 양산시 동면 금산리 1501","lat":35.30737,"lon":129.02009,"height":6.29,"network":"ASOS","reference":false},{"type":"ASOS","id":263,"name":"의령군","address":"경상남도 의령군 의령읍 무전리 78","lat":35.32258,"lon":128.28812,"height":14.1,"network":"ASOS","reference":false},{"type":"ASOS","id":264,"name":"함양군","address":"경상남도 함양군 함양읍 용평리 915-63","lat":35.51138,"lon":127.74538,"height":152.07,"network":"ASOS","reference":false},{"type":"ASOS","id":284,"name":"거창","address":"경상남도 거창군 거창읍 정장리 967-8","lat":35.66739,"lon":127.9099,"height":228.45,"network":"ASOS","reference":false},{"type":"ASOS","id":285,"name":"합천","address":"경상남도 합천군 합천읍 합천리 129-4","lat":35.56505,"lon":128.16994,"height":26.72,"network":"ASOS","reference":false},{"type":"ASOS","id":288,"name":"밀양","address":"경상남도 밀양시 내이동 1073-3","lat":35.49147,"lon":128.74412,"height":8.31,"network":"ASOS","reference":false},{"type":"ASOS","id":289,"name":"산청","address":"경상남도 산청군 산청읍 지리 311-2","lat":35.413,"lon":127.8791,"height":138.22,"network":"ASOS","reference":false},{"type":"ASOS","id":294,"name":"거제","address":"경상남도 거제시 장평동 770-27","lat":34.88818,"lon":128.60459,"height":44.83,"network":"ASOS","reference":false},{"type":"ASOS","id":295,"name":"남해","address":"경상남도 남해군 이동면 다정리 797-2","lat":34.81662,"lon":127.92641,"height":45.71,"network":"ASOS","reference":false},{"type":"ASOS","id":296,"name":"북부산","address":"부산광역시 강서구 대저1동 1246","lat":35.217781,"lon":128.960242,"height":3.0,"network":"ASOS","reference":false},{"type":"AWS","id":45,"name":"하이","address":"경상남도 고성군 하이면 덕호리 810-4","lat":34.91889,"lon":128.11806,"height":15.0,"network":"AWS","reference":false},{"type":"AWS","id":160,"name":"부산(레)","address":"부산광역시 서구 서대신동3가 산32-10","lat":35.11885,"lon":128.99993,"height":549.15,"network":"AWS","reference":false},{"type":"AWS","id":311,"name":"가야산","address":"경상남도 합천군 가야면 치인리 1230-112","lat":35.78915,"lon":128.08673,"height":605.47,"network":"AWS","reference":false},{"type":"AWS","id":313,"name":"양지암","address":"경상남도 거제시 능포동 116-27","lat":34.88208,"lon":128.74127,"height":70.0,"network":"AWS","reference":false},{"type":"AWS","id":673,"name":"진영","address":"경상남도 김해시 진영읍 우동리 262-1","lat":35.28223,"lon":128.7175,"height":20.64,"network":"AWS","reference":false},{"type":"AWS","id":854,"name":"삼동","address":"울산광역시 울주군 삼동면 금곡리 547-15","lat":35.49528,"lon":129.13357,"height":166.92,"network":"AWS","reference":false},{"type":"AWS","id":872,"name":"지리산","address":"경상남도 산청군 시천면 중산리 633-11","lat":35.31924,"lon":127.75642,"height":869.44,"network":"AWS","reference":false},{"type":"AWS","id":900,"name":"두서","address":"울산광역시 울주군 두서면 구량리 500-7","lat":35.62027,"lon":129.14356,"height":117.49,"network":"AWS","reference":false},{"type":"AWS","id":901,"name":"울기","address":"울산광역시 동구 방어동 산23","lat":35.48678,"lon":129.43531,"height":67.64,"network":"AWS","reference":false},{"type":"AWS","id":902,"name":"시천","address":"경상남도 산청군 시천면 내공리 640-1","lat":35.24229,"lon":127.81897,"height":137.13,"network":"AWS","reference":false},{"type":"AWS","id":903,"name":"도천","address":"경상남도 창녕군 도천면 우강리 841-36","lat":35.40387,"lon":128.51486,"height":14.86,"network":"AWS","reference":false},{"type":"AWS","id":904,"name":"사상","address":"부산광역시 사상구 삼락동 29-43","lat":35.16944,"lon":128.97505,"height":0.732,"network":"AWS","reference":false},{"type":"AWS","id":905,"name":"양산상북","address":"경상남도 양산시 상북면 좌삼리 497-9","lat":35.4414,"lon":129.04288,"height":83.57,"network":"AWS","reference":false},{"type":"AWS","id":906,"name":"화개","address":"경상남도 하동군 화개면 용강리 400-2","lat":35.23236,"lon":127.64269,"height":89.59,"network":"AWS","reference":false},{"type":"AWS","id":907,"name":"삼천포","address":"경상남도 사천시 대방동 136-3","lat":34.93211,"lon":128.06313,"height":29.46,"network":"AWS","reference":false},{"type":"AWS","id":908,"name":"진해","address":"경상남도 창원시 진해구 성내동 476-2","lat":35.11221,"lon":128.7537,"height":11.74,"network":"AWS","reference":false},{"type":"AWS","id":909,"name":"서이말","address":"경상남도 거제시 일운면 지세포리 산48-2","lat":34.78774,"lon":128.73825,"height":109.74,"network":"AWS","reference":false},{"type":"AWS","id":910,"name":"영도","address":"부산광역시 영도구 동삼동 산2-1","lat":35.06609,"lon":129.07421,"height":138.96,"network":"AWS","reference":false},{"type":"AWS","id":911,"name":"매물도","address":"경상남도 통영시 한산면 매죽리 39-9","lat":34.64893,"lon":128.57714,"height":69.02,"network":"AWS","reference":false},{"type":"AWS","id":912,"name":"백천","address":"경상남도 함양군 함양읍 백천리 409-2","lat":35.52627,"lon":127.77836,"height":140.33,"network":"AWS","reference":false},{"type":"AWS","id":913,"name":"상주면","address":"경상남도 남해군 상주면 상주리 1722","lat":34.7238,"lon":127.98155,"height":19.65,"network":"AWS","reference":false},{"type":"AWS","id":914,"name":"서하","address":"경상남도 함양군 서하면 봉전리 1331-9","lat":35.63763,"lon":127.71556,"height":353.86,"network":"AWS","reference":false},{"type":"AWS","id":915,"name":"삼가","address":"경상남도 합천군 삼가면 두모리 192-9","lat":35.41353,"lon":128.10178,"height":85.28,"network":"AWS","reference":false},{"type":"AWS","id":916,"name":"단성","address":"경상남도 산청군 단성면 강누리 38-3","lat":35.31111,"lon":127.96696,"height":55.0,"network":"AWS","reference":false},{"type":"AWS","id":917,"name":"사천","address":"경상남도 사천시 용현면 신복리 500-4","lat":35.03694,"lon":128.06768,"height":25.79,"network":"AWS","reference":false},{"type":"AWS","id":918,"name":"고성","address":"경상남도 고성군 고성읍 죽계리 435-230","lat":34.99052,"lon":128.33089,"height":7.03,"network":"AWS","reference":false},{"type":"AWS","id":919,"name":"창녕","address":"경상남도 창녕군 대지면 효정리 600","lat":35.55142,"lon":128.47669,"height":30.0,"network":"AWS","reference":false},{"type":"AWS","id":920,"name":"함안","address":"경상남도 함안군 가야읍 산서리 928","lat":35.29613,"lon":128.39942,"height":8.39,"network":"AWS","reference":false},{"type":"AWS","id":921,"name":"가덕도","address":"부산광역시 강서구 대항동 162-1","lat":34.99308,"lon":128.83141,"height":75.63,"network":"AWS","reference":false},{"type":"AWS","id":922,"name":"단장","address":"경상남도 밀양시 단장면 고례리 1710","lat":35.48645,"lon":128.92911,"height":138.03,"network":"AWS","reference":false},{"type":"AWS","id":923,"name":"기장","address":"부산광역시 기장군 일광읍 이천리 산1-3","lat":35.27505,"lon":129.25113,"height":65.99,"network":"AWS","reference":false},{"type":"AWS","id":924,"name":"간절곶","address":"울산광역시 울주군 서생면 대송리 28-1","lat":35.35866,"lon":129.36028,"height":22.23,"network":"AWS","reference":false},{"type":"AWS","id":925,"name":"생림","address":"경상남도 김해시 생림면 마사리 666-9","lat":35.37435,"lon":128.82299,"height":8.68,"network":"AWS","reference":false},{"type":"AWS","id":926,"name":"진북","address":"경상남도 창원시 마산합포구 진북면 덕곡리 109-7","lat":35.12624,"lon":128.47483,"height":13.33,"network":"AWS","reference":false},{"type":"AWS","id":927,"name":"송백","address":"경상남도 밀양시 산내면 송백리 1532-1","lat":35.58197,"lon":128.88365,"height":126.74,"network":"AWS","reference":false},{"type":"AWS","id":929,"name":"개천","address":"경상남도 고성군 개천면 청광리 418-8","lat":35.11369,"lon":128.30701,"height":129.52,"network":"AWS","reference":false},{"type":"AWS","id":930,"name":"사량도","address":"경상남도 통영시 사량면 양지리 187-15","lat":34.80992,"lon":128.23814,"height":3.83,"network":"AWS","reference":false},{"type":"AWS","id":931,"name":"욕지도","address":"경상남도 통영시 욕지면 동항리 376-3","lat":34.6223,"lon":128.27351,"height":73.75,"network":"AWS","reference":false},{"type":"AWS","id":932,"name":"하동","address":"경상남도 하동군 하동읍 신기리 441-2","lat":35.06058,"lon":127.76664,"height":4.47,"network":"AWS","reference":false},{"type":"AWS","id":933,"name":"금남","address":"경상남도 하동군 금남면 덕천리 842-4","lat":34.99676,"lon":127.83238,"height":32.22,"network":"AWS","reference":false},{"type":"AWS","id":934,"name":"수곡","address":"경상남도 진주시 수곡면 사곡리 96-9","lat":35.2214,"lon":127.92848,"height":82.8,"network":"AWS","reference":false},{"type":"AWS","id":935,"name":"청덕","address":"경상남도 합천군 청덕면 가현리 776-1","lat":35.56979,"lon":128.34114,"height":23.63,"network":"AWS","reference":false},{"type":"AWS","id":936,"name":"신포","address":"경상남도 의령군 칠곡면 신포리 326","lat":35.33263,"lon":128.2023,"height":61.21,"network":"AWS","reference":false},{"type":"AWS","id":937,"name":"해운대","address":"부산광역시 해운대구 우동 41-3","lat":35.17721,"lon":129.16068,"height":81.87,"network":"AWS","reference":false},{"type":"AWS","id":938,"name":"부산진","address":"부산광역시 부산진구 개금동 445","lat":35.15888,"lon":129.01929,"height":114.38,"network":"AWS","reference":false},{"type":"AWS","id":939,"name":"금정구","address":"부산광역시 금정구 두구동 1641","lat":35.2932,"lon":129.10348,"height":49.26,"network":"AWS","reference":false},{"type":"AWS","id":940,"name":"동래","address":"부산광역시 동래구 복천동 1-2","lat":35.20914,"lon":129.09013,"height":70.07,"network":"AWS","reference":false},{"type":"AWS","id":941,"name":"북구","address":"부산광역시 북구 덕천동 763-29","lat":35.21304,"lon":129.00258,"height":6.94,"network":"AWS","reference":false},{"type":"AWS","id":942,"name":"부산남구","address":"부산광역시 남구 감만동 산44-1","lat":35.11863,"lon":129.08841,"height":124.26,"network":"AWS","reference":false},{"type":"AWS","id":943,"name":"매곡","address":"울산광역시 북구 매곡동 838-31","lat":35.66706,"lon":129.37502,"height":460.23,"network":"AWS","reference":false},{"type":"AWS","id":944,"name":"길곡","address":"경상남도 창녕군 길곡면 증산리 901-1","lat":35.38516,"lon":128.57005,"height":10.05,"network":"AWS","reference":false},{"type":"AWS","id":945,"name":"대병","address":"경상남도 합천군 대병면 하금리 575","lat":35.53452,"lon":127.9901,"height":231.31,"network":"AWS","reference":false},{"type":"AWS","id":946,"name":"북상","address":"경상남도 거창군 북상면 갈계리 1458","lat":35.78,"lon":127.81826,"height":324.25,"network":"AWS","reference":false},{"type":"AWS","id":947,"name":"명사","address":"경상남도 거제시 남부면 저구리 423-3","lat":34.72193,"lon":128.5908,"height":30.51,"network":"AWS","reference":false},{"type":"AWS","id":948,"name":"삼장","address":"경상남도 산청군 삼장면 덕교리 618-3","lat":35.31074,"lon":127.83448,"height":140.43,"network":"AWS","reference":false},{"type":"AWS","id":949,"name":"정자","address":"울산광역시 북구 산하동 958-5","lat":35.6375,"lon":129.4412,"height":8.0,"network":"AWS","reference":false},{"type":"AWS","id":950,"name":"사하","address":"부산광역시 사하구 괴정동 619-61","lat":35.09006,"lon":128.98393,"height":167.95,"network":"AWS","reference":false},{"type":"AWS","id":953,"name":"장목","address":"경상남도 거제시 장목면 장목리 360-12","lat":34.99839,"lon":128.67977,"height":30.87,"network":"AWS","reference":false},{"type":"AWS","id":954,"name":"온산","address":"울산광역시 울주군 온산읍 이진리 산 45-1","lat":35.43103,"lon":129.36011,"height":53.92,"network":"AWS","reference":false},{"type":"AWS","id":974,"name":"대곡","address":"경상남도 진주시 대곡면 단목리 1758-5","lat":35.24434,"lon":128.15605,"height":17.52,"network":"AWS","reference":false},{"type":"AWS","id":899,"name":"마산회원","address":"경상남도 창원시 마산회원구 삼호로 63","lat":35.22354,"lon":128.58215,"height":33.3,"network":"AWS","reference":false},{"type":"AWS","id":898,"name":"장생포","address":"울산광역시 남구 매암동 139-90","lat":35.50482,"lon":129.386,"height":1.57,"network":"AWS","reference":false}];
 var S=DEFAULT_STATIONS.slice();
-var STATION_CONFIG_FILE='./ASOS, AWS 지점정보(부산관할)_수정.xlsx';
+var STATION_CONFIG_NAME='ASOS, AWS 지점정보(부산관할)_수정.xlsx';
+var EMBEDDED_REFERENCE_STATIONS=[{"id":133,"name":"대전","lat":36.37199,"lon":127.3721,"height":67.79,"network":"AWS","reference":true,"type":"REF","address":""},{"id":648,"name":"장동","lat":36.41347,"lon":127.43821,"height":99.9,"network":"AWS","reference":true,"type":"REF","address":""},{"id":643,"name":"세천","lat":36.34019,"lon":127.49378,"height":91.34,"network":"AWS","reference":true,"type":"REF","address":""},{"id":378,"name":"정림","lat":36.30361,"lon":127.36278,"height":71.19,"network":"AWS","reference":true,"type":"REF","address":""},{"id":642,"name":"오월드","lat":36.29129,"lon":127.39586,"height":148.61,"network":"AWS","reference":true,"type":"REF","address":""},{"id":238,"name":"금산","lat":36.10563,"lon":127.48175,"height":170.17,"network":"AWS","reference":true,"type":"REF","address":""},{"id":449,"name":"옥천","lat":37.51002,"lon":127.44809,"height":32.0,"network":"AWS","reference":true,"type":"REF","address":""},{"id":626,"name":"옥천청산","lat":36.35294,"lon":127.82157,"height":120.57,"network":"AWS","reference":true,"type":"REF","address":""},{"id":135,"name":"추풍령","lat":36.22025,"lon":127.99458,"height":244.98,"network":"AWS","reference":true,"type":"REF","address":""},{"id":605,"name":"영동","lat":36.16,"lon":127.755,"height":143.0,"network":"AWS","reference":true,"type":"REF","address":""},{"id":647,"name":"가곡","lat":36.12474,"lon":127.68507,"height":118.4,"network":"AWS","reference":true,"type":"REF","address":""},{"id":821,"name":"공성","lat":36.28187,"lon":128.07393,"height":91.11,"network":"AWS","reference":true,"type":"REF","address":""},{"id":806,"name":"선산","lat":36.23336,"lon":128.2903,"height":41.05,"network":"AWS","reference":true,"type":"REF","address":""},{"id":847,"name":"소보","lat":36.27623,"lon":128.46637,"height":70.41,"network":"AWS","reference":true,"type":"REF","address":""},{"id":823,"name":"군위","lat":36.24934,"lon":128.55577,"height":81.56,"network":"AWS","reference":true,"type":"REF","address":""},{"id":807,"name":"의흥","lat":36.17966,"lon":128.69318,"height":114.26,"network":"AWS","reference":true,"type":"REF","address":""},{"id":841,"name":"화북","lat":36.08494,"lon":128.91106,"height":138.88,"network":"AWS","reference":true,"type":"REF","address":""},{"id":830,"name":"기계","lat":36.06887,"lon":129.19957,"height":45.06,"network":"AWS","reference":true,"type":"REF","address":""},{"id":138,"name":"포항","lat":36.03201,"lon":129.38002,"height":3.94,"network":"AWS","reference":true,"type":"REF","address":""},{"id":808,"name":"호미곶","lat":36.07597,"lon":129.56673,"height":11.41,"network":"AWS","reference":true,"type":"REF","address":""},{"id":816,"name":"구룡포","lat":35.9831,"lon":129.5475,"height":42.37,"network":"AWS","reference":true,"type":"REF","address":""},{"id":995,"name":"오천","lat":35.9286,"lon":129.38223,"height":80.32,"network":"AWS","reference":true,"type":"REF","address":""},{"id":850,"name":"감포","lat":35.78471,"lon":129.49062,"height":6.67,"network":"AWS","reference":true,"type":"REF","address":""},{"id":859,"name":"토함산","lat":35.7549,"lon":129.36873,"height":475.0,"network":"AWS","reference":true,"type":"REF","address":""},{"id":829,"name":"외동","lat":35.71214,"lon":129.31815,"height":72.92,"network":"AWS","reference":true,"type":"REF","address":""},{"id":811,"name":"황성","lat":35.86299,"lon":129.20929,"height":32.36,"network":"AWS","reference":true,"type":"REF","address":""},{"id":283,"name":"경주시","lat":35.81747,"lon":129.20123,"height":40.13,"network":"AWS","reference":true,"type":"REF","address":""},{"id":842,"name":"산내","lat":35.7576,"lon":129.011,"height":170.66,"network":"AWS","reference":true,"type":"REF","address":""},{"id":826,"name":"신녕","lat":36.04709,"lon":128.79003,"height":130.98,"network":"AWS","reference":true,"type":"REF","address":""},{"id":281,"name":"영천","lat":35.97742,"lon":128.9514,"height":96.12,"network":"AWS","reference":true,"type":"REF","address":""},{"id":840,"name":"하양","lat":35.9126,"lon":128.8144,"height":71.0,"network":"AWS","reference":true,"type":"REF","address":""},{"id":827,"name":"경산","lat":35.82425,"lon":128.743,"height":61.21,"network":"AWS","reference":true,"type":"REF","address":""},{"id":848,"name":"청도금천","lat":35.67916,"lon":128.89534,"height":104.4,"network":"AWS","reference":true,"type":"REF","address":""},{"id":813,"name":"청도","lat":35.65404,"lon":128.73183,"height":77.53,"network":"AWS","reference":true,"type":"REF","address":""},{"id":143,"name":"대구","lat":35.87797,"lon":128.65296,"height":54.27,"network":"AWS","reference":true,"type":"REF","address":""},{"id":860,"name":"신암","lat":35.88515,"lon":128.61903,"height":58.81,"network":"AWS","reference":true,"type":"REF","address":""},{"id":845,"name":"대구북구","lat":35.90842,"lon":128.59068,"height":30.18,"network":"AWS","reference":true,"type":"REF","address":""},{"id":846,"name":"대구서구","lat":35.86509,"lon":128.53095,"height":76.37,"network":"AWS","reference":true,"type":"REF","address":""},{"id":991,"name":"옥포","lat":35.80279,"lon":128.44562,"height":27.5,"network":"AWS","reference":true,"type":"REF","address":""},{"id":828,"name":"달성","lat":35.69018,"lon":128.42384,"height":24.93,"network":"AWS","reference":true,"type":"REF","address":""},{"id":992,"name":"하빈","lat":35.9062,"lon":128.4464,"height":35.5,"network":"AWS","reference":true,"type":"REF","address":""},{"id":853,"name":"팔공산","lat":36.01827,"lon":128.62129,"height":568.37,"network":"AWS","reference":true,"type":"REF","address":""},{"id":824,"name":"가산","lat":36.0956,"lon":128.50008,"height":114.95,"network":"AWS","reference":true,"type":"REF","address":""},{"id":825,"name":"칠곡","lat":36.03977,"lon":128.3813,"height":29.79,"network":"AWS","reference":true,"type":"REF","address":""},{"id":279,"name":"구미","lat":36.13055,"lon":128.32055,"height":49.17,"network":"AWS","reference":true,"type":"REF","address":""},{"id":812,"name":"고령","lat":35.69603,"lon":128.28214,"height":41.19,"network":"AWS","reference":true,"type":"REF","address":""},{"id":810,"name":"성주","lat":35.92552,"lon":128.2985,"height":39.43,"network":"AWS","reference":true,"type":"REF","address":""},{"id":809,"name":"대덕","lat":35.93544,"lon":127.97919,"height":205.1,"network":"AWS","reference":true,"type":"REF","address":""},{"id":822,"name":"김천","lat":36.11987,"lon":128.1552,"height":79.24,"network":"AWS","reference":true,"type":"REF","address":""},{"id":701,"name":"무주","lat":36.00168,"lon":127.66835,"height":212.0,"network":"AWS","reference":true,"type":"REF","address":""},{"id":735,"name":"덕유산","lat":35.89424,"lon":127.77306,"height":660.36,"network":"AWS","reference":true,"type":"REF","address":""},{"id":314,"name":"설천봉","lat":35.86621,"lon":127.74312,"height":1515.31,"network":"AWS","reference":true,"type":"REF","address":""},{"id":757,"name":"진안주천","lat":35.97436,"lon":127.43596,"height":269.51,"network":"AWS","reference":true,"type":"REF","address":""},{"id":758,"name":"동향","lat":35.83521,"lon":127.57117,"height":320.61,"network":"AWS","reference":true,"type":"REF","address":""},{"id":703,"name":"진안","lat":35.76036,"lon":127.43743,"height":354.27,"network":"AWS","reference":true,"type":"REF","address":""},{"id":248,"name":"장수","lat":35.65696,"lon":127.52031,"height":406.87,"network":"AWS","reference":true,"type":"REF","address":""},{"id":379,"name":"번암","lat":35.54046,"lon":127.5463,"height":292.0,"network":"AWS","reference":true,"type":"REF","address":""},{"id":247,"name":"남원","lat":35.4213,"lon":127.39652,"height":133.49,"network":"AWS","reference":true,"type":"REF","address":""},{"id":759,"name":"뱀사골","lat":35.37162,"lon":127.57826,"height":478.65,"network":"AWS","reference":true,"type":"REF","address":""},{"id":315,"name":"성삼재","lat":35.30673,"lon":127.51079,"height":1087.86,"network":"AWS","reference":true,"type":"REF","address":""},{"id":791,"name":"피아골","lat":35.26621,"lon":127.58376,"height":410.15,"network":"AWS","reference":true,"type":"REF","address":""},{"id":709,"name":"구례","lat":35.20808,"lon":127.49355,"height":27.0,"network":"AWS","reference":true,"type":"REF","address":""},{"id":856,"name":"광양백운산","lat":35.1018,"lon":127.59815,"height":514.84,"network":"AWS","reference":true,"type":"REF","address":""},{"id":266,"name":"광양시","lat":34.9434,"lon":127.6914,"height":88.21,"network":"AWS","reference":true,"type":"REF","address":""},{"id":713,"name":"광양읍","lat":34.97507,"lon":127.58259,"height":15.56,"network":"AWS","reference":true,"type":"REF","address":""},{"id":766,"name":"여수산단","lat":34.84946,"lon":127.71496,"height":78.86,"network":"AWS","reference":true,"type":"REF","address":""},{"id":786,"name":"돌산","lat":34.63811,"lon":127.77409,"height":20.27,"network":"AWS","reference":true,"type":"REF","address":""},{"id":750,"name":"백야","lat":34.62781,"lon":127.63568,"height":23.0,"network":"AWS","reference":true,"type":"REF","address":""},{"id":306,"name":"소리도","lat":34.43185,"lon":127.8011,"height":3.04,"network":"AWS","reference":true,"type":"REF","address":""},{"id":790,"name":"나로도","lat":34.53258,"lon":127.46735,"height":135.19,"network":"AWS","reference":true,"type":"REF","address":""},{"id":767,"name":"포두","lat":34.58853,"lon":127.39745,"height":3.72,"network":"AWS","reference":true,"type":"REF","address":""},{"id":748,"name":"벌교","lat":34.83694,"lon":127.3631,"height":1.6,"network":"AWS","reference":true,"type":"REF","address":""},{"id":174,"name":"순천","lat":35.0204,"lon":127.3694,"height":165.0,"network":"AWS","reference":true,"type":"REF","address":""},{"id":712,"name":"순천시","lat":34.90351,"lon":127.51927,"height":4.09,"network":"AWS","reference":true,"type":"REF","address":""},{"id":794,"name":"황전","lat":35.10066,"lon":127.42739,"height":75.99,"network":"AWS","reference":true,"type":"REF","address":""},{"id":687,"name":"석곡","lat":35.12619,"lon":127.25286,"height":61.93,"network":"AWS","reference":true,"type":"REF","address":""},{"id":768,"name":"곡성","lat":35.28886,"lon":127.28531,"height":100.48,"network":"AWS","reference":true,"type":"REF","address":""}];
+var STATION_CONFIG_TIMEOUT_MS=1800;
+var xlsxLoadPromise=null;
+function ensureXlsxLib(){
+  if(typeof XLSX!=='undefined')return Promise.resolve(XLSX);
+  if(xlsxLoadPromise)return xlsxLoadPromise;
+
+  xlsxLoadPromise=new Promise(function(resolve,reject){
+    var s=document.createElement('script'),done=false,
+        timer=setTimeout(function(){finishXlsx(new Error('XLSX 라이브러리 로드 시간 초과'))},6000);
+
+    function finishXlsx(error){
+      if(done)return;done=true;clearTimeout(timer);
+      if(error){xlsxLoadPromise=null;reject(error)}
+      else resolve(XLSX);
+    }
+
+    s.src='https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+    s.async=true;
+    s.onload=function(){
+      if(typeof XLSX==='undefined')finishXlsx(new Error('XLSX 라이브러리 초기화 실패'));
+      else finishXlsx(null);
+    };
+    s.onerror=function(){finishXlsx(new Error('XLSX 라이브러리를 불러오지 못했습니다.'))};
+    document.head.appendChild(s);
+  });
+  return xlsxLoadPromise;
+}
+function stationConfigSignature(rows){
+  return rows.map(function(s){
+    return [s.type,s.id,s.name,Number(s.lat).toFixed(6),Number(s.lon).toFixed(6),Number(s.height||0).toFixed(2)].join(':');
+  }).join('|');
+}
+var stationConfigSignatureCurrent='';
+
 var stationConfigSource='내장 기본지점';
 
 function stationNormKey(v){
@@ -1130,12 +1200,47 @@ function mergeBaseAndReferences(refs){
 }
 
 var stationConfigError='';
-async function loadStationConfig(){
+function applyEmbeddedStationConfig(){
   try{
-    var r=await fetch(STATION_CONFIG_FILE+'?v=20260831c',{cache:'no-store'});
-    if(!r.ok)throw new Error('지점정보 엑셀 HTTP '+r.status);
+    var merged=mergeBaseAndReferences(EMBEDDED_REFERENCE_STATIONS),
+        refCount=merged.filter(function(s){return s.type==='REF'}).length;
+    if(merged.length<=DEFAULT_STATIONS.length)throw new Error('내장 참고지점 병합 실패');
+    S=merged;
+    stationConfigSignatureCurrent=stationConfigSignature(merged);
+    stationConfigSource='시트4 병합 · HTML 내장 fallback · 전체 '+merged.length+' / 참고 '+refCount;
+    stationConfigError='';
+    return true;
+  }catch(x){
+    stationConfigError=x&&x.message?x.message:String(x);
+    S=DEFAULT_STATIONS.slice();
+    stationConfigSource='경고: 내장 참고지점 병합 실패';
+    return false;
+  }
+}
+async function loadStationConfig(){
+  /* 이 함수는 지도 시작을 절대 막지 않는다.
+     HTML 내장 Sheet4로 먼저 시작하고, 동일폴더 XLSX는 백그라운드에서 최신값만 확인한다. */
+  if(location.protocol!=='http:'&&location.protocol!=='https:'){
+    return{loaded:false,changed:false,reason:'file protocol'};
+  }
 
-    var parsed=parseReferenceSheet4(await r.arrayBuffer()),
+  var controller=typeof AbortController!=='undefined'?new AbortController():null,
+      timer=null;
+  try{
+    if(controller)timer=setTimeout(function(){try{controller.abort()}catch(_){}},STATION_CONFIG_TIMEOUT_MS);
+
+    var url='./'+encodeURIComponent(STATION_CONFIG_NAME).replace(/%2F/g,'/'),
+        opts={cache:'no-store'};
+    if(controller)opts.signal=controller.signal;
+
+    var r=await fetch(url+'?v=20260922d',opts);
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    var buf=await r.arrayBuffer();
+
+    /* SheetJS도 백그라운드에서 필요할 때만 로드 */
+    await ensureXlsxLib();
+
+    var parsed=parseReferenceSheet4(buf),
         merged=mergeBaseAndReferences(parsed.references),
         refCount=merged.filter(function(s){return s.type==='REF'}).length;
 
@@ -1143,17 +1248,24 @@ async function loadStationConfig(){
       throw new Error('시트4 참고지점 병합 후 지점 수가 늘어나지 않았습니다.');
     }
 
-    S=merged;
+    var sig=stationConfigSignature(merged),
+        changed=sig!==stationConfigSignatureCurrent;
+
+    if(changed){
+      S=merged;
+      stationConfigSignatureCurrent=sig;
+    }
+
     stationConfigSource='시트4 병합 · '+parsed.sheetName+
-      ' · 전체 '+merged.length+' / 참고 '+refCount;
+      ' · 전체 '+merged.length+' / 참고 '+refCount+' · 동일폴더 XLSX';
     stationConfigError='';
-    return true;
+    return{loaded:true,changed:changed,refCount:refCount};
   }catch(x){
-    stationConfigError=x&&x.message?x.message:String(x);
-    console.error('station config',x);
-    S=DEFAULT_STATIONS.slice();
-    stationConfigSource='경고: 시트4 병합 실패';
-    return false;
+    stationConfigError='동일폴더 XLSX 미적용 · 내장 Sheet4 유지 · '+(x&&x.message?x.message:String(x));
+    console.warn('station config background',stationConfigError);
+    return{loaded:false,changed:false,reason:stationConfigError};
+  }finally{
+    if(timer)clearTimeout(timer);
   }
 }
 
@@ -1711,7 +1823,25 @@ function fly(s){
 }
 function hull(P){if(P.length<=2)return P.slice();P=P.slice().sort((a,b)=>a.x===b.x?a.y-b.y:a.x-b.x);function c(o,a,b){return(a.x-o.x)*(b.y-o.y)-(a.y-o.y)*(b.x-o.x)}var l=[],u=[];P.forEach(p=>{while(l.length>=2&&c(l[l.length-2],l[l.length-1],p)<=0)l.pop();l.push(p)});for(var i=P.length-1;i>=0;i--){var p=P[i];while(u.length>=2&&c(u[u.length-2],u[u.length-1],p)<=0)u.pop();u.push(p)}l.pop();u.pop();return l.concat(u)}function inside(x,y,p){var z=false;for(var i=0,j=p.length-1;i<p.length;j=i++){var a=p[i],b=p[j];if(((a.y>y)!=(b.y>y))&&(x<(b.x-a.x)*(y-a.y)/(b.y-a.y+1e-30)+a.x))z=!z}return z}function km(a,b,c,d){var R=6371,r=Math.PI/180,da=(c-a)*r,do1=(d-b)*r,q=Math.sin(da/2)**2+Math.cos(a*r)*Math.cos(c*r)*Math.sin(do1/2)**2;return 2*R*Math.asin(Math.sqrt(q))}
 function interpRamp(t,q){t=Math.max(0,Math.min(1,t));for(var i=1;i<q.length;i++)if(t<=q[i][0]){var a=q[i-1],b=q[i],f=(t-a[0])/(b[0]-a[0]);return a[1].map((v,j)=>Math.round(v+f*(b[1][j]-v)))}return q[q.length-1][1]}
-function rampTemp(t){return interpRamp(t,[[0,[49,54,149]],[.1,[69,117,180]],[.2,[116,173,209]],[.3,[171,217,233]],[.4,[224,243,248]],[.5,[255,255,191]],[.6,[254,224,144]],[.7,[253,174,97]],[.8,[244,109,67]],[.9,[215,48,39]],[1,[165,0,38]]])}
+function rampTemp(t){
+  /* 연중 고정 절대기온 범례(-40~45℃).
+     기상청 기온 분포도의 저온→고온 색상 흐름을 참고:
+     흰색 → 청색 → 녹색 → 노랑 → 빨강 → 검정 */
+  return interpRamp(t,[
+    [0.0000,[255,255,255]],
+    [0.1176,[217,240,255]],
+    [0.2353,[75,139,205]],
+    [0.3529,[0,80,180]],
+    [0.4706,[0,166,185]],
+    [0.5882,[0,165,80]],
+    [0.7059,[103,190,60]],
+    [0.7647,[255,230,0]],
+    [0.8235,[255,155,0]],
+    [0.8824,[230,45,35]],
+    [0.9412,[125,0,0]],
+    [1.0000,[0,0,0]]
+  ])
+}
 function rampHumidity(t){return interpRamp(t,[[0,[161,98,7]],[.2,[253,230,138]],[.4,[217,249,157]],[.6,[94,234,212]],[.8,[14,165,233]],[1,[29,78,216]]])}
 function rampRain(t){
   return interpRamp(t,[
@@ -1851,32 +1981,36 @@ function drawContours(canvas,grid,cw,ch,mn,mx,meta,forcedStep){
   ctx.restore();
 }
 
-function queryMonth(){
-  var d=dataMode==='daily'?String(e('apiDate').value||''):String(e('apiInstantDate').value||''),
-      m=d.match(/^\d{4}-(\d{2})-/);
-  if(m)return Math.max(1,Math.min(12,Number(m[1])));
-  return new Date().getMonth()+1;
-}
-function kmaSeasonRange(month,dataMin,dataMax){
-  /* 기상청 1991~2020 평년값 및 공식 계절 분포도 범위를 참고한
-     "운영용 계절 고정 표시범위". 기상청이 공개한 정확한 AWS 월범위 숫자표는
-     공개 도움말/API 명세에 없어 공식 팔레트로 표기하지 않는다. */
-  var cfg;
-  if(month===12||month<=2)cfg={name:'겨울',min:-15,max:20};
-  else if(month<=5)cfg={name:'봄',min:-5,max:35};
-  else if(month<=8)cfg={name:'여름',min:10,max:40};
-  else cfg={name:'가을',min:-5,max:35};
-
-  var mn=cfg.min,mx=cfg.max;
-  /* 실제 관측이 기본 범위를 넘으면 5℃ 단위로만 확장하여 색 포화를 방지 */
-  while(Number.isFinite(dataMin)&&dataMin<mn)mn-=5;
-  while(Number.isFinite(dataMax)&&dataMax>mx)mx+=5;
-  return{name:cfg.name,min:mn,max:mx};
+var TEMP_ABS_MIN=-40,TEMP_ABS_MAX=45;
+function rainDisplayMax(v){
+  var x=Math.max(0,Number(v)||0),
+      steps=[1,2,5,10,20,30,50,80,100,150,200,300,500];
+  for(var i=0;i<steps.length;i++)if(x<=steps[i])return steps[i];
+  return Math.ceil(x/100)*100;
 }
 function scalarDisplayRange(meta,dataMin,dataMax){
-  if(meta.unit!=='℃')return{name:'자료범위',min:dataMin,max:dataMax};
-  var r=kmaSeasonRange(queryMonth(),dataMin,dataMax);
-  return{name:r.name+' · KMA 평년기반',min:r.min,max:r.max};
+  /* 기온은 계절/월별로 재정규화하지 않는다.
+     모든 날짜가 동일한 -40~45℃ 절대색을 사용하므로 겨울/여름 색 의미가 동일하다. */
+  if(meta.unit==='℃'){
+    return{
+      name:'연중 절대기온 · KMA 색상흐름 참고',
+      min:TEMP_ABS_MIN,max:TEMP_ABS_MAX,
+      fixed:true,
+      clipped:dataMin<TEMP_ABS_MIN||dataMax>TEMP_ABS_MAX
+    };
+  }
+
+  /* 강수는 반드시 0 mm가 팔레트 시작점(흰색)이 되게 한다.
+     현재 자료의 최소값으로 재정규화하지 않는다. */
+  if(meta.palette==='rain'){
+    return{
+      name:'강수 · 0 mm 기준',
+      min:0,max:rainDisplayMax(dataMax),
+      fixed:true,clipped:false
+    };
+  }
+
+  return{name:'자료범위',min:dataMin,max:dataMax,fixed:false,clipped:false};
 }
 function invalidateScalarCache(){dataRevision++;scalarCache.clear()}
 function rememberScalarCache(key,obj){
@@ -1955,8 +2089,36 @@ function mountScalar(field,obj){
     e('tempLegend').style.display='block';
     e('tmin').textContent=obj.displayMin.toFixed(meta.unit==='%'?0:1)+meta.unit;
     e('tmax').textContent=obj.displayMax.toFixed(meta.unit==='%'?0:1)+meta.unit;
-    var rangeText=meta.unit==='℃'?(' · '+obj.rangeName+' '+obj.displayMin.toFixed(0)+'~'+obj.displayMax.toFixed(0)+'℃ · 관측 '+obj.dataMin.toFixed(1)+'~'+obj.dataMax.toFixed(1)+'℃'):'';
-    e('legendTitle').textContent='IDW p=2 · '+meta.label+rangeText+(contourOn?(' · 등치선 '+contourStepLabel(meta,obj.dataMin,obj.dataMax)):'')+(analysisSurfaceMode==='elevated'?' · 지형 노출형':' · 지형 밀착형');
+
+    var ticks=e('legendTicks'),badge=e('legendBadge'),obs=e('legendObserved');
+    if(ticks){
+      var vals;
+      if(meta.unit==='℃')vals=[-40,-20,0,20,30,40,45];
+      else{
+        vals=[];
+        var tstep=(obj.displayMax-obj.displayMin)/4;
+        for(var ti=0;ti<5;ti++)vals.push(obj.displayMin+tstep*ti);
+      }
+      ticks.innerHTML=vals.map(function(v,idx){
+        var pct=(v-obj.displayMin)/Math.max(.0001,obj.displayMax-obj.displayMin)*100,
+            cls=idx===0?'edgeLeft':idx===vals.length-1?'edgeRight':'';
+        pct=Math.max(0,Math.min(100,pct));
+        return '<span class="'+cls+'" style="left:'+pct.toFixed(2)+'%">'+
+          v.toFixed(meta.unit==='%'?0:meta.unit==='℃'?0:1)+meta.unit+'</span>';
+      }).join('');
+    }
+    if(meta.unit==='℃'){
+      if(badge)badge.textContent='연중 절대기온 · -40~45℃';
+      if(obs)obs.textContent='실제 관측 '+obj.dataMin.toFixed(1)+' ~ '+obj.dataMax.toFixed(1)+'℃'+
+        (obj.rangeClipped?' · 범위 밖 값은 끝색 고정':'');
+    }else if(meta.palette==='rain'){
+      if(badge)badge.textContent=meta.label+' · 0 mm 기준';
+      if(obs)obs.textContent='실제 관측 '+obj.dataMin.toFixed(1)+' ~ '+obj.dataMax.toFixed(1)+' mm';
+    }else{
+      if(badge)badge.textContent=meta.label+' · 자료범위';
+      if(obs)obs.textContent='관측 '+obj.dataMin.toFixed(meta.unit==='%'?0:1)+' ~ '+obj.dataMax.toFixed(meta.unit==='%'?0:1)+meta.unit;
+    }
+    e('legendTitle').textContent='IDW p=2'+(contourOn?(' · 등치선 '+contourStepLabel(meta,obj.dataMin,obj.dataMax)):'')+(analysisSurfaceMode==='elevated'?' · 지형 노출형':' · 지형 밀착형');
     S.forEach(label);scheduleLabelDeclutter();
     requestSceneRender();
     return true;
@@ -2087,7 +2249,7 @@ function buildScalar(field){
     grid:grid,
     maskCanvas:soft,
     dataMin:dataMin,dataMax:dataMax,
-    displayMin:dr.min,displayMax:dr.max,rangeName:dr.name,
+    displayMin:dr.min,displayMax:dr.max,rangeName:dr.name,rangeFixed:!!dr.fixed,rangeClipped:!!dr.clipped,
     W:geom.W,E:geom.E,S0:geom.S0,N:geom.N
   };
   obj.contourUrls[contourKey]=contourUrl;
@@ -2512,7 +2674,7 @@ async function load(f){var op=++dataOpSeq;try{
   var ext=f.name.toLowerCase().split('.').pop(),R=[];
   if(ext==='csv'||ext==='txt')R=csv(await f.text());
   else{
-    if(typeof XLSX==='undefined')throw new Error('XLSX 라이브러리를 불러오지 못했습니다. CSV 형식은 별도 라이브러리 없이 가능합니다.');
+    await ensureXlsxLib();
     var b=XLSX.read(await f.arrayBuffer(),{type:'array',cellDates:false});
     b.SheetNames.forEach(function(n){
       R=R.concat(XLSX.utils.sheet_to_json(b.Sheets[n],{defval:''}));
@@ -2616,6 +2778,56 @@ function applyContourStepChange(){
   if(tempOn&&activeScalar&&activeScalarObj&&contourOn)remountActiveScalar();
 }
 function toggleScalar(field){if(tempOn&&activeScalar===field)clearTemp();else buildScalar(field)}
+function refreshStationNetworkRuntime(){
+  refreshStationDerived();
+  analysisGeometry=null;
+  invalidateScalarCache();
+
+  if(!ready||!viewer)return;
+
+  var activeField=tempOn?activeScalar:null,
+      keepGrid=wgridOn,keepObs=wobsOn;
+
+  if(tempOn)clearTemp(false);
+  if(wgridOn){clearW(wgrid);wgridOn=false}
+  if(wobsOn){clearW(wobs);wobsOn=false}
+
+  ['ASOS','AWS','REF'].forEach(function(k){
+    (ents[k]||[]).forEach(function(en){try{viewer.entities.remove(en)}catch(_){}});
+  });
+  ents={ASOS:[],AWS:[],REF:[]};
+  entMap.clear();
+
+  fillSelect();
+  S.forEach(addStation);
+  S.forEach(label);
+
+  if(activeField)buildScalar(activeField);
+
+  if(keepGrid&&countWind(wx)>=3&&gridWind()){
+    wgridOn=true;
+    e('windGridBtn').textContent='바람장 ON';
+    e('windGridBtn').classList.add('on');
+  }else{
+    e('windGridBtn').textContent='바람장 OFF';
+    e('windGridBtn').classList.remove('on');
+  }
+
+  if(keepObs&&countWind(wx)>=1){
+    wobsOn=true;obsWind();
+    e('windObsBtn').textContent='관측바람 ON';
+    e('windObsBtn').classList.add('on');
+  }else{
+    e('windObsBtn').textContent='관측바람 OFF';
+    e('windObsBtn').classList.remove('on');
+  }
+
+  var rc=S.filter(function(s){return s.type==='REF'}).length;
+  e('status').textContent='광역 관측망 '+S.length+'지점 · 참고 '+rc+' 포함 · XLSX 최신값 반영';
+  e('status').style.background='rgba(6,78,59,.92)';
+  scheduleLabelDeclutter();
+  requestSceneRender();
+}
 function install(){
   if(ready)return;ready=true;refreshStationDerived();viewer=ws3d.viewer;
   try{
@@ -2671,35 +2883,6 @@ function install(){
     e('aval').textContent=Math.round(Number(this.value)*100)+'%';
     setAnalysisSurfaceAlpha(Number(this.value));
   };
-  function terrainExaggerationSupported(){
-    return !!(viewer&&viewer.scene&&('verticalExaggeration' in viewer.scene));
-  }
-  function setTerrainExaggeration(value){
-    var n=Math.max(1,Math.min(3,Number(value)||1)),
-        s=terrainExaggerationSupported(),
-        ctl=e('terrainExaggeration'),
-        val=e('terrainExaggerationVal'),
-        note=e('terrainExaggerationNote');
-    if(ctl)ctl.value=n.toFixed(1);
-    if(val)val.textContent=n.toFixed(1)+'×';
-    if(!s){
-      if(ctl)ctl.disabled=true;
-      if(note)note.textContent='현재 V-World/Cesium 환경에서는 지형 수직과장을 지원하지 않습니다.';
-      return false;
-    }
-    try{
-      viewer.scene.verticalExaggeration=n;
-      if('verticalExaggerationRelativeHeight' in viewer.scene)viewer.scene.verticalExaggerationRelativeHeight=0;
-      if(note)note.textContent=n===1?'1.0× = 실제 지형. 지형 강조는 시각화에만 적용됩니다.':'지형을 '+n.toFixed(1)+'×로 시각 강조 중 · 관측값/IDW 계산에는 영향 없음';
-      requestSceneRender();
-      return true;
-    }catch(x){
-      if(ctl)ctl.disabled=true;
-      if(note)note.textContent='지형 수직과장 적용 실패 · 현재 지형 1.0× 유지';
-      return false;
-    }
-  }
-
   function setAnalysisPlaneHeight(value,applyNow){
     var n=Number(value);
     if(!Number.isFinite(n))n=analysisPlaneHeight;
@@ -2743,14 +2926,7 @@ function install(){
       this.blur();
     }
   };
-
-  e('terrainExaggeration').oninput=function(){
-    e('terrainExaggerationVal').textContent=Number(this.value).toFixed(1)+'×';
-  };
-  e('terrainExaggeration').onchange=function(){setTerrainExaggeration(this.value)};
-  setTerrainExaggeration(1);
-
-  e('wdensity').oninput=function(){e('wdensityVal').textContent=this.value;scheduleWindRedraw(true,false)};
+e('wdensity').oninput=function(){e('wdensityVal').textContent=this.value;scheduleWindRedraw(true,false)};
   e('wscale').oninput=function(){e('wval').textContent=Number(this.value).toFixed(1)+'×';scheduleWindRedraw(true,true)};
   e('wthick').oninput=function(){e('wthickVal').textContent=Number(this.value).toFixed(1);scheduleWindRedraw(true,true)};
   e('walpha').oninput=function(){e('walphaVal').textContent=Math.round(Number(this.value)*100)+'%';scheduleWindRedraw(true,true)};
@@ -2794,7 +2970,7 @@ function install(){
   },Cesium.ScreenSpaceEventType.LEFT_CLICK);
   var cc=coreStations().length,rc=S.length-cc;
   if(stationConfigSource.indexOf('시트4 병합')===0){
-    e('status').textContent='광역 관측망 '+S.length+'지점 · 참고 '+rc+' · 전 요소 동일 반영';
+    e('status').textContent='광역 관측망 '+S.length+'지점 · 참고 '+rc+' 포함 · 분석영역=전체망 convex hull';
     e('status').style.background='rgba(6,78,59,.92)';
   }else{
     e('status').textContent='⚠ 시트4 미로드 · 내장 '+S.length+'지점만 사용 중';
@@ -2802,26 +2978,70 @@ function install(){
   }
   setTimeout(home,500);setTimeout(function(){adminBoundary(true)},1500)
 }
-function startVworldMap(){try{refreshStationDerived();if(typeof vw==='undefined')throw new Error('V-World API 스크립트가 로드되지 않았습니다.');vw.ws3dInitCallBack=function(){try{install()}catch(x){err(x,'분석 UI 초기화')}};var o={mapId:'map',initPosition:new vw.CameraPosition(new vw.CoordZ(analysisExtent.clon,analysisExtent.clat,analysisExtent.homeH),new vw.Direction(0,-90,0)),logo:true,navigation:true};map=new vw.Map();map.setOption(o);map.start();setTimeout(function(){try{if(!ready&&typeof ws3d!=='undefined'&&ws3d.viewer)install()}catch(x){err(x,'지연 초기화')}},1500)}catch(x){err(x,'V-World map.start()')}}
-loadStationConfig().then(function(ok){
-  refreshStationDerived();
+function startVworldMap(){
+  try{
+    refreshStationDerived();
+    if(typeof vw==='undefined')throw new Error('V-World API 스크립트가 로드되지 않았습니다.');
+    vw.ws3dInitCallBack=function(){try{install()}catch(x){err(x,'분석 UI 초기화')}};
+    var o={mapId:'map',initPosition:new vw.CameraPosition(new vw.CoordZ(analysisExtent.clon,analysisExtent.clat,analysisExtent.homeH),new vw.Direction(0,-90,0)),logo:true,navigation:true};
+    map=new vw.Map();map.setOption(o);map.start();
+    setTimeout(function(){
+      try{
+        if(!ready&&typeof ws3d!=='undefined'&&ws3d.viewer)install();
+      }catch(x){err(x,'지연 초기화')}
+    },1500);
+    setTimeout(function(){
+      if(!ready){
+        var st=e('status');
+        if(st){
+          st.textContent='⚠ V-World 3D 초기화 지연 · API 키/등록 URL/네트워크 상태 확인';
+          st.style.background='rgba(127,29,29,.95)';
+        }
+      }
+    },6000);
+  }catch(x){err(x,'V-World map.start()')}
+}
+/* 즉시 시작: 외부 XLSX/SheetJS를 기다리지 않는다. */
+var embeddedReady=applyEmbeddedStationConfig();
+refreshStationDerived();
+
+var st0=e('status');
+if(st0){
+  if(embeddedReady){
+    var ref0=S.filter(function(s){return s.type==='REF'}).length;
+    st0.textContent='광역 관측망 '+S.length+'지점 · 참고 '+ref0+' 포함 · 내장 Sheet4로 즉시 시작';
+    st0.style.background='rgba(6,78,59,.92)';
+  }else{
+    st0.textContent='⚠ 내장 참고지점 병합 실패 · 기본 관측망 사용';
+    st0.style.background='rgba(127,29,29,.95)';
+  }
+}
+if(st0){
+  st0.textContent+=' · V-World 초기화 중';
+}
+
+/* V-World는 상단의 정식 parser-loaded script가 먼저 준비한다.
+   동적 script 삽입 방식은 vw 초기화 시점이 불안정하여 사용하지 않는다. */
+if(typeof vw!=='undefined'){
+  startVworldMap();
+}else{
   var st=e('status');
   if(st){
-    if(ok){
-      var refCount=S.filter(function(s){return s.type==='REF'}).length;
-      st.textContent='광역 관측망 '+S.length+'지점 로드 · 참고 '+refCount+' · 전 요소 동일 계산';
-      st.style.background='rgba(6,78,59,.92)';
-    }else{
-      st.textContent='⚠ 시트4 병합 실패 · 현재 '+S.length+'개 기존지점만 사용 · '+(stationConfigError||'');
-      st.style.background='rgba(127,29,29,.95)';
-      st.title=stationConfigError||'ASOS, AWS 지점정보(부산관할)_수정.xlsx를 analysis.html과 같은 폴더에 두세요.';
-    }
+    st.textContent='⚠ V-World API 로드 실패 · API 키/등록 URL/네트워크 상태 확인 후 새로고침';
+    st.style.background='rgba(127,29,29,.95)';
   }
-  startVworldMap();
+}
+
+/* 최신 XLSX는 지도 시작과 독립적으로 백그라운드에서 확인 */
+loadStationConfig().then(function(result){
+  if(result&&result.loaded&&result.changed){
+    if(ready)refreshStationNetworkRuntime();
+    else refreshStationDerived();
+  }else if(result&&result.loaded){
+    stationConfigSource+=' · 내장값과 동일';
+  }
 }).catch(function(x){
-  console.warn(x);refreshStationDerived();
-  var st=e('status');if(st){st.textContent='⚠ 시트4 초기화 오류: '+(x&&x.message?x.message:x);st.style.background='rgba(127,29,29,.95)'}
-  startVworldMap();
+  console.warn('background station config',x);
 })
 })();</script>
 
