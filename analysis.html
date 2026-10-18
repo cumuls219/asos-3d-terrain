@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v20.3 + VIS (2026-10-16): parser-loaded V-World API + lazy SheetJS + embedded-network startup + fixed annual absolute-temperature spectrum + interpolation-only IDW -->
+<!-- v20.3 + AWS2 VIS exact integration (2026-10-18): parser-loaded V-World API + lazy SheetJS + embedded-network startup + fixed annual absolute-temperature spectrum + interpolation-only IDW -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
@@ -496,6 +496,16 @@ button,.fileLabel,select{font-family:inherit}
 #terrainDisplayDetails .sectionCaption{margin-top:7px;color:#94a3b8;line-height:1.5}
 #surfaceMode{width:100%;height:40px}
 
+/* VIS 별도 자료원 안내: 비활성 버튼 대신 조회 상태를 표시 */
+#visSourceBox{margin:8px 0 3px;padding:9px;border:1px solid #344257;border-radius:7px;background:#0d1727}
+#visSourceState{font-size:11px;line-height:1.55;color:#b8cbdf;overflow-wrap:anywhere}
+#visSourceState.error{color:#fbb6b6}
+#visSourceState.ok{color:#a7e3c2}
+#visActions{display:grid;grid-template-columns:1fr 1fr;gap:7px;align-items:end;margin-top:8px}
+#visActions select{width:100%;height:35px;border:1px solid #344257;background:#0c1526;color:#fff;border-radius:5px;margin-top:4px}
+#visActions .fileLabel{font-size:11px;min-height:35px}
+#visBtn.visBusy{opacity:.72;cursor:progress}
+
 /* v16 operational UI cleanup */
 .compactSetting{margin-top:9px}
 .compactAction{min-height:36px!important;padding:0 12px!important}
@@ -800,9 +810,19 @@ button,.fileLabel,select{font-family:inherit}
         <div class="scalarGrid compactToggleGrid">
           <button id="tempBtn" class="temp" disabled>기온장 OFF</button>
           <button id="hmBtn" disabled>습도장 OFF</button>
-          <button id="visBtn" disabled>시정장 OFF</button>
+          <button id="visBtn" type="button" title="시정자료가 없으면 별도 AWS2 시정 API 조회">시정장 · 조회</button>
           <button id="rainBtn" disabled>강수장 OFF</button>
           <button id="dailyBtn" disabled>일극값장 OFF</button>
+        </div>
+        <div id="visSourceBox" role="status" aria-live="polite">
+          <div id="visSourceState">시정장은 별도 AWS2 시정자료가 필요합니다. <b>시정</b>을 누르면 선택 시각의 AWS2 시정자료를 조회합니다(프록시 mode=vis 필요).</div>
+          <div id="visActions">
+            <label class="fieldLabel" for="visPeriod">시정 평균주기
+              <select id="visPeriod"><option value="1" selected>1분 평균</option><option value="10">10분 평균</option></select>
+            </label>
+            <label class="fileLabel" for="visFile" title="기상청 AWS2 시정자료(TXT/CSV) 또는 지점번호·시정(m) 컬럼 파일">시정자료 파일 열기</label>
+            <input id="visFile" type="file" accept=".csv,.txt,.tsv,.xlsx,.xls" style="display:none">
+          </div>
         </div>
 
         <div id="rainBasis" class="inlineSetting">
@@ -970,15 +990,15 @@ button,.fileLabel,select{font-family:inherit}
     <div id="guideHead"><h2 id="guideTitle">3D 기상 분석지도 · 사용 설명서</h2><button id="guideClose" type="button">닫기</button></div>
     <div id="guideContent">
       <h3>1. 빠른 사용 순서</h3>
-      <div class="guideBox"><span class="guideKey">특정 시각</span> 날짜·시각 선택 → 관측자료 조회 → 기온/습도/시정/강수 또는 바람 분석장을 선택합니다.<br><span class="guideKey">일극값</span> 날짜와 요소(일강수량·일최고기온·일최저기온·일최대풍속) 선택 → 조회 → 일극값장을 켭니다.</div>
+      <div class="guideBox"><span class="guideKey">특정 시각</span> 날짜·시각 선택 → 관측자료 조회 → 기온/습도/시정/강수 또는 바람 분석장을 선택합니다. 시정은 별도 AWS2 API 연동이 필요합니다.<br><span class="guideKey">일극값</span> 날짜와 요소(일강수량·일최고기온·일최저기온·일최대풍속) 선택 → 조회 → 일극값장을 켭니다.</div>
       <h3>2. 지도 · 관측망</h3>
       <ul><li><b>위성</b>: 기본 ON. 배경 위성영상을 켜거나 끕니다.</li><li><b>3D 건물</b>: V-World 건물 레이어를 켜거나 끕니다.</li><li><b>시군구 경계</b>: V-World WMS <code>LT_C_ADSIGG</code> 행정구역 경계를 표출합니다. 분석장과 독립적으로 ON/OFF 됩니다.</li><li><b>주요 산</b>: 기상청 산악예보 지점정보의 정상 좌표·고도를 기준으로 <code>산명(고도m)</code>를 표출합니다. 고도가 높은 산은 넓은 시야에서, 낮은 산은 확대 시 나타나도록 자동으로 과밀을 줄입니다. 산 표시를 클릭하면 좌표·고도·자료 기준을 확인할 수 있습니다.</li><li><b>ASOS / AWS / 참고</b>: 관측망별 마커·라벨을 독립적으로 제어합니다. 참고지점은 기본 OFF이며 화면에서 숨겨져도 기온·습도·강수·바람 공간계산에는 그대로 포함됩니다. 지점표시는 바람벡터보다 앞에 보이도록 우선 처리됩니다.</li><li><b>라벨 표시</b>: 자동(권장)은 줌과 충돌을 고려해 필요한 라벨만 표시하고, 간소는 ASOS·고산 위주, 전체는 넓은 범위에서 모든 관측망 라벨을 후보로 표시합니다.</li>
-<li><b>NOW</b>: 현재시각 기준 약 5분 전의 매분 관측자료로 즉시 전환·조회합니다.</li>
+<li><b>시정</b>: 1분/10분 평균을 선택합니다(기본 10분). 자동 연동은 API 프록시에서 <code>mode=vis</code>를 지원해야 하며, 별도 시정 관측장비가 없는 지점에는 임의 시정값을 만들지 않습니다.</li><li><b>NOW</b>: 현재시각 기준 약 5분 전의 매분 관측자료로 즉시 전환·조회합니다.</li>
 <li><b>기온 범례</b>: 모든 날짜에 동일한 -40~45℃ 연중 절대범위를 사용합니다. 저온의 흰색·청색에서 녹색·노랑·빨강을 거쳐 고온의 검정으로 이어지는 기상청 기온 분포도 색상 흐름을 참고하되, 공개 도움말에 정확한 RGB/수치표가 없어 본 도구의 고정 운영범위임을 명시합니다.</li>
 <li><b>내삽 범위</b>: 관측망 최외곽 convex hull 내부만 IDW로 내삽하고 외부는 투명 처리합니다. 관측망 밖 외삽은 하지 않습니다.</li>
 </ul>
       <h3>3. 스칼라 분석장</h3>
-      <ul><li>기온, 상대습도, 시정, 강수, 일극값을 관측지점 값으로부터 <b>IDW(p=2)</b> 보간합니다.</li><li>시트4의 <b>모든 관측지점</b>을 지도 표출과 공간계산에 동일하게 사용하고, 전체 관측망의 <b>볼록껍질 내부</b>를 광역 분석영역으로 사용합니다.</li><li>시정은 원자료 m를 km로 변환하고, 0.2·0.5·1·2·5·10·20 km를 고정 기준으로 색상 표출합니다. API의 VIS 제공 여부에 따라 시정장 버튼이 활성화됩니다.</li><li>강수는 15분·60분·12시간·일누적 중 선택할 수 있습니다.</li><li>기본값은 <b>지형 밀착형</b>입니다. 필요할 때 지형 노출형으로 전환하고 기준고도를 0~1,400m에서 슬라이더 또는 숫자로 직접 입력할 수 있습니다. 이 고도는 시각화용이며 관측값을 보정하지 않습니다.</li><li>분석장 투명도를 조절하여 지형·위성영상과 함께 볼 수 있습니다.</li></ul>
+      <ul><li>기온, 상대습도, 시정, 강수, 일극값을 관측지점 값으로부터 <b>IDW(p=2)</b> 보간합니다.</li><li>시트4의 <b>모든 관측지점</b>을 지도 표출과 공간계산에 동일하게 사용하고, 전체 관측망의 <b>볼록껍질 내부</b>를 광역 분석영역으로 사용합니다.</li><li>시정은 원자료 m를 km로 변환하고, 0.2·0.5·1·2·5·10·20 km를 고정 기준으로 색상 표출합니다. 시정 버튼은 별도 AWS2 시정자료(mode=vis) 조회를 시도합니다. Worker가 시정 서비스를 지원하지 않는 경우에는 TXT/CSV/XLSX 시정자료 파일을 직접 입력할 수 있습니다. 실제 시정 관측지점이 3개 미만이면 분석장을 그리지 않습니다.</li><li>강수는 15분·60분·12시간·일누적 중 선택할 수 있습니다. 시정은 1분·10분 평균을 선택하며 m→km 변환 후 0.2/0.5/1/2/5/10/20 km 고정 비선형 범례를 사용합니다. 시정장 IDW는 관측지점별 55 km·3점 이상 조건으로 제한합니다.</li><li>기본값은 <b>지형 밀착형</b>입니다. 필요할 때 지형 노출형으로 전환하고 기준고도를 0~1,400m에서 슬라이더 또는 숫자로 직접 입력할 수 있습니다. 이 고도는 시각화용이며 관측값을 보정하지 않습니다.</li><li>분석장 투명도를 조절하여 지형·위성영상과 함께 볼 수 있습니다.</li></ul>
       <h3>4. 바람 분석장</h3>
       <ul><li>1분 또는 10분 풍향·풍속을 선택합니다. 둘 다 있으면 10분 평균을 우선 사용합니다.</li><li>풍향을 직접 보간하지 않고 관측 풍향·풍속을 U/V 성분으로 변환한 뒤 각각 IDW 보간합니다.</li><li>밀도·길이·벡터 두께·투명도를 조절할 수 있습니다. 지형 노출형에서는 depth-fail 재질을 함께 사용해 바람벡터를 분석장보다 우선적으로 선명하게 표시합니다.</li><li>지형 노출형에서는 보간 바람벡터를 분석면 높이에 배치하고 실제 산지에 의해 가려지도록 합니다. 관측바람은 관측지점 위치를 유지합니다.</li></ul>
       <h3>5. 색상과 해석</h3>
@@ -2136,6 +2156,7 @@ function mountScalar(field,obj){
       if(badge)badge.textContent=meta.label+' · 자료범위';
       if(obs)obs.textContent='관측 '+obj.dataMin.toFixed(meta.unit==='%'?0:1)+' ~ '+obj.dataMax.toFixed(meta.unit==='%'?0:1)+meta.unit;
     }
+    refreshVisButton();
     e('legendTitle').textContent='IDW p=2'+(contourOn?(' · 등치선 '+contourStepLabel(meta,obj.dataMin,obj.dataMax)):'')+(analysisSurfaceMode==='elevated'?' · 지형 노출형':' · 지형 밀착형');
     S.forEach(label);scheduleLabelDeclutter();
     requestSceneRender();
@@ -2173,6 +2194,28 @@ function getAnalysisGeometry(cw,ch){
   if(!analysisGeometry||analysisGeometry.cw!==cw||analysisGeometry.ch!==ch)analysisGeometry=buildAnalysisGeometry(cw,ch);
   return analysisGeometry;
 }
+/* VIS만 관측장비 보유지점 수가 적으므로, 모든 AWS 지점 중 가까운 32개가 아니라
+   실제 VIS 값이 있는 지점 중 가까운 32개를 사전 계산한다.
+   누락 지점으로 인해 후보가 모두 소진돼 화면이 빈 영역으로 변하는 것을 방지. */
+function visCandidatesForValues(values,geom){
+  var active=[];
+  for(var i=0;i<values.length;i++)if(Number.isFinite(values[i]))active.push(i);
+  if(active.length<3)return geom.candidates;
+  var blocks=new Array(geom.blocksX*geom.blocksY),cosm=Math.cos((geom.S0+geom.N)*.5*Math.PI/180);
+  for(var by=0;by<geom.blocksY;by++)for(var bx=0;bx<geom.blocksX;bx++){
+    var px=Math.min(geom.cw-1,bx*geom.block+geom.block*.5),
+        py=Math.min(geom.ch-1,by*geom.block+geom.block*.5),
+        lon=geom.W+(geom.E-geom.W)*px/(geom.cw-1),
+        lat=geom.N-(geom.N-geom.S0)*py/(geom.ch-1);
+    var near=active.map(function(si){
+      var s=S[si],dy=(s.lat-lat)*111.32,dx=(s.lon-lon)*111.32*cosm;
+      return{i:si,d:dx*dx+dy*dy};
+    });
+    near.sort(function(a,b){return a.d-b.d});
+    blocks[by*geom.blocksX+bx]=near.slice(0,Math.min(32,near.length)).map(function(q){return q.i});
+  }
+  return blocks;
+}
 function rasterIdwImage(values,geom,mn,mx,meta){
   var cw=geom.cw,ch=geom.ch,rad=Math.PI/180,R=6371,nearQ=Math.pow(.03/(2*R),2),
       maxKm=meta.palette==='vis'?55:220,maxQ=Math.pow(Math.sin(maxKm/(2*R)),2),sp=Math.max(.0001,mx-mn),K=16,
@@ -2182,13 +2225,14 @@ function rasterIdwImage(values,geom,mn,mx,meta){
   c.height=ch;
   grid.fill(NaN);
   var ctx=c.getContext('2d',{alpha:true}),im=ctx.createImageData(cw,ch),d=im.data,
-      a=new Float64Array(S.length),b=new Float64Array(S.length);
+      a=new Float64Array(S.length),b=new Float64Array(S.length),
+      candidates=meta.palette==='vis'?visCandidatesForValues(values,geom):geom.candidates;
   for(var y=0;y<ch;y++){
     var lat=geom.N-(geom.N-geom.S0)*y/(ch-1),lr=lat*rad,cl=Math.cos(lr);
     for(var si=0;si<S.length;si++){var sl=Math.sin((lr-geom.prep[si].latr)/2);a[si]=sl*sl;b[si]=cl*geom.prep[si].coslat}
     var by=Math.min(geom.blocksY-1,Math.floor(y/geom.block));
     for(var x=0;x<cw;x++){
-      var bx=Math.min(geom.blocksX-1,Math.floor(x/geom.block)),cand=geom.candidates[by*geom.blocksX+bx],sw=0,sv=0,v=NaN,used=0;
+      var bx=Math.min(geom.blocksX-1,Math.floor(x/geom.block)),cand=candidates[by*geom.blocksX+bx],sw=0,sv=0,v=NaN,used=0;
       for(var ci=0;ci<cand.length&&used<K;ci++){
         var idx=cand[ci],val=values[idx];if(!Number.isFinite(val))continue;
         var q=a[idx]+b[idx]*geom.lonQ[idx][x];if(q>maxQ)continue;if(q<nearQ){v=val;sw=-1;break}
@@ -2212,6 +2256,7 @@ function clearTemp(updateLabels){
   tempOn=false;activeScalar=null;activeScalarObj=null;
   [['tempBtn','기온장 OFF'],['hmBtn','습도장 OFF'],['visBtn','시정장 OFF'],['rainBtn','강수장 OFF'],['dailyBtn','일극값장 OFF']].forEach(function(a){var b=e(a[0]);if(b){b.textContent=a[1];b.classList.remove('on','temp','humidity','vis','rain','daily');if(a[0]==='tempBtn')b.classList.add('temp')}});
   e('tempLegend').style.display='none';
+  refreshVisButton();
   if(updateLabels)S.forEach(label);
 }
 function buildScalar(field){
@@ -2227,6 +2272,10 @@ function buildScalar(field){
       dr=scalarDisplayRange(meta,dataMin,dataMax),
       raster=rasterIdwImage(values,geom,dr.min,dr.max,meta),c=raster.canvas,grid=raster.grid,
       x=c.getContext('2d'),cw=geom.cw,ch=geom.ch;
+  if(meta.palette==='vis'){
+    var validCells=0;for(var ci=0;ci<grid.length;ci++)if(Number.isFinite(grid[ci]))validCells++;
+    if(!validCells){visStatus('유효 시정지점은 있으나 55 km 반경 내 3개 관측점 조건을 충족하는 공간 격자가 없습니다. 분포장을 표시하지 않습니다.','error');return false;}
+  }
 
   /* 관측망 convex hull 내부만 IDW 내삽. hull 외부는 hard mask로 투명 처리하여 외삽하지 않는다. */
   var hard=document.createElement('canvas');hard.width=cw;hard.height=ch;
@@ -2432,6 +2481,7 @@ function setNowAndFetch(){
 }
 function setQueryMode(mode){
   var daily=mode==='daily';e('apiBox').classList.toggle('daily-mode',daily);
+  /* UI 조회모드와 자료모드는 다를 수 있으므로, 실제 시정 API 실행은 선택 모드를 확인한다. */
   e('apiFetchBtn').textContent=daily?'선택 날짜 일극값 조회':'선택 시각 관측자료 조회';
   e('apiState').className='';
   e('apiState').textContent=daily?'날짜와 일극값 요소를 선택한 뒤 조회하세요.':'날짜·시각을 선택한 뒤 조회하세요.';
@@ -2440,7 +2490,7 @@ function validTa(v){return fin(v)&&v>-90&&v<70}
 function validWd(v){return fin(v)&&v>=0&&v<=360}
 function validWs(v){return fin(v)&&v>=0&&v<100}
 function validHm(v){return fin(v)&&v>=0&&v<=100}
-function validVis(v){return fin(v)&&v>=0&&v<=100000}
+function validVis(v){return fin(v)&&v>=0&&v<=80000&&v!==99999}
 function visToKm(v){return validVis(v)?v/1000:NaN} // KMA 관측 시정 원자료 m -> km
 function validRn(v){return fin(v)&&v>=0&&v<3000}
 function validDailyVal(obs,v){if(obs==='rn_day')return validRn(v);if(obs==='ta_max'||obs==='ta_min')return validTa(v);if(obs==='ws_max')return validWs(v);return fin(v)}
@@ -2449,7 +2499,7 @@ function parseKmaAwsText(txt){
   // API 응답에 VIS 헤더가 존재할 때만 시정 필드를 파싱한다. 고정 열번호 추측 금지.
   String(txt||'').split(/\r?\n/).forEach(function(line){
     var s=line.trim();if(!s)return;
-    if(s.charAt(0)==='#'){var h=s.replace(/^#+\s*/,'').split(/\s+/).map(wnk);var hi=h.indexOf('vis');if(hi<0)hi=h.indexOf('visibility');if(hi>=0&&h.indexOf('stn')>=0)visIdx=hi;return}
+    if(s.charAt(0)==='#'){var h=s.replace(/^#+\s*/,'').split(/\s+/).map(wnk);var hi=h.indexOf('vis10');if(hi<0)hi=h.indexOf('vis1');if(hi<0)hi=h.indexOf('vis');if(hi<0)hi=h.indexOf('visibility');if(hi>=0&&h.indexOf('stn')>=0)visIdx=hi;return}
     var a=s.split(/\s+/);if(a.length<18)return;
     var tm=a[0],id=Math.trunc(num(a[1]));if(!Number.isFinite(id))return;
     var wd1=num(a[2]),ws1=num(a[3]),wd10=num(a[6]),ws10=num(a[7]),ta=num(a[8]),
@@ -2569,6 +2619,207 @@ async function fetchKmaData(){
   }
 }
 
+/* ===== VIS 2026.10 별도 API 연동: AWS2 시정 nph-aws2_min_vis =====
+   기존 mode=min AWS 응답에 VIS 값이 없으면 별도 mode=vis 프록시를 조회한다.
+   이 API는 VIS1/VIS10 (m)을 제공하므로 기존 지점값에만 병합한다.
+   프록시가 mode=vis 미구현이면 임의 시정값을 생성하지 않고 파일 입력을 안내한다. */
+var visBusy=false,visRawSource=null,visQueryEpoch=0,visLastSource='';
+function visStatus(msg,type){
+  var el=e('visSourceState');if(!el)return;
+  el.className=type||'';el.textContent=msg;
+}
+function refreshVisButton(){
+  var b=e('visBtn');if(!b)return;
+  b.disabled=false; // 조회 개시/파일안내는 언제나 접근 가능해야 함
+  var count=countField(wx,'vis');
+  var active=tempOn&&activeScalar==='vis';
+  b.textContent=visBusy?'시정 조회 중…':active?'시정장 ON':count>=3?'시정장 OFF':'시정장 · 조회';
+  b.classList.toggle('visBusy',visBusy);
+  b.setAttribute('aria-label',count>=3?'시정 분석장, 유효 관측 '+count+'개 지점, '+(active?'켜짐':'꺼짐'):'시정 분석장, 시정자료 조회');
+  b.title=count>=3?'관측 시정 '+count+'지점 · 클릭해 분포장 표출':'별도 AWS2 시정자료 조회 또는 시정자료 파일 입력';
+}
+/* APIHub AWS2 시정: # YYMMDDHHMI STN S VIS1 VIS10 WW1 WW15
+   문서의 10분 시정 표기에 VIS1 중복 오타가 있어 실제 응답 헤더 우선 분석.
+   반환 단위 m. 출력 컬럼은 응답 헤더를 통해서만 결정한다. */
+function visHeaders(parts){
+  var h=parts.map(wnk),sid=h.indexOf('stn'),tm=-1;
+  ['yymmddhhmi','yyyymmddhhmi','yyyymmddhhmm','tm','time'].some(function(k){tm=h.indexOf(k);return tm>=0});
+  var v1=h.indexOf('vis1'),v10=h.indexOf('vis10');
+  if(v1<0)v1=h.indexOf('vis1m');
+  if(v10<0)v10=h.indexOf('vis10m');
+  if(sid<0||(v1<0&&v10<0))return null;
+  return{sid:sid,tm:tm,v1:v1,v10:v10,n:h.length};
+}
+function visParseText(text){
+  var hdr=null,records=[],lines=String(text||'').split(/\r?\n/);
+  lines.forEach(function(line){
+    var s=line.trim();if(!s)return;
+    if(/^#/.test(s)){
+      var possible=visHeaders(s.replace(/^#+\s*/,'').split(/[\s,]+/).filter(Boolean));
+      if(possible)hdr=possible;
+      return;
+    }
+    var p=s.split(/[\s,]+/).filter(Boolean);
+    var fromRow=visHeaders(p);
+    if(fromRow){hdr=fromRow;return}
+    if(!hdr||p.length<hdr.n)return;
+    var id=Math.trunc(num(p[hdr.sid]));
+    if(!stationById.has(id))return;
+    var tm=hdr.tm>=0?p[hdr.tm]:'';
+    if(hdr.tm>=0&&!/^\d{12}$/.test(tm))return;
+    var v1=hdr.v1>=0?num(p[hdr.v1]):NaN;
+    var v10=hdr.v10>=0?num(p[hdr.v10]):NaN;
+    records.push({id:id,tm:tm,vis1:validVis(v1)?v1:NaN,vis10:validVis(v10)?v10:NaN});
+  });
+  return records;
+}
+function visCsvText(text){
+  var data=csv(text),records=[];
+  data.forEach(function(r){
+    var id=Math.trunc(num(fv(r,'id')));
+    if(!stationById.has(id))return;
+    function findNamed(keys){
+      var ks=Object.keys(r);
+      for(var i=0;i<ks.length;i++)if(keys.indexOf(wnk(ks[i]))>=0)return num(r[ks[i]]);
+      return NaN;
+    }
+    var v1=findNamed(['vis1','vis1m','1분시정','시정1분','시정1','1분평균시정','visibility1']);
+    var v10=findNamed(['vis10','vis10m','10분시정','시정10분','시정10','10분평균시정','visibility10']);
+    var generic=num(fv(r,'vis'));
+    if(!validVis(v1)&&!validVis(v10)&&validVis(generic)){if(e('visPeriod').value==='1')v1=generic;else v10=generic;}
+    records.push({id:id,tm:String(fv(r,'time')||''),vis1:validVis(v1)?v1:NaN,vis10:validVis(v10)?v10:NaN});
+  });
+  return records;
+}
+function parseVisPayload(body){
+  var records=visParseText(body);
+  if(records.length)return records;
+  records=visCsvText(body);
+  return records;
+}
+/* 시정 파일·API 관측시각 정규화: ISO/date-time도 KST 숫자형으로 매칭 */
+function visTimeKey(value){
+  var s=String(value==null?'':value).trim();
+  if(/^\d{12}$/.test(s))return s;
+  var m=s.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})[ T](\d{1,2}):(\d{1,2})/);
+  if(!m)return '';
+  return m[1]+m[2].padStart(2,'0')+m[3].padStart(2,'0')+m[4].padStart(2,'0')+m[5].padStart(2,'0');
+}
+function visGetValue(row){
+  var period=e('visPeriod').value;
+  // 10분 선택 시 1분 값으로 대체하지 않음: 평균기간 의미를 유지한다.
+  return period==='1'?row.vis1:row.vis10;
+}
+function visMerge(records,source){
+  if(!records||!records.length)return 0;
+  if(dataMode==='daily'){
+    visStatus('일극값 모드의 일자료와 시정 시각자료는 결합하지 않습니다. 특정 시각 조회로 전환하세요.','error');
+    return 0;
+  }
+  var fresh=new Map(),accepted=new Map(),otherTimes=0,expectedTime=instantTimeToKma();
+  /* 평균주기를 바꿀 때 이전 10분/1분 시정값이 남지 않게 전체 시정만 초기화.
+     기존 기온·습도·강수·바람 필드는 보존. */
+  wx.forEach(function(w,id){fresh.set(id,Object.assign({},w,{vis:NaN}))});
+  records.forEach(function(r){
+    var rowTime=visTimeKey(r.tm);
+    if(rowTime&&expectedTime&&rowTime!==expectedTime){otherTimes++;return}
+    var v=visGetValue(r);
+    if(validVis(v)&&stationById.has(r.id))accepted.set(r.id,{v:v,tm:r.tm});
+  });
+  if(accepted.size<3){
+    wx=fresh;
+    if(tempOn&&activeScalar==='vis')clearTemp(false);
+    invalidateScalarCache();refreshVisButton();S.forEach(label);scheduleLabelDeclutter();
+    var staleLine=e('visDataAppend');if(staleLine)staleLine.remove();
+    var alt=records.filter(function(r){return !visTimeKey(r.tm)||visTimeKey(r.tm)===expectedTime}).filter(function(r){return validVis(e('visPeriod').value==='1'?r.vis10:r.vis1)}).length;
+    visStatus('선택한 '+e('visPeriod').value+'분 평균 유효 '+accepted.size+'지점'+(alt?' · 다른 평균주기는 '+alt+'지점: 평균주기를 변경해 보세요':'')+(otherTimes?' · 시각 불일치 '+otherTimes+'행 제외':'')+' · 이전 평균주기 값은 제거했습니다.','error');
+    return accepted.size;
+  }
+  accepted.forEach(function(item,id){
+    var old=fresh.get(id);
+    if(!old)old={temp:NaN,humidity:NaN,vis:NaN,rn15:NaN,rn60:NaN,rn12:NaN,rnday:NaN,daily:NaN,wd:NaN,ws:NaN,time:''};
+    old.vis=visToKm(item.v);
+    if(!old.time&&item.tm)old.time=item.tm;
+    fresh.set(id,old);
+  });
+  wx=fresh;
+  visLastSource=source;
+  invalidateScalarCache();
+  if(tempOn&&activeScalar==='vis')clearTemp(false);
+  refreshVisButton();S.forEach(label);scheduleLabelDeclutter();
+  var info=e('dataInfo');
+  if(info){
+    var current=info.querySelector('#visDataAppend');
+    if(current)current.remove();
+    var line=document.createElement('div');line.id='visDataAppend';line.textContent='별도 시정자료: '+accepted.size+'지점 ('+e('visPeriod').value+'분 평균, '+source+')';info.appendChild(line);
+  }
+  visStatus('시정자료 '+accepted.size+'개 지점 연결 완료 · '+source+' · '+e('visPeriod').value+'분 평균'+(otherTimes?' · 시각 불일치 '+otherTimes+'행 제외':''),'ok');
+  return accepted.size;
+}
+async function fetchVisData(){
+  if(visBusy)return false;
+  if(dataMode==='daily'){visStatus('현재 일극값 조회 모드입니다. 먼저 [조회]에서 특정 시각 자료를 조회하세요.','error');return false}
+  var tm=instantTimeToKma();
+  if(!tm){visStatus('조회 탭에서 시정 관측시각을 선택하세요.','error');return false}
+  var epoch=++visQueryEpoch;
+  visBusy=true;refreshVisButton();
+  visStatus('기상청 AWS2 시정자료 조회 중 · '+tm+' · 프록시 mode=vis');
+  try{
+    var url=proxyRequestUrl({mode:'vis',tm2:tm,stn:0,disp:0,help:1});
+    var res=await fetch(url,{cache:'no-store'});
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    var body=await res.text();
+    if(epoch!==visQueryEpoch || tm!==instantTimeToKma() || dataMode!=='instant')return false;
+    var records=parseVisPayload(body);
+    /* KMA tm2 응답에 다른 시각 자료가 섞이면 실황으로 결합하지 않는다. */
+    var mismatched=records.filter(function(row){return row.tm && row.tm!==tm}).length;
+    records=records.filter(function(row){return !row.tm || row.tm===tm});
+    if(!records.length && mismatched)throw new Error('요청시각 '+tm+'에 일치하는 시정 관측행이 없습니다. 응답시각을 확인하세요.');
+    if(!records.length){
+      if(/error|invalid|unsupported|unknown|not found|요청|오류|실패|unauthorized|permission|auth/i.test(body.slice(0,500)))throw new Error('프록시 시정(mode=vis) 응답 오류 또는 API 미승인/미설정입니다. Worker 및 APIHub 사용 권한을 확인하세요.');
+      throw new Error('시정 응답(VIS1/VIS10) 헤더를 찾지 못했습니다. 프록시 mode=vis 연결을 확인하세요.');
+    }
+    visRawSource=records;
+    var count=visMerge(records,'AWS2 시정 API');
+    if(count>=3){buildScalar('vis');return true}
+    return false;
+  }catch(err){
+    if(epoch===visQueryEpoch)visStatus('시정 API 자동연동 실패: '+err.message+'  아래 [시정자료 파일 열기]로 시정 TXT/CSV를 불러올 수도 있습니다.','error');
+    return false;
+  }finally{visBusy=false;refreshVisButton()}
+}
+function activateVis(){
+  if(tempOn&&activeScalar==='vis'){clearTemp();return}
+  if(countField(wx,'vis')>=3){if(!buildScalar('vis'))visStatus('시정 분포장 생성에 실패했습니다. 자료 유효지점과 브라우저 콘솔을 확인하세요.','error');return}
+  fetchVisData();
+}
+function changeVisPeriod(){
+  if(visRawSource&&visRawSource.length){
+    var wasActive=tempOn&&activeScalar==='vis';
+    var c=visMerge(visRawSource,visLastSource||'AWS2 시정');
+    if(c>=3&&wasActive)buildScalar('vis');
+  }else if(countField(wx,'vis')>=3)visStatus('직접 불러온 단일 VIS 자료는 평균주기 선택으로 변환되지 않습니다. 파일의 실제 평균주기를 확인하세요.');
+}
+async function loadVisFile(f){
+  try{
+    if(dataMode==='daily'){
+      visStatus('일극값 모드에서는 시정 시각자료와 결합하지 않습니다. 특정 시각 자료로 전환하세요.','error');return;
+    }
+    var rows=[],ext=f.name.split('.').pop().toLowerCase();
+    if(ext==='xlsx'||ext==='xls'){
+      var XL=await ensureXlsxLib(),buf=await f.arrayBuffer(),book=XL.read(buf,{type:'array'});
+      var sh=book.Sheets[book.SheetNames[0]];
+      rows=XL.utils.sheet_to_csv(sh)?visCsvText(XL.utils.sheet_to_csv(sh)):[];
+    }else{
+      var text=await f.text();rows=parseVisPayload(text);
+    }
+    if(!rows.length)throw new Error('시정 열을 찾지 못했습니다. 헤더 STN, VIS1/VIS10 또는 지점번호, 시정(m) 컬럼을 확인하세요.');
+    visRawSource=rows;
+    var c=visMerge(rows,'파일 '+f.name);
+    if(c>=3)buildScalar('vis');
+  }catch(x){visStatus('시정 파일 입력 실패: '+x.message,'error')}
+}
+
 function timeText(v){if(typeof XLSX!=='undefined'&&typeof v==='number'&&v>20000&&XLSX.SSF){var d=XLSX.SSF.parse_date_code(v);if(d)return d.y+'-'+String(d.m).padStart(2,'0')+'-'+String(d.d).padStart(2,'0')+' '+String(d.H).padStart(2,'0')+':'+String(d.M).padStart(2,'0')}return String(v==null?'':v)}
 function countField(M,field){var c=0;M.forEach(function(w){if(fin(w[field]))c++});return c}
 function updateRainAvailability(rebuildActive){
@@ -2593,6 +2844,7 @@ function applyRows(R,name,autoDraw,preserveVisuals){
     var old=M.get(id);
     if(old)dup.add(id);
     else old={temp:NaN,humidity:NaN,vis:NaN,rn15:NaN,rn60:NaN,rn12:NaN,rnday:NaN,daily:NaN,wd:NaN,ws:NaN,time:''};
+    if(preserveVisuals){var prev=wx.get(id);if(prev&&fin(prev.vis))old.vis=prev.vis;}
 
     var v;
     v=num(fv(r,'temp'));if(validTa(v))old.temp=v;
@@ -2614,6 +2866,7 @@ function applyRows(R,name,autoDraw,preserveVisuals){
   });
 
   cancelWindRedraw();
+  if(!preserveVisuals){visRawSource=null;visQueryEpoch++;visLastSource='';}
   wx=M;
   if(!preserveVisuals){
     invalidateScalarCache();
@@ -2629,7 +2882,8 @@ function applyRows(R,name,autoDraw,preserveVisuals){
       r15=countField(M,'rn15'),r60=countField(M,'rn60'),r12=countField(M,'rn12'),rd=countField(M,'rnday'),wc=0;
   M.forEach(function(w){if(fin(w.wd)&&fin(w.ws))wc++});
 
-  e('tempBtn').disabled=tc<3;e('hmBtn').disabled=hc<3;e('visBtn').disabled=vc<3;e('dailyBtn').disabled=true;
+  e('tempBtn').disabled=tc<3;e('hmBtn').disabled=hc<3;e('visBtn').disabled=false;e('dailyBtn').disabled=true;
+  refreshVisButton();
   updateRainAvailability(!preserveVisuals);
   e('windGridBtn').disabled=wc<3;e('windObsBtn').disabled=wc<1;
 
@@ -2648,6 +2902,8 @@ function applyRows(R,name,autoDraw,preserveVisuals){
   if(bad)msg+='<br>지점번호 해석 불가 행 '+bad+'개';
 
   e('dataInfo').innerHTML=msg;
+  if(vc>=3)visStatus('시정 관측값 '+vc+'지점 확인 · 시정 버튼을 누르면 분석장을 표시합니다.','ok');
+  else visStatus('현재 조회자료의 시정 유효지점 '+vc+'개 · 시정 버튼을 누르면 AWS2 별도 시정자료를 조회합니다.');
   e('status').textContent='특정시각 자료 적용 · 기온 '+tc+' · 습도 '+hc+' · 바람 '+wc;
   S.forEach(label);
 
@@ -2679,10 +2935,11 @@ function applyDailyRows(R,name,obs,tm,autoDraw){
     if(!validDailyVal(obs,v))return;
     M.set(id,{temp:NaN,humidity:NaN,vis:NaN,rn15:NaN,rn60:NaN,rn12:NaN,rnday:NaN,daily:v,wd:NaN,ws:NaN,time:tm});
   });
-  cancelWindRedraw();wx=M;invalidateScalarCache();clearTemp();clearW(wgrid);clearW(wobs);wgridOn=wobsOn=false;
+  cancelWindRedraw();visRawSource=null;visQueryEpoch++;visLastSource='';wx=M;invalidateScalarCache();clearTemp();clearW(wgrid);clearW(wobs);wgridOn=wobsOn=false;
   e('windGridBtn').textContent='바람장 OFF';e('windObsBtn').textContent='관측바람 OFF';
   e('windGridBtn').classList.remove('on');e('windObsBtn').classList.remove('on');
-  e('tempBtn').disabled=true;e('hmBtn').disabled=true;e('visBtn').disabled=true;e('rainBtn').disabled=true;
+  e('tempBtn').disabled=true;e('hmBtn').disabled=true;e('visBtn').disabled=false;e('rainBtn').disabled=true;
+  refreshVisButton();
   e('windGridBtn').disabled=true;e('windObsBtn').disabled=true;
   var c=countField(M,'daily');e('dailyBtn').disabled=c<3;
 
@@ -2896,7 +3153,9 @@ function install(){
 
   e('tempBtn').onclick=function(){toggleScalar('temp')};
   e('hmBtn').onclick=function(){toggleScalar('humidity')};
-  e('visBtn').onclick=function(){toggleScalar('vis')};
+  e('visBtn').onclick=activateVis;
+  e('visPeriod').onchange=changeVisPeriod;
+  e('visFile').onchange=function(){var f=this.files&&this.files[0];if(f)loadVisFile(f);this.value=''};
   e('rainBtn').onclick=function(){var f=selectedRainField();if(tempOn&&activeScalar===f)clearTemp();else buildRain()};
   e('dailyBtn').onclick=function(){toggleScalar('daily')};
   e('contourBtn').onclick=toggleContours;
