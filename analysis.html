@@ -1,9 +1,13 @@
 <!DOCTYPE html>
-<!-- v20.3 stable: parser-loaded V-World API + lazy SheetJS + embedded-network startup + fixed annual absolute-temperature spectrum + interpolation-only IDW -->
+<!-- v20.3 + VIS (2026-10-16): parser-loaded V-World API + lazy SheetJS + embedded-network startup + fixed annual absolute-temperature spectrum + interpolation-only IDW -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<script src="https://map.vworld.kr/js/webglMapInit.js.do?version=3.0&apiKey=CD9939DD-4087-326C-A1F8-F077628FF9FB"></script>
+<script>
+/* V-World 로더 상태: 개인정보/인증키를 표시하지 않음 */
+window.__vworldLoadState={loaded:false,failed:false};
+</script>
+<script id="vworldApiLoader" onload="window.__vworldLoadState.loaded=true" onerror="window.__vworldLoadState.failed=true" src="https://map.vworld.kr/js/webglMapInit.js.do?version=3.0&apiKey=CD9939DD-4087-326C-A1F8-F077628FF9FB"></script>
 <title>광역 3D 기상분석지도</title>
 <style>
 :root{--p:rgba(7,17,31,.87);--l:rgba(255,255,255,.16);--m:#cbd5e1}*{box-sizing:border-box}
@@ -121,6 +125,7 @@ button,.fileLabel,select{border:1px solid var(--l);border-radius:9px;background:
 #dailyQuery{grid-template-columns:1fr 1fr;gap:7px}
 #dailyQuery .wide{grid-column:1/-1}
 .scalarGrid{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.on.vis{background:rgba(147,51,234,.20)!important;border-color:#a78bfa!important}
 .on.humidity{background:rgba(20,184,166,.2)!important;border-color:#2dd4bf!important}
 .on.rain{background:rgba(37,99,235,.22)!important;border-color:#60a5fa!important}
 .on.daily{background:rgba(168,85,247,.2)!important;border-color:#c084fc!important}
@@ -131,6 +136,7 @@ button,.fileLabel,select{border:1px solid var(--l);border-radius:9px;background:
   margin-top:7px;padding:7px 8px;border-radius:8px;background:rgba(255,255,255,.045)
 }
 #rainBasis .rbTitle{font-size:10px;color:#cbd5e1;align-self:center}
+#grad.vis{background:linear-gradient(90deg,#9333ea 0%,#ef4444 16.667%,#f97316 33.333%,#eab308 50%,#22c55e 66.667%,#06b6d4 83.333%,#2563eb 100%)}
 #grad.humidity{background:linear-gradient(90deg,#a16207,#fde68a,#d9f99d,#5eead4,#0ea5e9,#1d4ed8)}
 #grad.rain{background:linear-gradient(90deg,#ffffff,#f8fcff,#d6efff,#70cdff,#32be78,#f5dc46,#ff9128,#e64137,#b032cd)}
 #grad.windmax{background:linear-gradient(90deg,#fefce8,#fde68a,#fb923c,#ef4444,#991b1b)}
@@ -302,6 +308,7 @@ button,.fileLabel,select{font-family:inherit}
 #panel button.on.temp,
 #panel button.on.wind,
 #panel button.on.humidity,
+#panel button.on.vis,
 #panel button.on.rain,
 #panel button.on.daily,
 #panel button.on.asos,
@@ -793,6 +800,7 @@ button,.fileLabel,select{font-family:inherit}
         <div class="scalarGrid compactToggleGrid">
           <button id="tempBtn" class="temp" disabled>기온장 OFF</button>
           <button id="hmBtn" disabled>습도장 OFF</button>
+          <button id="visBtn" disabled>시정장 OFF</button>
           <button id="rainBtn" disabled>강수장 OFF</button>
           <button id="dailyBtn" disabled>일극값장 OFF</button>
         </div>
@@ -962,7 +970,7 @@ button,.fileLabel,select{font-family:inherit}
     <div id="guideHead"><h2 id="guideTitle">3D 기상 분석지도 · 사용 설명서</h2><button id="guideClose" type="button">닫기</button></div>
     <div id="guideContent">
       <h3>1. 빠른 사용 순서</h3>
-      <div class="guideBox"><span class="guideKey">특정 시각</span> 날짜·시각 선택 → 관측자료 조회 → 기온/습도/강수 또는 바람 분석장을 선택합니다.<br><span class="guideKey">일극값</span> 날짜와 요소(일강수량·일최고기온·일최저기온·일최대풍속) 선택 → 조회 → 일극값장을 켭니다.</div>
+      <div class="guideBox"><span class="guideKey">특정 시각</span> 날짜·시각 선택 → 관측자료 조회 → 기온/습도/시정/강수 또는 바람 분석장을 선택합니다.<br><span class="guideKey">일극값</span> 날짜와 요소(일강수량·일최고기온·일최저기온·일최대풍속) 선택 → 조회 → 일극값장을 켭니다.</div>
       <h3>2. 지도 · 관측망</h3>
       <ul><li><b>위성</b>: 기본 ON. 배경 위성영상을 켜거나 끕니다.</li><li><b>3D 건물</b>: V-World 건물 레이어를 켜거나 끕니다.</li><li><b>시군구 경계</b>: V-World WMS <code>LT_C_ADSIGG</code> 행정구역 경계를 표출합니다. 분석장과 독립적으로 ON/OFF 됩니다.</li><li><b>주요 산</b>: 기상청 산악예보 지점정보의 정상 좌표·고도를 기준으로 <code>산명(고도m)</code>를 표출합니다. 고도가 높은 산은 넓은 시야에서, 낮은 산은 확대 시 나타나도록 자동으로 과밀을 줄입니다. 산 표시를 클릭하면 좌표·고도·자료 기준을 확인할 수 있습니다.</li><li><b>ASOS / AWS / 참고</b>: 관측망별 마커·라벨을 독립적으로 제어합니다. 참고지점은 기본 OFF이며 화면에서 숨겨져도 기온·습도·강수·바람 공간계산에는 그대로 포함됩니다. 지점표시는 바람벡터보다 앞에 보이도록 우선 처리됩니다.</li><li><b>라벨 표시</b>: 자동(권장)은 줌과 충돌을 고려해 필요한 라벨만 표시하고, 간소는 ASOS·고산 위주, 전체는 넓은 범위에서 모든 관측망 라벨을 후보로 표시합니다.</li>
 <li><b>NOW</b>: 현재시각 기준 약 5분 전의 매분 관측자료로 즉시 전환·조회합니다.</li>
@@ -970,7 +978,7 @@ button,.fileLabel,select{font-family:inherit}
 <li><b>내삽 범위</b>: 관측망 최외곽 convex hull 내부만 IDW로 내삽하고 외부는 투명 처리합니다. 관측망 밖 외삽은 하지 않습니다.</li>
 </ul>
       <h3>3. 스칼라 분석장</h3>
-      <ul><li>기온, 상대습도, 강수, 일극값을 관측지점 값으로부터 <b>IDW(p=2)</b> 보간합니다.</li><li>시트4의 <b>모든 관측지점</b>을 지도 표출과 공간계산에 동일하게 사용하고, 전체 관측망의 <b>볼록껍질 내부</b>를 광역 분석영역으로 사용합니다.</li><li>강수는 15분·60분·12시간·일누적 중 선택할 수 있습니다.</li><li>기본값은 <b>지형 밀착형</b>입니다. 필요할 때 지형 노출형으로 전환하고 기준고도를 0~1,400m에서 슬라이더 또는 숫자로 직접 입력할 수 있습니다. 이 고도는 시각화용이며 관측값을 보정하지 않습니다.</li><li>분석장 투명도를 조절하여 지형·위성영상과 함께 볼 수 있습니다.</li></ul>
+      <ul><li>기온, 상대습도, 시정, 강수, 일극값을 관측지점 값으로부터 <b>IDW(p=2)</b> 보간합니다.</li><li>시트4의 <b>모든 관측지점</b>을 지도 표출과 공간계산에 동일하게 사용하고, 전체 관측망의 <b>볼록껍질 내부</b>를 광역 분석영역으로 사용합니다.</li><li>시정은 원자료 m를 km로 변환하고, 0.2·0.5·1·2·5·10·20 km를 고정 기준으로 색상 표출합니다. API의 VIS 제공 여부에 따라 시정장 버튼이 활성화됩니다.</li><li>강수는 15분·60분·12시간·일누적 중 선택할 수 있습니다.</li><li>기본값은 <b>지형 밀착형</b>입니다. 필요할 때 지형 노출형으로 전환하고 기준고도를 0~1,400m에서 슬라이더 또는 숫자로 직접 입력할 수 있습니다. 이 고도는 시각화용이며 관측값을 보정하지 않습니다.</li><li>분석장 투명도를 조절하여 지형·위성영상과 함께 볼 수 있습니다.</li></ul>
       <h3>4. 바람 분석장</h3>
       <ul><li>1분 또는 10분 풍향·풍속을 선택합니다. 둘 다 있으면 10분 평균을 우선 사용합니다.</li><li>풍향을 직접 보간하지 않고 관측 풍향·풍속을 U/V 성분으로 변환한 뒤 각각 IDW 보간합니다.</li><li>밀도·길이·벡터 두께·투명도를 조절할 수 있습니다. 지형 노출형에서는 depth-fail 재질을 함께 사용해 바람벡터를 분석장보다 우선적으로 선명하게 표시합니다.</li><li>지형 노출형에서는 보간 바람벡터를 분석면 높이에 배치하고 실제 산지에 의해 가려지도록 합니다. 관측바람은 관측지점 위치를 유지합니다.</li></ul>
       <h3>5. 색상과 해석</h3>
@@ -1272,7 +1280,7 @@ async function loadStationConfig(){
 function e(id){return document.getElementById(id)}function esc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}function err(x,s){e('emsg').innerHTML='<p><b>단계: '+esc(s)+'</b></p><p>'+esc(x&&x.message?x.message:x)+'</p>';e('estack').textContent=x&&x.stack?x.stack:'stack 없음';e('error').style.display='flex'}
 function num(v){if(v===null||v===undefined||v==='')return NaN;var n=Number(String(v).replace(/,/g,'').trim());return Number.isFinite(n)?n:NaN}function fin(v){return Number.isFinite(v)}function nk(k){return String(k==null?'':k).toLowerCase().replace(/[℃°%㎧]/g,'').replace(/\(.*?\)/g,'').replace(/[\s_\-./]/g,'')}
 var MOUNTAINS=[{"name":"지리산","lat":35.3371,"lon":127.7306,"height":1915,"src":"기상청 산악예보 지점정보"},{"name":"가야산","lat":35.823125,"lon":128.120825,"height":1430,"src":"기상청 산악예보 지점정보"},{"name":"기백산","lat":35.706667,"lon":127.781944,"height":1331,"src":"기상청 산악예보 지점정보"},{"name":"가지산","lat":35.620356,"lon":129.003089,"height":1240,"src":"기상청 산악예보 지점정보"},{"name":"황석산","lat":35.6552,"lon":127.7554,"height":1193,"src":"기상청 산악예보 지점정보"},{"name":"운문산","lat":35.615556,"lon":128.959167,"height":1188,"src":"기상청 산악예보 지점정보"},{"name":"신불산","lat":35.5397,"lon":129.0525,"height":1159,"src":"기상청 산악예보 지점정보"},{"name":"황매산","lat":35.495556,"lon":127.974167,"height":1108,"src":"기상청 산악예보 지점정보"},{"name":"웅석봉","lat":35.363611,"lon":127.876944,"height":1099,"src":"기상청 산악예보 지점정보"},{"name":"재약산","lat":35.545321,"lon":128.980166,"height":1078,"src":"기상청 산악예보 지점정보"},{"name":"천성산","lat":35.401319,"lon":129.106255,"height":915,"src":"기상청 산악예보 지점정보"},{"name":"금정산","lat":35.28,"lon":129.051111,"height":802,"src":"기상청 산악예보 지점정보"},{"name":"무학산","lat":35.209722,"lon":128.535,"height":761,"src":"기상청 산악예보 지점정보"},{"name":"화왕산","lat":35.5468,"lon":128.5325,"height":756,"src":"기상청 산악예보 지점정보"},{"name":"금산","lat":34.7531,"lon":127.9804,"height":705,"src":"기상청 산악예보 지점정보"},{"name":"장산","lat":35.194167,"lon":129.144444,"height":634,"src":"기상청 산악예보 지점정보"},{"name":"천태산","lat":35.420278,"lon":128.903056,"height":631,"src":"기상청 산악예보 지점정보"},{"name":"호구산","lat":34.791111,"lon":127.905278,"height":618,"src":"기상청 산악예보 지점정보"},{"name":"대성산","lat":35.385556,"lon":127.942778,"height":599,"src":"기상청 산악예보 지점정보"},{"name":"방어산","lat":35.253333,"lon":128.292778,"height":530,"src":"기상청 산악예보 지점정보"},{"name":"연화산","lat":35.071,"lon":128.265,"height":524,"src":"기상청 산악예보 지점정보"},{"name":"미륵산","lat":34.8104,"lon":128.4161,"height":458,"src":"기상청 산악예보 지점정보"},{"name":"봉명산","lat":35.085983,"lon":127.915081,"height":407,"src":"기상청 산악예보 지점정보"}];
-var A={id:['지점번호','지점','stn','stnid','stationid','id'],time:['관측시각','관측시간','시각','tm','time','datetime','date'],temp:['기온','ta','temp','temperature','airtemperature'],humidity:['습도','상대습도','hm','humidity','relativehumidity'],rn15:['강수15분','15분강수량','rn15','rn15m','rn-15m'],rn60:['강수60분','60분강수량','1시간강수량','rn60','rn60m','rn-60m','rnhr1'],rn12:['강수12시간','12시간강수량','rn12','rn12h','rn-12h'],rnday:['일강수량','강수일누적','rnday','rn-day'],daily:['일극값','dailyvalue','value'],wd:['풍향','wd','winddirection','winddir'],ws:['풍속','ws','windspeed']};Object.keys(A).forEach(function(k){A[k]=A[k].map(nk)});
+var A={id:['지점번호','지점','stn','stnid','stationid','id'],time:['관측시각','관측시간','시각','tm','time','datetime','date'],temp:['기온','ta','temp','temperature','airtemperature'],humidity:['습도','상대습도','hm','humidity','relativehumidity'],vis:['시정','가시거리','시정거리','vis','visibility','visibilitym','vism','visualrange'],rn15:['강수15분','15분강수량','rn15','rn15m','rn-15m'],rn60:['강수60분','60분강수량','1시간강수량','rn60','rn60m','rn-60m','rnhr1'],rn12:['강수12시간','12시간강수량','rn12','rn12h','rn-12h'],rnday:['일강수량','강수일누적','rnday','rn-day'],daily:['일극값','dailyvalue','value'],wd:['풍향','wd','winddirection','winddir'],ws:['풍속','ws','windspeed']};Object.keys(A).forEach(function(k){A[k]=A[k].map(nk)});
 
 /* 바람 열은 평균주기 숫자를 보존해서 별도로 탐지한다.
    예: 풍향(1분) -> 풍향1분, WD10 -> wd10 */
@@ -1430,6 +1438,7 @@ function dailyMeta(obs){var M={
 function scalarMeta(field){
  if(field==='temp')return{label:'기온',unit:'℃',palette:'temp'};
  if(field==='humidity')return{label:'상대습도',unit:'%',palette:'humidity'};
+ if(field==='vis')return{label:'시정',unit:'km',palette:'vis'};
  if(field==='rn15')return{label:'15분 강수량',unit:'mm',palette:'rain'};
  if(field==='rn60')return{label:'60분 강수량',unit:'mm',palette:'rain'};
  if(field==='rn12')return{label:'12시간 강수량',unit:'mm',palette:'rain'};
@@ -1857,7 +1866,10 @@ function rampRain(t){
   ])
 }
 function rampWindMax(t){return interpRamp(t,[[0,[254,252,232]],[.25,[253,230,138]],[.5,[251,146,60]],[.75,[239,68,68]],[1,[153,27,27]]])}
-function scalarColor(t,palette){if(palette==='humidity')return rampHumidity(t);if(palette==='rain')return rampRain(Math.sqrt(Math.max(0,t)));if(palette==='windmax')return rampWindMax(t);return rampTemp(t)}
+var VIS_STOPS=[[.2,[147,51,234]],[.5,[239,68,68]],[1,[249,115,22]],[2,[234,179,8]],[5,[34,197,94]],[10,[6,182,212]],[20,[37,99,235]]];
+function visNormalized(v){if(v<=VIS_STOPS[0][0])return 0;for(var i=1;i<VIS_STOPS.length;i++)if(v<=VIS_STOPS[i][0])return (i-1+(v-VIS_STOPS[i-1][0])/(VIS_STOPS[i][0]-VIS_STOPS[i-1][0]))/(VIS_STOPS.length-1);return 1}
+function rampVis(t){return interpRamp(t,VIS_STOPS.map(function(p,i){return[i/(VIS_STOPS.length-1),p[1]]}))}
+function scalarColor(t,palette){if(palette==='vis')return rampVis(visNormalized(.2+Math.max(0,Math.min(1,t))*19.8));if(palette==='humidity')return rampHumidity(t);if(palette==='rain')return rampRain(Math.sqrt(Math.max(0,t)));if(palette==='windmax')return rampWindMax(t);return rampTemp(t)}
 
 function selectedContourStep(){
   var el=e('contourStep');
@@ -1876,6 +1888,7 @@ function niceContourStep(meta,mn,mx){
   return n*pow;
 }
 function contourLevels(meta,mn,mx,forcedStep){
+  if(meta.palette==='vis')return [.2,.5,1,2,5,10,20].filter(function(v){return v>mn+1e-9&&v<mx-1e-9});
   var step=forcedStep||niceContourStep(meta,mn,mx),out=[],
       first=Math.ceil(mn/step)*step;
   for(var v=first;v<mx-1e-9&&out.length<14;v+=step){
@@ -1991,7 +2004,8 @@ function rainDisplayMax(v){
 function scalarDisplayRange(meta,dataMin,dataMax){
   /* 기온은 계절/월별로 재정규화하지 않는다.
      모든 날짜가 동일한 -40~45℃ 절대색을 사용하므로 겨울/여름 색 의미가 동일하다. */
-  if(meta.unit==='℃'){
+  if(meta.palette==='vis')return{name:'시정 · 고정 0.2~20 km (7기준)',min:.2,max:20,fixed:true,clipped:dataMin<.2||dataMax>20};
+   if(meta.unit==='℃'){
     return{
       name:'연중 절대기온 · KMA 색상흐름 참고',
       min:TEMP_ABS_MIN,max:TEMP_ABS_MAX,
@@ -2081,9 +2095,9 @@ function mountScalar(field,obj){
     }
 
     tempOn=true;activeScalar=field;
-    var btnId=field==='temp'?'tempBtn':field==='humidity'?'hmBtn':field==='daily'?'dailyBtn':'rainBtn',
+    var btnId=field==='temp'?'tempBtn':field==='humidity'?'hmBtn':field==='vis'?'visBtn':field==='daily'?'dailyBtn':'rainBtn',
         btn=e(btnId),
-        cls=field==='daily'?'daily':meta.palette==='temp'?'temp':meta.palette==='humidity'?'humidity':meta.palette==='rain'?'rain':'daily';
+        cls=field==='daily'?'daily':meta.palette==='vis'?'vis':meta.palette==='temp'?'temp':meta.palette==='humidity'?'humidity':meta.palette==='rain'?'rain':'daily';
     btn.textContent=meta.label+'장 ON';btn.classList.add('on',cls);
     e('grad').className=meta.palette;
     e('tempLegend').style.display='block';
@@ -2093,25 +2107,29 @@ function mountScalar(field,obj){
     var ticks=e('legendTicks'),badge=e('legendBadge'),obs=e('legendObserved');
     if(ticks){
       var vals;
-      if(meta.unit==='℃')vals=[-40,-20,0,20,30,40,45];
+      if(meta.palette==='vis')vals=[.2,.5,1,2,5,10,20];
+       else if(meta.unit==='℃')vals=[-40,-20,0,20,30,40,45];
       else{
         vals=[];
         var tstep=(obj.displayMax-obj.displayMin)/4;
         for(var ti=0;ti<5;ti++)vals.push(obj.displayMin+tstep*ti);
       }
       ticks.innerHTML=vals.map(function(v,idx){
-        var pct=(v-obj.displayMin)/Math.max(.0001,obj.displayMax-obj.displayMin)*100,
+        var pct=meta.palette==='vis'?(idx/(vals.length-1)*100):(v-obj.displayMin)/Math.max(.0001,obj.displayMax-obj.displayMin)*100,
             cls=idx===0?'edgeLeft':idx===vals.length-1?'edgeRight':'';
         pct=Math.max(0,Math.min(100,pct));
         return '<span class="'+cls+'" style="left:'+pct.toFixed(2)+'%">'+
-          v.toFixed(meta.unit==='%'?0:meta.unit==='℃'?0:1)+meta.unit+'</span>';
+          v.toFixed(meta.palette==='vis'?(v<1?1:v===.2?1:0):meta.unit==='%'?0:meta.unit==='℃'?0:1)+(meta.palette==='vis'?'k':meta.unit)+'</span>';
       }).join('');
     }
     if(meta.unit==='℃'){
       if(badge)badge.textContent='연중 절대기온 · -40~45℃';
       if(obs)obs.textContent='실제 관측 '+obj.dataMin.toFixed(1)+' ~ '+obj.dataMax.toFixed(1)+'℃'+
         (obj.rangeClipped?' · 범위 밖 값은 끝색 고정':'');
-    }else if(meta.palette==='rain'){
+    }else if(meta.palette==='vis'){
+       if(badge)badge.textContent='시정 · 0.2~20 km 고정 기준';
+       if(obs)obs.textContent='실제 관측 '+obj.dataMin.toFixed(1)+' ~ '+obj.dataMax.toFixed(1)+' km'+(obj.rangeClipped?' · 끝색 고정':'');
+     }else if(meta.palette==='rain'){
       if(badge)badge.textContent=meta.label+' · 0 mm 기준';
       if(obs)obs.textContent='실제 관측 '+obj.dataMin.toFixed(1)+' ~ '+obj.dataMax.toFixed(1)+' mm';
     }else{
@@ -2157,7 +2175,7 @@ function getAnalysisGeometry(cw,ch){
 }
 function rasterIdwImage(values,geom,mn,mx,meta){
   var cw=geom.cw,ch=geom.ch,rad=Math.PI/180,R=6371,nearQ=Math.pow(.03/(2*R),2),
-      maxKm=220,maxQ=Math.pow(Math.sin(maxKm/(2*R)),2),sp=Math.max(.0001,mx-mn),K=16,
+      maxKm=meta.palette==='vis'?55:220,maxQ=Math.pow(Math.sin(maxKm/(2*R)),2),sp=Math.max(.0001,mx-mn),K=16,
       c=document.createElement('canvas'),
       grid=new Float32Array(cw*ch);
   c.width=cw;
@@ -2192,7 +2210,7 @@ function clearTemp(updateLabels){
   if(tempPlane){try{viewer.entities.remove(tempPlane)}catch(x){}tempPlane=null}
   tempPlaneMaterial=null;
   tempOn=false;activeScalar=null;activeScalarObj=null;
-  [['tempBtn','기온장 OFF'],['hmBtn','습도장 OFF'],['rainBtn','강수장 OFF'],['dailyBtn','일극값장 OFF']].forEach(function(a){var b=e(a[0]);if(b){b.textContent=a[1];b.classList.remove('on','temp','humidity','rain','daily');if(a[0]==='tempBtn')b.classList.add('temp')}});
+  [['tempBtn','기온장 OFF'],['hmBtn','습도장 OFF'],['visBtn','시정장 OFF'],['rainBtn','강수장 OFF'],['dailyBtn','일극값장 OFF']].forEach(function(a){var b=e(a[0]);if(b){b.textContent=a[1];b.classList.remove('on','temp','humidity','vis','rain','daily');if(a[0]==='tempBtn')b.classList.add('temp')}});
   e('tempLegend').style.display='none';
   if(updateLabels)S.forEach(label);
 }
@@ -2422,12 +2440,16 @@ function validTa(v){return fin(v)&&v>-90&&v<70}
 function validWd(v){return fin(v)&&v>=0&&v<=360}
 function validWs(v){return fin(v)&&v>=0&&v<100}
 function validHm(v){return fin(v)&&v>=0&&v<=100}
+function validVis(v){return fin(v)&&v>=0&&v<=100000}
+function visToKm(v){return validVis(v)?v/1000:NaN} // KMA 관측 시정 원자료 m -> km
 function validRn(v){return fin(v)&&v>=0&&v<3000}
 function validDailyVal(obs,v){if(obs==='rn_day')return validRn(v);if(obs==='ta_max'||obs==='ta_min')return validTa(v);if(obs==='ws_max')return validWs(v);return fin(v)}
 function parseKmaAwsText(txt){
-  var rows=[];
+  var rows=[],visIdx=-1;
+  // API 응답에 VIS 헤더가 존재할 때만 시정 필드를 파싱한다. 고정 열번호 추측 금지.
   String(txt||'').split(/\r?\n/).forEach(function(line){
-    var s=line.trim();if(!s||s.charAt(0)==='#')return;
+    var s=line.trim();if(!s)return;
+    if(s.charAt(0)==='#'){var h=s.replace(/^#+\s*/,'').split(/\s+/).map(wnk);var hi=h.indexOf('vis');if(hi<0)hi=h.indexOf('visibility');if(hi>=0&&h.indexOf('stn')>=0)visIdx=hi;return}
     var a=s.split(/\s+/);if(a.length<18)return;
     var tm=a[0],id=Math.trunc(num(a[1]));if(!Number.isFinite(id))return;
     var wd1=num(a[2]),ws1=num(a[3]),wd10=num(a[6]),ws10=num(a[7]),ta=num(a[8]),
@@ -2436,6 +2458,7 @@ function parseKmaAwsText(txt){
       '지점번호':id,'관측시각':tm,
       '기온':validTa(ta)?ta:'',
       '습도':validHm(hm)?hm:'',
+      '시정':visIdx>=0&&visIdx<a.length&&validVis(num(a[visIdx]))?num(a[visIdx]):'',
       '강수15분':validRn(rn15)?rn15:'',
       '강수60분':validRn(rn60)?rn60:'',
       '강수12시간':validRn(rn12)?rn12:'',
@@ -2569,11 +2592,12 @@ function applyRows(R,name,autoDraw,preserveVisuals){
 
     var old=M.get(id);
     if(old)dup.add(id);
-    else old={temp:NaN,humidity:NaN,rn15:NaN,rn60:NaN,rn12:NaN,rnday:NaN,daily:NaN,wd:NaN,ws:NaN,time:''};
+    else old={temp:NaN,humidity:NaN,vis:NaN,rn15:NaN,rn60:NaN,rn12:NaN,rnday:NaN,daily:NaN,wd:NaN,ws:NaN,time:''};
 
     var v;
     v=num(fv(r,'temp'));if(validTa(v))old.temp=v;
     v=num(fv(r,'humidity'));if(validHm(v))old.humidity=v;
+    v=num(fv(r,'vis'));if(validVis(v))old.vis=visToKm(v);
     v=num(fv(r,'rn15'));if(validRn(v))old.rn15=v;
     v=num(fv(r,'rn60'));if(validRn(v))old.rn60=v;
     v=num(fv(r,'rn12'));if(validRn(v))old.rn12=v;
@@ -2601,11 +2625,11 @@ function applyRows(R,name,autoDraw,preserveVisuals){
     if(keepObs)clearW(wobs);
   }
 
-  var tc=countField(M,'temp'),hc=countField(M,'humidity'),
+  var tc=countField(M,'temp'),hc=countField(M,'humidity'),vc=countField(M,'vis'),
       r15=countField(M,'rn15'),r60=countField(M,'rn60'),r12=countField(M,'rn12'),rd=countField(M,'rnday'),wc=0;
   M.forEach(function(w){if(fin(w.wd)&&fin(w.ws))wc++});
 
-  e('tempBtn').disabled=tc<3;e('hmBtn').disabled=hc<3;e('dailyBtn').disabled=true;
+  e('tempBtn').disabled=tc<3;e('hmBtn').disabled=hc<3;e('visBtn').disabled=vc<3;e('dailyBtn').disabled=true;
   updateRainAvailability(!preserveVisuals);
   e('windGridBtn').disabled=wc<3;e('windObsBtn').disabled=wc<1;
 
@@ -2614,7 +2638,7 @@ function applyRows(R,name,autoDraw,preserveVisuals){
   var rb=scalarMeta(selectedRainField()).label;
 
   var msg='<b>'+esc(name)+'</b><br>'+
-    '매칭 '+M.size+' / '+S.length+' · 기온 '+tc+' · 습도 '+hc+' · '+esc(rb)+' '+countField(M,selectedRainField())+' · 바람 '+wc+
+    '매칭 '+M.size+' / '+S.length+' · 기온 '+tc+' · 습도 '+hc+' · 시정 '+vc+' · '+esc(rb)+' '+countField(M,selectedRainField())+' · 바람 '+wc+
     '<br>강수자료: 15분 '+r15+' / 60분 '+r60+' / 12시간 '+r12+' / 일누적 '+rd+
     '<br>선택 바람: <b>'+esc(modeText)+'</b>'+
     '<br>시각: '+esc(ts);
@@ -2653,12 +2677,12 @@ function applyDailyRows(R,name,obs,tm,autoDraw){
     if(!Number.isFinite(id)){bad++;return}
     if(!stationById.has(id)){unk.add(id);return}
     if(!validDailyVal(obs,v))return;
-    M.set(id,{temp:NaN,humidity:NaN,rn15:NaN,rn60:NaN,rn12:NaN,rnday:NaN,daily:v,wd:NaN,ws:NaN,time:tm});
+    M.set(id,{temp:NaN,humidity:NaN,vis:NaN,rn15:NaN,rn60:NaN,rn12:NaN,rnday:NaN,daily:v,wd:NaN,ws:NaN,time:tm});
   });
   cancelWindRedraw();wx=M;invalidateScalarCache();clearTemp();clearW(wgrid);clearW(wobs);wgridOn=wobsOn=false;
   e('windGridBtn').textContent='바람장 OFF';e('windObsBtn').textContent='관측바람 OFF';
   e('windGridBtn').classList.remove('on');e('windObsBtn').classList.remove('on');
-  e('tempBtn').disabled=true;e('hmBtn').disabled=true;e('rainBtn').disabled=true;
+  e('tempBtn').disabled=true;e('hmBtn').disabled=true;e('visBtn').disabled=true;e('rainBtn').disabled=true;
   e('windGridBtn').disabled=true;e('windObsBtn').disabled=true;
   var c=countField(M,'daily');e('dailyBtn').disabled=c<3;
 
@@ -2713,6 +2737,7 @@ function popup(click,s){
       rows='<tr><th>관측시각</th><td>'+esc(w.time||'-')+'</td></tr>'+
            '<tr><th>기온</th><td>'+(fin(w.temp)?w.temp.toFixed(1)+' ℃':'-')+'</td></tr>'+
            '<tr><th>습도</th><td>'+(fin(w.humidity)?w.humidity.toFixed(0)+' %':'-')+'</td></tr>'+
+           '<tr><th>시정</th><td>'+(fin(w.vis)?w.vis.toFixed(2)+' km':'-')+'</td></tr>'+
            '<tr><th>15분 강수</th><td>'+(fin(w.rn15)?w.rn15.toFixed(1)+' mm':'-')+'</td></tr>'+
            '<tr><th>60분 강수</th><td>'+(fin(w.rn60)?w.rn60.toFixed(1)+' mm':'-')+'</td></tr>'+
            '<tr><th>12시간 강수</th><td>'+(fin(w.rn12)?w.rn12.toFixed(1)+' mm':'-')+'</td></tr>'+
@@ -2871,6 +2896,7 @@ function install(){
 
   e('tempBtn').onclick=function(){toggleScalar('temp')};
   e('hmBtn').onclick=function(){toggleScalar('humidity')};
+  e('visBtn').onclick=function(){toggleScalar('vis')};
   e('rainBtn').onclick=function(){var f=selectedRainField();if(tempOn&&activeScalar===f)clearTemp();else buildRain()};
   e('dailyBtn').onclick=function(){toggleScalar('daily')};
   e('contourBtn').onclick=toggleContours;
@@ -3020,17 +3046,50 @@ if(st0){
   st0.textContent+=' · V-World 초기화 중';
 }
 
-/* V-World는 상단의 정식 parser-loaded script가 먼저 준비한다.
-   동적 script 삽입 방식은 vw 초기화 시점이 불안정하여 사용하지 않는다. */
-if(typeof vw!=='undefined'){
-  startVworldMap();
-}else{
-  var st=e('status');
-  if(st){
-    st.textContent='⚠ V-World API 로드 실패 · API 키/등록 URL/네트워크 상태 확인 후 새로고침';
-    st.style.background='rgba(127,29,29,.95)';
+/* 외부 3D API 초기화는 DOM 파싱과 다를 수 있으므로 최대 4초 대기한다.
+   인증/도메인 차단은 반복 삽입으로 우회하지 않으며 원인 안내를 표시한다. */
+function vworldEnvironmentHelp(){
+  var proto=location.protocol||'',host=location.host||'',embedded=false;
+  try{embedded=(window.top!==window.self)}catch(_){embedded=true}
+  var msg='';
+  if(proto==='file:'){
+    msg='로컬 파일(file://)에서 열었습니다. V-World 인증키에 등록된 HTTP(S) 웹주소로 배포하여 열어야 합니다.';
+  }else if(embedded || proto==='about:' || location.origin==='null'){
+    msg='웹페이지 미리보기/임베드 화면입니다. 실제 출처(도메인)가 등록된 서비스 URL과 다를 수 있습니다. 등록된 운영 웹주소에서 직접 열어 주세요.';
+  }else{
+    msg='네트워크 접근 또는 V-World 인증키의 등록 서비스 URL/3D API 사용 권한을 확인하세요.';
+  }
+  var state=window.__vworldLoadState||{};
+  var loader=state.failed?'외부 스크립트 요청 실패(차단·DNS·네트워크 등)':
+             state.loaded?'스크립트 요청 완료했으나 vw 객체 없음(응답 내용·초기화·인증 확인 필요)':'외부 스크립트 로드 미완료(네트워크·접근 제한 가능)';
+  var runtime=(proto==='file:'?'file://':(location.origin==='null'?'샌드박스/미등록 출처 (null)':(location.origin||proto+'//'+host)));
+  return {msg:msg,loader:loader,runtime:runtime,embedded:embedded};
+}
+function showVworldLoadFailure(){
+  var diag=vworldEnvironmentHelp(),st=e('status');
+  if(st){st.textContent='⚠ V-World 3D API 준비 실패 · 실행환경 및 인증 URL 확인';st.style.background='rgba(127,29,29,.95)'}
+  /* 진단 내용은 실제 HTML 안에서 읽을 수 있어 접근 거부 원인을 구분한다. */
+  var card=e('ecard'),errEl=e('error');
+  if(card&&errEl){
+    card.innerHTML='<h2 style="margin-top:0">V-World 3D 지도 연결 실패</h2>'+
+      '<p>'+esc(diag.msg)+'</p>'+
+      '<p><b>점검 결과</b></p>'+
+      '<div style="line-height:1.7;padding:12px;border:1px solid #334155;border-radius:8px;background:#020617">'+
+      '현재 실행 주소: <code>'+esc(diag.runtime)+'</code><br>'+
+      '미리보기/임베드: '+(diag.embedded?'예':'아니오')+'<br>'+
+      'API 상태: '+esc(diag.loader)+'</div>'+
+      '<p style="color:#cbd5e1;font-size:13px;line-height:1.6">기존 코드에 설정된 운영 URL은 <code>https://cumuls219.github.io/asos-3d-terrain/</code>입니다. 이 URL을 포함하여 실제 배포 주소가 V-World 인증키의 서비스 URL과 일치하는지 확인하세요. 단순 새로고침이나 키를 다른 사람의 키로 변경하는 것은 해결 방법이 아닙니다.</p>'+
+      '<button type="button" id="retryVworld" style="padding:9px 16px;border:1px solid #64748b;border-radius:8px;background:#1e293b;color:#fff;cursor:pointer">다시 시도(새로고침)</button>';
+    errEl.style.display='flex';
+    e('retryVworld').onclick=function(){location.reload()};
   }
 }
+(function awaitVworldApi(attempt){
+  if(typeof vw!=='undefined' && vw.Map && vw.CameraPosition){startVworldMap();return}
+  if(window.__vworldLoadState&&window.__vworldLoadState.failed){showVworldLoadFailure();return}
+  if(attempt>=20){showVworldLoadFailure();return}
+  setTimeout(function(){awaitVworldApi(attempt+1)},200);
+})(0);
 
 /* 최신 XLSX는 지도 시작과 독립적으로 백그라운드에서 확인 */
 loadStationConfig().then(function(result){
@@ -3067,6 +3126,7 @@ loadStationConfig().then(function(result){
   var compactLabels={
     tempBtn:"기온",
     hmBtn:"습도",
+    visBtn:"시정",
     rainBtn:"강수",
     dailyBtn:"일극값",
     windGridBtn:"바람장",
