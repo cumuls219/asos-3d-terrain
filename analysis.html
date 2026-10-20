@@ -815,7 +815,7 @@ button,.fileLabel,select{font-family:inherit}
           <button id="dailyBtn" disabled>일극값장 OFF</button>
         </div>
         <div id="visSourceBox" role="status" aria-live="polite">
-          <div id="visSourceState">시정장은 별도 AWS2 시정자료가 필요합니다. <b>시정</b>을 누르면 선택 시각의 AWS2 시정자료를 조회합니다(프록시 mode=vis 필요).</div>
+          <div id="visSourceState">시정은 별도 AWS2 시정 API로 조회합니다. 조회 실패 시 HTTP 상태와 Worker 응답 본문을 표시하며, 실제 시정값이 없으면 분포장을 임의로 생성하지 않습니다.</div>
           <div id="visActions">
             <label class="fieldLabel" for="visPeriod">시정 평균주기
               <select id="visPeriod"><option value="1" selected>1분 평균</option><option value="10">10분 평균</option></select>
@@ -998,7 +998,7 @@ button,.fileLabel,select{font-family:inherit}
 <li><b>내삽 범위</b>: 관측망 최외곽 convex hull 내부만 IDW로 내삽하고 외부는 투명 처리합니다. 관측망 밖 외삽은 하지 않습니다.</li>
 </ul>
       <h3>3. 스칼라 분석장</h3>
-      <ul><li>기온, 상대습도, 시정, 강수, 일극값을 관측지점 값으로부터 <b>IDW(p=2)</b> 보간합니다.</li><li>시트4의 <b>모든 관측지점</b>을 지도 표출과 공간계산에 동일하게 사용하고, 전체 관측망의 <b>볼록껍질 내부</b>를 광역 분석영역으로 사용합니다.</li><li>시정은 원자료 m를 km로 변환하고, 0.2·0.5·1·2·5·10·20 km를 고정 기준으로 색상 표출합니다. 시정 버튼은 별도 AWS2 시정자료(mode=vis) 조회를 시도합니다. Worker가 시정 서비스를 지원하지 않는 경우에는 TXT/CSV/XLSX 시정자료 파일을 직접 입력할 수 있습니다. 실제 시정 관측지점이 3개 미만이면 분석장을 그리지 않습니다.</li><li>강수는 15분·60분·12시간·일누적 중 선택할 수 있습니다. 시정은 1분·10분 평균을 선택하며 m→km 변환 후 0.2/0.5/1/2/5/10/20 km 고정 비선형 범례를 사용합니다. 시정장 IDW는 관측지점별 55 km·3점 이상 조건으로 제한합니다.</li><li>기본값은 <b>지형 밀착형</b>입니다. 필요할 때 지형 노출형으로 전환하고 기준고도를 0~1,400m에서 슬라이더 또는 숫자로 직접 입력할 수 있습니다. 이 고도는 시각화용이며 관측값을 보정하지 않습니다.</li><li>분석장 투명도를 조절하여 지형·위성영상과 함께 볼 수 있습니다.</li></ul>
+      <ul><li>기온, 상대습도, 시정, 강수, 일극값을 관측지점 값으로부터 <b>IDW(p=2)</b> 보간합니다.</li><li>시트4의 <b>모든 관측지점</b>을 지도 표출과 공간계산에 동일하게 사용하고, 전체 관측망의 <b>볼록껍질 내부</b>를 광역 분석영역으로 사용합니다.</li><li>시정은 원자료 m를 km로 변환하고, 0.2·0.5·1·2·5·10·20 km를 고정 기준으로 색상 표출합니다. 시정 버튼은 별도 AWS2 시정자료(mode=vis) 조회를 시도합니다. HTTP 400은 Worker 라우팅·요청인자, HTTP 502/503은 APIHub 호출·Secret을 점검해야 합니다. Worker가 시정 서비스를 지원하지 않는 경우에는 TXT/CSV/XLSX 시정자료 파일을 직접 입력할 수 있습니다. 실제 시정 관측지점이 3개 미만이면 분석장을 그리지 않습니다.</li><li>강수는 15분·60분·12시간·일누적 중 선택할 수 있습니다. 시정은 1분·10분 평균을 선택하며 m→km 변환 후 0.2/0.5/1/2/5/10/20 km 고정 비선형 범례를 사용합니다. 시정장 IDW는 관측지점별 55 km·3점 이상 조건으로 제한합니다.</li><li>기본값은 <b>지형 밀착형</b>입니다. 필요할 때 지형 노출형으로 전환하고 기준고도를 0~1,400m에서 슬라이더 또는 숫자로 직접 입력할 수 있습니다. 이 고도는 시각화용이며 관측값을 보정하지 않습니다.</li><li>분석장 투명도를 조절하여 지형·위성영상과 함께 볼 수 있습니다.</li></ul>
       <h3>4. 바람 분석장</h3>
       <ul><li>1분 또는 10분 풍향·풍속을 선택합니다. 둘 다 있으면 10분 평균을 우선 사용합니다.</li><li>풍향을 직접 보간하지 않고 관측 풍향·풍속을 U/V 성분으로 변환한 뒤 각각 IDW 보간합니다.</li><li>밀도·길이·벡터 두께·투명도를 조절할 수 있습니다. 지형 노출형에서는 depth-fail 재질을 함께 사용해 바람벡터를 분석장보다 우선적으로 선명하게 표시합니다.</li><li>지형 노출형에서는 보간 바람벡터를 분석면 높이에 배치하고 실제 산지에 의해 가려지도록 합니다. 관측바람은 관측지점 위치를 유지합니다.</li></ul>
       <h3>5. 색상과 해석</h3>
@@ -2767,7 +2767,23 @@ async function fetchVisData(){
   try{
     var url=proxyRequestUrl({mode:'vis',tm2:tm,stn:0,disp:0,help:1});
     var res=await fetch(url,{cache:'no-store'});
-    if(!res.ok)throw new Error('HTTP '+res.status);
+    if(!res.ok){
+      /* 상태코드뿐 아니라 서버 응답 원문을 표시해 Worker 미배포와 APIHub 거부를 구별한다.
+         원문에 인증키가 포함되어도 화면에 노출하지 않는다. */
+      var errorBody='';
+      try{errorBody=await res.text()}catch(ignore){}
+      errorBody=String(errorBody||'')
+        .replace(/authKey\s*(?:=|:|%3D)\s*[^\s&<]+/ig,'authKey=[보호됨]')
+        .replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim().slice(0,240);
+      var hint=res.status===400
+        ?'프록시 요청 거부: mode=vis 미등록 또는 요청인자 검증 실패 가능성. Cloudflare Worker를 먼저 갱신하세요.'
+        :res.status===401||res.status===403
+          ?'인증/서비스 승인 확인 필요.'
+          :res.status===502||res.status===503
+            ?'Worker까지 요청 도달. APIHub 상류 호출 또는 환경변수 설정을 확인하세요.'
+            :'프록시 또는 APIHub 응답 확인 필요.';
+      throw new Error('HTTP '+res.status+' · '+hint+(errorBody?' · 서버 응답: '+errorBody:''));
+    }
     var body=await res.text();
     if(epoch!==visQueryEpoch || tm!==instantTimeToKma() || dataMode!=='instant')return false;
     var records=parseVisPayload(body);
